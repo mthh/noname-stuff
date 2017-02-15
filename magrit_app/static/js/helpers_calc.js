@@ -108,6 +108,35 @@ function getDecimalSeparator(){
     return 1.1.toLocaleString().substr(1,1)
 }
 
+const get_precision_axis = (serie_min, serie_max, precision) => {
+    let range_serie = serie_max - serie_min;
+    if(serie_max > 1 && range_serie > 100){
+        return ".0f";
+    } else if (range_serie > 10){
+        if(precision == 0){
+            return ".0f";
+        }
+        return ".1f";
+    } else if (range_serie > 1){
+        if(precision < 2){
+            return ".1f";
+        }
+        return ".2f";
+    } else if (range_serie > 0.1){
+        return ".3f";
+    } else if (range_serie > 0.01){
+        return ".4f";
+    } else if (range_serie > 0.001){
+        return ".5f";
+    } else if (range_serie > 0.0001){
+        return ".6f";
+    } else if (range_serie > 0.00001){
+        return ".7f";
+    } else {
+        return ".8f";
+    }
+};
+
 var PropSizer = function(fixed_value, fixed_size, type_symbol){
   this.fixed_value = fixed_value;
   var sqrt = Math.sqrt,

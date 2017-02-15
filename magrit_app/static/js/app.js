@@ -1138,7 +1138,6 @@ function displayInfoOnMove() {
 
             d3.select(".info_button").style('box-shadow', 'inset 2px 2px 1px black');
             if (symbol) {
-                var ref_layer_name = current_layers[top_visible_layer].ref_layer_name;
                 svg_layers.select(id_top_layer).selectAll(symbol).on("mouseover", function (d, i) {
                     var txt_info = ["<h3>", top_visible_layer, "</h3><i>Feature ", i + 1, "/", current_layers[top_visible_layer].n_features, "</i><p>"];
                     var properties = result_data[top_visible_layer][i];
@@ -1202,7 +1201,9 @@ function reproj_symbol_layer() {
 
                 if (symbol == "text") {
                     // Reproject the labels :
-                    svg_layers.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).attrs(function (d) {
+                    svg_layers.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).style('font-size', function (d) {
+                        return d.properties.size * size_rap;
+                    }).attrs(function (d) {
                         var pt = path.centroid(d.geometry);
                         return { 'x': pt[0], 'y': pt[1] };
                     });
@@ -1656,32 +1657,22 @@ function isInterrupted(proj_name) {
 
 function handleClipPath(proj_name) {
     proj_name = proj_name.toLowerCase();
-    if (isInterrupted(proj_name)) {
-        var defs_sphere = defs.node().querySelector("#sphere"),
-            defs_clipPath = defs.node().querySelector("clipPath");
-        if (defs_sphere) {
-            defs_sphere.remove();
-        }
-        if (defs_clipPath) {
-            defs_clipPath.remove();
-        }
+    var defs_sphere = defs.node().querySelector("#sphere"),
+        defs_clipPath = defs.node().querySelector("clipPath");
+    if (defs_sphere) {
+        defs_sphere.remove();
+    }
+    if (defs_clipPath) {
+        defs_clipPath.remove();
+    }
 
+    if (isInterrupted(proj_name)) {
         defs.append("path").datum({ type: "Sphere" }).attr("id", "sphere").attr("d", path);
 
         defs.append("clipPath").attr("id", "clip").append("use").attr("xlink:href", "#sphere");
 
         svg_layers.selectAll(".layer").attr("clip-path", "url(#clip)");
-
-        // svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
     } else {
-        var _defs_sphere = defs.node().querySelector("#sphere"),
-            _defs_clipPath = defs.node().querySelector("clipPath");
-        if (_defs_sphere) {
-            _defs_sphere.remove();
-        }
-        if (_defs_clipPath) {
-            _defs_clipPath.remove();
-        }
         svg_layers.selectAll(".layer").attr("clip-path", null);
     }
 }
@@ -1689,16 +1680,17 @@ function handleClipPath(proj_name) {
 function change_projection(proj_name) {
     var new_proj_name = proj_name.split('()')[0].split('.')[1];
 
-    var prev_rotate = proj.rotate();
+    var prev_rotate = proj.rotate(),
+        prev_translate = proj.translate(),
+        prev_scale = proj.scale();
+
+    var prev_zoom = cloneObj(svg_map.__zoom);
+
     // Update global variables:
     proj = eval(proj_name);
     path = d3.geoPath().projection(proj).pointRadius(4);
-    t = proj.translate();
-    s = proj.scale();
-
-    // // Reset the projection center input :
-    // document.getElementById("form_projection_center").value = 0;
-    // document.getElementById("proj_center_value_txt").value = 0;
+    t = prev_translate;
+    s = prev_scale;
 
     // Do the reprojection :
     proj.translate(t).scale(s).rotate(prev_rotate);
@@ -1720,21 +1712,7 @@ function change_projection(proj_name) {
         d3.selectAll(".options_ortho").remove();
     }
 
-    // map.select("svg").on("mousedown", null)
-    //                 .on("mousemove", null)
-    //                 .on("mouseup", null);
-
-    // Reset the scale of the projection and the center of the view :
-    var layer_name = Object.getOwnPropertyNames(user_data)[0] || Object.getOwnPropertyNames(result_data)[0] || null;
-    if (!layer_name) {
-        var layers = layers_node.getElementsByClassName("layer");
-        layer_name = layers.length > 0 ? _app.id_to_layer.get(layers[layers.length - 1].id) : null;
-    }
-    if (layer_name) {
-        scale_to_lyr(layer_name);
-        center_map(layer_name);
-        zoom_without_redraw();
-    }
+    Object.assign(svg_map.__zoom, prev_zoom);
 
     // Reproject
     reproj_symbol_layer();
@@ -2003,9 +1981,9 @@ function patchSvgForInkscape() {
     for (var i = elems.length - 1; i > -1; i--) {
         if (elems[i].id == "") {
             continue;
-        } else if (Array.prototype.indexOf.call(elems[i].classList, "layer") > -1) {
+        } else if (elems[i].classList.contains("layer")) {
             elems[i].setAttribute("inkscape:label", elems[i].id);
-        } else if (elems[i].id.indexOf("legend") > -1) {
+        } else if (elems[i].id.indexOf("legend") > -1 && elems[i].id != "legend_node") {
             var layer_name = elems[i].className.baseVal.split("lgdf_")[1];
             elems[i].setAttribute("inkscape:label", "legend_" + layer_name);
         } else {
@@ -2905,26 +2883,16 @@ var display_discretization = function display_discretization(layer_name, field_n
     //     [i18next.t("app_page.common.std_dev"), "std_dev"],
     [i18next.t("app_page.common.Q6"), "Q6"], [i18next.t("app_page.common.arithmetic_progression"), "arithmetic_progression"], [i18next.t("app_page.common.jenks"), "jenks"]];
 
-    if (!serie._hasZeroValue() && !serie._hasZeroValue()) {
+    if (!serie._hasZeroValue() && !serie._hasNegativeValue()) {
         available_functions.push([i18next.t("app_page.common.geometric_progression"), "geometric_progression"]);
     }
-    if (serie.max() > 1 && serie.max() - serie.min() > 100) {
-        var formatCount = d3.format(".0f");
-    } else {
-        var nb_right_decimal = _get_max_nb_left_sep(values) > 2 ? 2 : serie.precision;
-        var formatCount = d3.formatLocale({
-            decimal: getDecimalSeparator(),
-            thousands: "",
-            grouping: 3,
-            currency: ["", ""]
-        }).format('.' + nb_right_decimal + 'f');
-    }
+    var precision_axis = get_precision_axis(serie.min(), serie.max(), serie.precision);
+    var formatCount = d3.format(precision_axis);
     var discretization = newBox.append('div').attr("id", "discretization_panel").insert("p").insert("select").attr("class", "params").on("change", function () {
         type = this.value;
         if (type === "Q6") {
             nb_class = 6;
             txt_nb_class.node().value = 6;
-            // txt_nb_class.html(i18next.t("disc_box.class", {count: 6}));
             document.getElementById("nb_class_range").value = 6;
         }
         redisplay.compute();
@@ -2935,17 +2903,13 @@ var display_discretization = function display_discretization(layer_name, field_n
         discretization.append("option").text(func[0]).attr("value", func[1]);
     });
 
-    var txt_nb_class = d3.select("#discretization_panel").append("input").attrs({ type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: "38px", "margin": "0 10px", "vertical-align": "calc(20%)" }).on("change", function () {
+    var txt_nb_class = d3.select("#discretization_panel").append("input").attrs({ type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: "30px", "margin": "0 10px", "vertical-align": "calc(20%)" }).on("change", function () {
         var a = disc_nb_class.node();
         a.value = this.value;
         a.dispatchEvent(new Event('change'));
     });
 
     d3.select("#discretization_panel").append('span').html(i18next.t("disc_box.class"));
-    // var txt_nb_class = d3.select("#discretization_panel")
-    //                         .insert("p")
-    //                         .style("display", "inline")
-    //                         .html(i18next.t("disc_box.class", {count: +nb_class}));
 
     var disc_nb_class = d3.select("#discretization_panel").insert("input").styles({ display: "inline", width: "60px", "vertical-align": "middle", margin: "10px" }).attrs({ id: "nb_class_range", type: "range" }).attrs({ min: 2, max: max_nb_class, value: nb_class, step: 1 }).on("change", function () {
         type = discretization.node().value;
@@ -3599,13 +3563,8 @@ var display_discretization_links_discont = function display_discretization_links
     if (!serie._hasZeroValue() && !serie._hasZeroValue()) {
         available_functions.push([i18next.t("app_page.common.geometric_progression"), "geometric_progression"]);
     }
-
-    var formatCount = d3.formatLocale({
-        decimal: getDecimalSeparator(),
-        thousands: "",
-        grouping: 3,
-        currency: ["", ""]
-    }).format('.' + serie.precision + 'f');
+    var precision_axis = get_precision_axis(serie.min(), serie.max(), serie.precision);
+    var formatCount = d3.format(precision_axis);
 
     var discretization = newBox.append('div').attr("id", "discretization_panel").insert("p").html("Type ").insert("select").attr("class", "params").on("change", function () {
         var old_type = type;
@@ -3660,10 +3619,7 @@ var display_discretization_links_discont = function display_discretization_links
         })();
     }
 
-    // var txt_nb_class = d3.select("#discretization_panel")
-    //                         .insert("p").style("display", "inline")
-    //                         .html(i18next.t("disc_box.class", {count: +nb_class}));
-    var txt_nb_class = d3.select("#discretization_panel").append("input").attrs({ type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: "38px", "margin": "0 10px", "vertical-align": "calc(20%)" }).on("change", function () {
+    var txt_nb_class = d3.select("#discretization_panel").append("input").attrs({ type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: "30px", "margin": "0 10px", "vertical-align": "calc(20%)" }).on("change", function () {
         var a = disc_nb_class.node();
         a.value = this.value;
         a.dispatchEvent(new Event('change'));
@@ -3719,7 +3675,7 @@ var display_discretization_links_discont = function display_discretization_links
     make_overlay_elements();
 
     // As the x axis and the mean didn't change, they can be drawn only once :
-    svg_histo.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(d3.axisBottom().scale(x));
+    svg_histo.append("g").attr("class", "x axis").attr("transform", "translate(0," + height + ")").call(d3.axisBottom().scale(x).tickFormat(formatCount));
 
     var box_content = newBox.append("div").attr("id", "box_content");
     box_content.append("h3").style("margin", "0").html(i18next.t("disc_box.line_size"));
@@ -6784,7 +6740,7 @@ var render_label = function render_label(layer, rendering_params, options) {
             new_layer_data.push({
                 id: i,
                 type: "Feature",
-                properties: { label: ft.properties[label_field], x: coords[0], y: coords[1] },
+                properties: { label: ft.properties[label_field], x: coords[0], y: coords[1], size: +rendering_params.ref_font_size },
                 geometry: { type: "Point", coordinates: coords }
             });
             // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
@@ -7426,6 +7382,35 @@ function get_nb_left_separator(nb) {
 function getDecimalSeparator() {
     return 1.1.toLocaleString().substr(1, 1);
 }
+
+var get_precision_axis = function get_precision_axis(serie_min, serie_max, precision) {
+    var range_serie = serie_max - serie_min;
+    if (serie_max > 1 && range_serie > 100) {
+        return ".0f";
+    } else if (range_serie > 10) {
+        if (precision == 0) {
+            return ".0f";
+        }
+        return ".1f";
+    } else if (range_serie > 1) {
+        if (precision < 2) {
+            return ".1f";
+        }
+        return ".2f";
+    } else if (range_serie > 0.1) {
+        return ".3f";
+    } else if (range_serie > 0.01) {
+        return ".4f";
+    } else if (range_serie > 0.001) {
+        return ".5f";
+    } else if (range_serie > 0.0001) {
+        return ".6f";
+    } else if (range_serie > 0.00001) {
+        return ".7f";
+    } else {
+        return ".8f";
+    }
+};
 
 var PropSizer = function PropSizer(fixed_value, fixed_size, type_symbol) {
     var _this = this;
@@ -9604,6 +9589,7 @@ function createStyleBoxLabel(layer_name) {
             features[i].setAttribute("x", prev_settings[i]["position"][0]);
             features[i].setAttribute("y", prev_settings[i]["position"][1]);
             features[i].style.fontFamily = prev_settings[i]["font"];
+            features[i].__data__.properties.size = +prev_settings[i]["size"].replace('px', '');
         }
 
         current_layers[layer_name].fill_color = prev_settings_defaults.color;
@@ -9646,9 +9632,14 @@ function createStyleBoxLabel(layer_name) {
     label_sizes.append("span").html(i18next.t("app_page.layer_style_popup.labels_default_size"));
     label_sizes.insert("span").style("float", "right").html(" px");
     label_sizes.insert("input").style("float", "right").attr("type", "number").attr("value", +current_layers[layer_name].default_size.replace("px", "")).on("change", function () {
+        var _this = this;
+
         var size = this.value + "px";
         current_layers[layer_name].default_size = size;
         selection.style("font-size", size);
+        selection.each(function (d) {
+            d.properties.size = _this.value;
+        });
     });
 
     var default_color = popup.insert("p").attr("class", "line_elem");
@@ -10405,21 +10396,21 @@ function createStyleBox_ProbSymbol(layer_name) {
         fill_color_section.append("p").style("text-align", "center").html(i18next.t("app_page.layer_style_popup.color_break"));
         var p2 = fill_color_section.append("p").style("display", "inline");
         var col1 = p2.insert("input").attr("type", "color").attr("id", "col1").attr("value", current_layers[layer_name].fill_color.two[0]).on("change", function () {
-            var _this = this;
+            var _this2 = this;
 
             var new_break_val = +b_val.node().value;
             current_layers[layer_name].fill_color.two[0] = this.value;
             selection.transition().style("fill", function (d, i) {
-                return d_values[i] > new_break_val ? col2.node().value : _this.value;
+                return d_values[i] > new_break_val ? col2.node().value : _this2.value;
             });
         });
         var col2 = p2.insert("input").attr("type", "color").attr("id", "col2").attr("value", current_layers[layer_name].fill_color.two[1]).on("change", function () {
-            var _this2 = this;
+            var _this3 = this;
 
             var new_break_val = +b_val.node().value;
             current_layers[layer_name].fill_color.two[1] = this.value;
             selection.transition().style("fill", function (d, i) {
-                return d_values[i] > new_break_val ? _this2.value : col1.node().value;
+                return d_values[i] > new_break_val ? _this3.value : col1.node().value;
             });
         });
         fill_color_section.insert("span").html(i18next.t("app_page.layer_style_popup.break_value"));
@@ -10605,11 +10596,13 @@ function make_style_box_indiv_label(label_node) {
             label_node.textContent = current_options.content;
             label_node.style.fill = current_options.color;
             label_node.style.fontFamily = current_options.font;
+            label_node.__data__.properties.size = +current_options.size.replace('px', '');
         }
     });
     var box_content = d3.select(".styleTextAnnotation").select(".modal-body").insert("div");
     box_content.append("p").html(i18next.t("app_page.func_options.label.font_size")).append("input").attrs({ type: "number", id: "font_size", min: 0, max: 34, step: "any", value: +label_node.style.fontSize.slice(0, -2) }).style("width", "70px").on("change", function () {
         label_node.style.fontSize = this.value + "px";
+        label_node.__data__.properties.size = this.value;
     });
     box_content.append("p").html(i18next.t("app_page.func_options.label.content")).append("input").attrs({ "value": label_node.textContent, id: "label_content" }).on("keyup", function () {
         label_node.textContent = this.value;
@@ -12681,12 +12674,6 @@ var get_max_nb_dec = function get_max_nb_dec(layer_name) {
     });
     return max;
 };
-
-function _get_max_nb_left_sep(values) {
-    return max_fast(values.map(function (d) {
-        return ('' + d).split('.')[0].length;
-    }));
-}
 
 var get_max_nb_left_sep = function get_max_nb_left_sep(layer_name) {
     if (!current_layers[layer_name] || !current_layers[layer_name].colors_breaks) return;

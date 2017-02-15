@@ -1063,9 +1063,6 @@ var get_max_nb_dec = function(layer_name){
     return max;
 }
 
-function _get_max_nb_left_sep(values){
-    return max_fast(values.map(d => (''+d).split('.')[0].length));
-}
 
 var get_max_nb_left_sep = function(layer_name){
     if(!(current_layers[layer_name]) || !(current_layers[layer_name].colors_breaks))

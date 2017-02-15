@@ -290,35 +290,30 @@ var display_discretization_links_discont = function(layer_name, field_name, nb_c
     if(!serie._hasZeroValue() && !serie._hasZeroValue()){
         available_functions.push([i18next.t("app_page.common.geometric_progression"), "geometric_progression"]);
     }
-
-    var formatCount = d3.formatLocale({
-                        decimal: getDecimalSeparator(),
-                        thousands: "",
-                        grouping: 3,
-                        currency: ["", ""]
-                      }).format('.' + serie.precision + 'f');
+    var precision_axis = get_precision_axis(serie.min(), serie.max(), serie.precision);
+    var formatCount = d3.format(precision_axis);
 
     var discretization = newBox.append('div')
-                            .attr("id", "discretization_panel")
-                            .insert("p").html("Type ")
-                            .insert("select").attr("class", "params")
-                            .on("change", function(){
-                                let old_type = type;
-                                if(this.value == "user_defined"){
-                                    this.value = old_type;
-                                    return;
-                                }
-                                type = this.value;
-                                if(type === "Q6"){
-                                    nb_class = 6;
-                                    txt_nb_class.node().value = nb_class;
-                                    // txt_nb_class.html(i18next.t("disc_box.class", {count: nb_class}));
-                                    document.getElementById("nb_class_range").value = 6;
-                                }
-                                update_breaks();
-                                redisplay.compute();
-                                redisplay.draw();
-                            });
+        .attr("id", "discretization_panel")
+        .insert("p").html("Type ")
+        .insert("select").attr("class", "params")
+        .on("change", function(){
+            let old_type = type;
+            if(this.value == "user_defined"){
+                this.value = old_type;
+                return;
+            }
+            type = this.value;
+            if(type === "Q6"){
+                nb_class = 6;
+                txt_nb_class.node().value = nb_class;
+                // txt_nb_class.html(i18next.t("disc_box.class", {count: nb_class}));
+                document.getElementById("nb_class_range").value = 6;
+            }
+            update_breaks();
+            redisplay.compute();
+            redisplay.draw();
+        });
 
     available_functions.forEach( func => {
         discretization.append("option").text(func[0]).attr("value", func[1]);
@@ -356,13 +351,9 @@ var display_discretization_links_discont = function(layer_name, field_name, nb_c
             });
     }
 
-
-    // var txt_nb_class = d3.select("#discretization_panel")
-    //                         .insert("p").style("display", "inline")
-    //                         .html(i18next.t("disc_box.class", {count: +nb_class}));
     var txt_nb_class = d3.select("#discretization_panel").append("input")
         .attrs({type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1})
-        .styles({width: "38px", "margin": "0 10px", "vertical-align": "calc(20%)"})
+        .styles({width: "30px", "margin": "0 10px", "vertical-align": "calc(20%)"})
         .on("change", function(){
             let a = disc_nb_class.node();
             a.value = this.value;
@@ -430,7 +421,8 @@ var display_discretization_links_discont = function(layer_name, field_name, nb_c
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(d3.axisBottom()
-        .scale(x));
+                .scale(x)
+                .tickFormat(formatCount));
 
     var box_content = newBox.append("div").attr("id", "box_content");
     box_content.append("h3").style("margin", "0").html(i18next.t("disc_box.line_size"));

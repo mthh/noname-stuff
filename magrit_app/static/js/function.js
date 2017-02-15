@@ -3132,7 +3132,7 @@ var render_label = function(layer, rendering_params, options){
             new_layer_data.push({
                 id: i,
                 type: "Feature",
-                properties: {label: ft.properties[label_field], x: coords[0], y: coords[1]},
+                properties: {label: ft.properties[label_field], x: coords[0], y: coords[1], size: +rendering_params.ref_font_size},
                 geometry: {type: "Point", coordinates: coords}
             });
             // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});

@@ -507,35 +507,25 @@ var display_discretization = function(layer_name, field_name, nb_class, options)
      [i18next.t("app_page.common.jenks"), "jenks"]
     ];
 
-    if(!serie._hasZeroValue() && !serie._hasZeroValue()){
+    if(!serie._hasZeroValue() && !serie._hasNegativeValue()){
         available_functions.push([i18next.t("app_page.common.geometric_progression"), "geometric_progression"]);
     }
-    if(serie.max() > 1 && serie.max() - serie.min() > 100){
-        var formatCount = d3.format(".0f");
-    } else {
-        var nb_right_decimal = _get_max_nb_left_sep(values) > 2 ? 2 : serie.precision;
-        var formatCount = d3.formatLocale({
-                            decimal: getDecimalSeparator(),
-                            thousands: "",
-                            grouping: 3,
-                            currency: ["", ""]
-                          }).format('.' + nb_right_decimal + 'f');
-    }
+    let precision_axis = get_precision_axis(serie.min(), serie.max(), serie.precision);
+    var formatCount = d3.format(precision_axis);
     var discretization = newBox.append('div')
-                                .attr("id", "discretization_panel")
-                                .insert("p")
-                                .insert("select").attr("class", "params")
-                                .on("change", function(){
-                                    type = this.value;
-                                    if(type === "Q6"){
-                                        nb_class = 6;
-                                        txt_nb_class.node().value = 6;
-                                        // txt_nb_class.html(i18next.t("disc_box.class", {count: 6}));
-                                        document.getElementById("nb_class_range").value = 6;
-                                    }
-                                    redisplay.compute();
-                                    redisplay.draw();
-                                    });
+        .attr("id", "discretization_panel")
+        .insert("p")
+        .insert("select").attr("class", "params")
+        .on("change", function(){
+            type = this.value;
+            if(type === "Q6"){
+                nb_class = 6;
+                txt_nb_class.node().value = 6;
+                document.getElementById("nb_class_range").value = 6;
+            }
+            redisplay.compute();
+            redisplay.draw();
+            });
 
     available_functions.forEach( func => {
         discretization.append("option").text(func[0]).attr("value", func[1]);
@@ -543,7 +533,7 @@ var display_discretization = function(layer_name, field_name, nb_class, options)
 
     var txt_nb_class = d3.select("#discretization_panel").append("input")
         .attrs({type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1})
-        .styles({width: "38px", "margin": "0 10px", "vertical-align": "calc(20%)"})
+        .styles({width: "30px", "margin": "0 10px", "vertical-align": "calc(20%)"})
         .on("change", function(){
             let a = disc_nb_class.node();
             a.value = this.value;
@@ -551,12 +541,8 @@ var display_discretization = function(layer_name, field_name, nb_class, options)
         });
 
     d3.select("#discretization_panel")
-      .append('span')
-      .html(i18next.t("disc_box.class"));
-    // var txt_nb_class = d3.select("#discretization_panel")
-    //                         .insert("p")
-    //                         .style("display", "inline")
-    //                         .html(i18next.t("disc_box.class", {count: +nb_class}));
+        .append('span')
+        .html(i18next.t("disc_box.class"));
 
     var disc_nb_class = d3.select("#discretization_panel")
         .insert("input")

@@ -249,6 +249,7 @@ function createStyleBoxLabel(layer_name){
             features[i].setAttribute("x", prev_settings[i]["position"][0]);
             features[i].setAttribute("y", prev_settings[i]["position"][1]);
             features[i].style.fontFamily = prev_settings[i]["font"];
+            features[i].__data__.properties.size = +prev_settings[i]["size"].replace('px', '');
         }
 
         current_layers[layer_name].fill_color = prev_settings_defaults.color;
@@ -317,6 +318,7 @@ function createStyleBoxLabel(layer_name){
                 let size = this.value + "px";
                 current_layers[layer_name].default_size = size;
                 selection.style("font-size", size);
+                selection.each(d => { d.properties.size = this.value; });
             });
 
     let default_color = popup.insert("p").attr("class", "line_elem");
@@ -1424,6 +1426,7 @@ function make_style_box_indiv_label(label_node){
                 label_node.textContent = current_options.content;
                 label_node.style.fill = current_options.color;
                 label_node.style.fontFamily = current_options.font;
+                label_node.__data__.properties.size = +current_options.size.replace('px', '');
             }
         });
     let box_content = d3.select(".styleTextAnnotation").select(".modal-body").insert("div");
@@ -1433,6 +1436,7 @@ function make_style_box_indiv_label(label_node){
         .style("width", "70px")
         .on("change", function(){
             label_node.style.fontSize = this.value + "px";
+            label_node.__data__.properties.size = this.value;
         });
     box_content.append("p").html(i18next.t("app_page.func_options.label.content"))
         .append("input").attrs({"value": label_node.textContent, id: "label_content"})

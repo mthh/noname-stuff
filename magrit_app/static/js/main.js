@@ -1369,7 +1369,6 @@ function displayInfoOnMove(){
 
         d3.select(".info_button").style('box-shadow', 'inset 2px 2px 1px black');
         if(symbol){
-            let ref_layer_name = current_layers[top_visible_layer].ref_layer_name;
             svg_layers.select(id_top_layer).selectAll(symbol).on("mouseover", function(d,i){
                 let txt_info = ["<h3>", top_visible_layer, "</h3><i>Feature ",
                                 i + 1, "/", current_layers[top_visible_layer].n_features, "</i><p>"];
@@ -1432,6 +1431,7 @@ function reproj_symbol_layer(){
       if (symbol == "text") { // Reproject the labels :
           svg_layers.select('#' + _app.layer_to_id.get(lyr_name))
                 .selectAll(symbol)
+                .style('font-size', d => d.properties.size * size_rap)
                 .attrs( d => {
                   let pt = path.centroid(d.geometry);
                   return {'x': pt[0], 'y': pt[1]};
@@ -1482,7 +1482,6 @@ function reproj_symbol_layer(){
         svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
             .selectAll('path')
             .style("stroke-width", (d,i) => +d.properties.prop_val * size_rap );
-
     }
   }
 }
@@ -1940,12 +1939,12 @@ function isInterrupted(proj_name){
 
 function handleClipPath(proj_name){
     proj_name = proj_name.toLowerCase();
-    if(isInterrupted(proj_name)){
-        let defs_sphere = defs.node().querySelector("#sphere"),
-            defs_clipPath = defs.node().querySelector("clipPath");
-        if(defs_sphere){ defs_sphere.remove(); }
-        if(defs_clipPath){ defs_clipPath.remove(); }
+    let defs_sphere = defs.node().querySelector("#sphere"),
+        defs_clipPath = defs.node().querySelector("clipPath");
+    if(defs_sphere){ defs_sphere.remove(); }
+    if(defs_clipPath){ defs_clipPath.remove(); }
 
+    if(isInterrupted(proj_name)){
         defs.append("path")
             .datum({type: "Sphere"})
             .attr("id", "sphere")
@@ -1959,12 +1958,7 @@ function handleClipPath(proj_name){
         svg_layers.selectAll(".layer")
             .attr("clip-path", "url(#clip)");
 
-        // svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
     } else {
-        let defs_sphere = defs.node().querySelector("#sphere"),
-            defs_clipPath = defs.node().querySelector("clipPath");
-        if(defs_sphere){ defs_sphere.remove(); }
-        if(defs_clipPath){ defs_clipPath.remove(); }
         svg_layers.selectAll(".layer")
                 .attr("clip-path", null);
     }
@@ -1973,16 +1967,17 @@ function handleClipPath(proj_name){
 function change_projection(proj_name) {
     var new_proj_name = proj_name.split('()')[0].split('.')[1];
 
-    let prev_rotate = proj.rotate();
+    let prev_rotate = proj.rotate(),
+        prev_translate = proj.translate(),
+        prev_scale = proj.scale();
+
+    let prev_zoom = cloneObj(svg_map.__zoom);
+
     // Update global variables:
     proj = eval(proj_name);
     path = d3.geoPath().projection(proj).pointRadius(4);
-    t = proj.translate();
-    s = proj.scale();
-
-    // // Reset the projection center input :
-    // document.getElementById("form_projection_center").value = 0;
-    // document.getElementById("proj_center_value_txt").value = 0;
+    t = prev_translate;
+    s = prev_scale;
 
     // Do the reprojection :
     proj.translate(t).scale(s).rotate(prev_rotate);
@@ -2010,23 +2005,7 @@ function change_projection(proj_name) {
         d3.selectAll(".options_ortho").remove();
     }
 
-    // map.select("svg").on("mousedown", null)
-    //                 .on("mousemove", null)
-    //                 .on("mouseup", null);
-
-    // Reset the scale of the projection and the center of the view :
-    let layer_name = Object.getOwnPropertyNames(user_data)[0]
-                || Object.getOwnPropertyNames(result_data)[0]
-                || null;
-    if(!layer_name){
-        let layers = layers_node.getElementsByClassName("layer");
-        layer_name = layers.length > 0 ? _app.id_to_layer.get(layers[layers.length - 1].id) : null;
-    }
-    if(layer_name){
-        scale_to_lyr(layer_name);
-        center_map(layer_name);
-        zoom_without_redraw();
-    }
+    Object.assign(svg_map.__zoom, prev_zoom);
 
     // Reproject
     reproj_symbol_layer();
@@ -2304,9 +2283,9 @@ function patchSvgForInkscape(){
     for(let i = elems.length - 1; i > -1; i--){
         if(elems[i].id == ""){
             continue;
-        } else if (Array.prototype.indexOf.call(elems[i].classList, "layer") > -1) {
+        } else if (elems[i].classList.contains("layer")) {
             elems[i].setAttribute("inkscape:label", elems[i].id);
-        } else if(elems[i].id.indexOf("legend") > -1){
+        } else if(elems[i].id.indexOf("legend") > -1 && elems[i].id != "legend_node"){
             let layer_name = elems[i].className.baseVal.split("lgdf_")[1];
             elems[i].setAttribute("inkscape:label", "legend_" + layer_name);
         } else {
