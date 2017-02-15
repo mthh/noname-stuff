@@ -128,9 +128,9 @@ function copy_layer(ref_layer, new_name, type_result){
     let id_ref_layer = _app.layer_to_id.get(ref_layer);
     _app.layer_to_id.set(new_name, id_new_layer);
     _app.id_to_layer.set(id_new_layer, new_name);
-    svg_map.appendChild(document.getElementById("svg_map").querySelector("#"+id_ref_layer).cloneNode(true));
-    svg_map.lastChild.setAttribute("id", id_new_layer);
-    svg_map.lastChild.setAttribute("class", "result_layer layer");
+    layers_node.appendChild(layers_node.querySelector("#"+id_ref_layer).cloneNode(true));
+    layers_node.lastChild.setAttribute("id", id_new_layer);
+    layers_node.lastChild.setAttribute("class", "result_layer layer");
     current_layers[new_name] = {n_features: current_layers[ref_layer].n_features,
                              type: current_layers[ref_layer].type,
                              ref_layer_name: ref_layer};
@@ -142,7 +142,6 @@ function copy_layer(ref_layer, new_name, type_result){
         result_data[new_name].push(selec_dest[i].__data__.properties);
     }
     document.getElementById(id_new_layer).style.visibility = "";
-    up_legends();
     create_li_layer_elem(new_name, current_layers[new_name].n_features, [current_layers[new_name].type, type_result], "result");
 }
 

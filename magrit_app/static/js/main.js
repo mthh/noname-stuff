@@ -905,9 +905,9 @@ function setUpInterface(resume_project)
 
     // Zoom-in, Zoom-out, Info, Hand-Move and RectZoom buttons (on the top of the map) :
     let lm = map_div
-                .append("div")
-                .attr("class", "light-menu")
-                .styles({position:"absolute", right:"0px", bottom: "0px"});
+        .append("div")
+        .attr("class", "light-menu")
+        .styles({position:"absolute", right:"0px", bottom: "0px"});
 
     let lm_buttons = [
         {id: "zoom_out", "i18n": "[tooltip-title]app_page.lm_buttons.zoom-", "tooltip_position": "left", class: "zoom_button i18n", html: "-"},
@@ -938,10 +938,10 @@ function setUpInterface(resume_project)
     // Already append the div for displaying information on features,
     // setting it currently unactive until it will be requested :
     d3.select("body").append("div")
-                  .attr("id", "info_features")
-                  .classed("active", false)
-                  .style("display", "none")
-                  .html("");
+        .attr("id", "info_features")
+        .classed("active", false)
+        .style("display", "none")
+        .html("");
 
     prepare_drop_section();
     accordionize(".accordion");
@@ -958,7 +958,7 @@ function setUpInterface(resume_project)
           }
           let desired_order = [],
               actual_order = [],
-              layers = svg_map.getElementsByClassName("layer");
+              layers = layers_node.getElementsByClassName("layer");
 
           for(let i=0, len_i = a.target.childNodes.length; i < len_i; i++){
               let n = a.target.childNodes[i].getAttribute("layer_name");
@@ -968,7 +968,7 @@ function setUpInterface(resume_project)
           for(let i = 0, len = desired_order.length; i < len; i++){
               let lyr1 = document.getElementById(desired_order[i]),
                   lyr2 = document.getElementById(desired_order[i+1]) || document.getElementById(desired_order[i]);
-              svg_map.insertBefore(lyr2, lyr1);
+              layers_node.insertBefore(lyr2, lyr1);
           }
          if(at_end) displayInfoOnMove();
         },
@@ -1180,9 +1180,12 @@ var map = map_div.style("width", w+"px").style("height", h+"px")
             .on("contextmenu", function(event){ d3.event.preventDefault(); })
             .call(zoom);
 
+var svg_map = map.node();
 // map.on("contextmenu", function(event){ d3.event.preventDefault(); });
 
 var defs = map.append("defs");
+var svg_layers = map.append('g').attrs({'id': 'layers_node'});
+var svg_legend = map.append('g').attrs({'id': 'legend_node'});
 
 var _app = {
     to_cancel: undefined,
@@ -1302,12 +1305,6 @@ const customs_fonts = ['Arimo', 'Baloo Bhaina', 'Bitter', 'Dosis', 'Inconsolata'
     });
 })();
 
-function up_legends(){
-    let legend_features = svg_map.getElementsByClassName('legend');
-    for(let i = 0; i < legend_features.length; i++){
-        svg_map.appendChild(legend_features[i], null);
-    }
-}
 
 ////////////////
 // To sort:
@@ -1343,15 +1340,15 @@ function displayInfoOnMove(){
     var info_features = d3.select("#info_features");
     if(info_features.classed("active")){
         d3.select(".info_button").style('box-shadow', null);
-        map.selectAll(".layer").selectAll("path").on("mouseover", null);
-        map.selectAll(".layer").selectAll("circle").on("mouseover", null);
-        map.selectAll(".layer").selectAll("rect").on("mouseover", null);
+        svg_layers.selectAll(".layer").selectAll("path").on("mouseover", null);
+        svg_layers.selectAll(".layer").selectAll("circle").on("mouseover", null);
+        svg_layers.selectAll(".layer").selectAll("rect").on("mouseover", null);
         info_features.classed("active", false);
         info_features.node().innerHTML = "";
         info_features.style("display", "none");
         svg_map.style.cursor = "";
     } else {
-        let layers = svg_map.getElementsByClassName("layer"),
+        let layers = layers_node.getElementsByClassName("layer"),
             nb_layer = layers.length,
             top_visible_layer = null;
 
@@ -1373,7 +1370,7 @@ function displayInfoOnMove(){
         d3.select(".info_button").style('box-shadow', 'inset 2px 2px 1px black');
         if(symbol){
             let ref_layer_name = current_layers[top_visible_layer].ref_layer_name;
-            map.select(id_top_layer).selectAll(symbol).on("mouseover", function(d,i){
+            svg_layers.select(id_top_layer).selectAll(symbol).on("mouseover", function(d,i){
                 let txt_info = ["<h3>", top_visible_layer, "</h3><i>Feature ",
                                 i + 1, "/", current_layers[top_visible_layer].n_features, "</i><p>"];
                 let properties = result_data[top_visible_layer][i];
@@ -1386,7 +1383,7 @@ function displayInfoOnMove(){
                 });
         } else {
             symbol = "path"
-            map.select(id_top_layer).selectAll("path").on("mouseover", function(d,i){
+            svg_layers.select(id_top_layer).selectAll("path").on("mouseover", function(d,i){
                 let txt_info = ["<h3>", top_visible_layer, "</h3><i>Feature ",
                                 i + 1, "/", current_layers[top_visible_layer].n_features, "</i><p>"];
                 Object.getOwnPropertyNames(d.properties).forEach(function(el, i){
@@ -1397,7 +1394,7 @@ function displayInfoOnMove(){
                 info_features.style("display", null);
                 });
         }
-        map.select(id_top_layer).selectAll(symbol).on("mouseout", function(){
+        svg_layers.select(id_top_layer).selectAll(symbol).on("mouseout", function(){
                 info_features.node().innerHTML = "";
                 info_features.style("display", "none");
         });
@@ -1430,40 +1427,42 @@ function reproj_symbol_layer(){
             || current_layers[lyr_name].renderer.indexOf('Label')  > -1 )){
       let symbol = current_layers[lyr_name].symbol;
 
+      let size_rap = current_layers[lyr_name].proj_scale_draw === undefined ? 1 : proj.scale() / current_layers[lyr_name].proj_scale_draw;
+
       if (symbol == "text") { // Reproject the labels :
-          map.select('#' + _app.layer_to_id.get(lyr_name))
+          svg_layers.select('#' + _app.layer_to_id.get(lyr_name))
                 .selectAll(symbol)
                 .attrs( d => {
                   let pt = path.centroid(d.geometry);
                   return {'x': pt[0], 'y': pt[1]};
                 });
       } else if (symbol == "image"){ // Reproject pictograms :
-          map.select('#' + _app.layer_to_id.get(lyr_name))
+          svg_layers.select('#' + _app.layer_to_id.get(lyr_name))
               .selectAll(symbol)
               .attrs(function(d,i){
                 let coords = path.centroid(d.geometry),
-                    size = +this.getAttribute('width').slice(0, -2) / 2;
+                    size = size_rap * +this.getAttribute('width').slice(0, -2) / 2;
                 return { 'x': coords[0] - size, 'y': coords[1] - size };
               });
       } else if(symbol == "circle"){ // Reproject Prop Symbol :
-          map.select("#"+_app.layer_to_id.get(lyr_name))
+          svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
               .selectAll(symbol)
               .style('display', d => isNaN(+path.centroid(d)[0]) ? "none" : undefined)
               .attrs( d => {
                 let centroid = path.centroid(d);
                 return {
-                  'r': d.properties.prop_value,
+                  'r': d.properties.prop_value * size_rap,
                   'cx': centroid[0],
                   'cy': centroid[1]
                 };
               });
       } else if (symbol == "rect") { // Reproject Prop Symbol :
-          map.select("#"+_app.layer_to_id.get(lyr_name))
+          svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
               .selectAll(symbol)
               .style('display', d => isNaN(+path.centroid(d)[0]) ? "none" : undefined)
               .attrs( d => {
                 let centroid = path.centroid(d),
-                    size =  d.properties.prop_value;
+                    size =  d.properties.prop_value * size_rap;
                 return {
                   'height': size,
                   'width': size,
@@ -1472,6 +1471,13 @@ function reproj_symbol_layer(){
                 };
               });
       }
+    } else if (current_layers[lyr_name].renderer && (
+                current_layers[lyr_name].renderer == "DiscLayer" || current_layers[lyr_name].renderer == "Links")){
+        let size_rap = proj.scale() / current_layers[lyr_name].proj_scale_draw;
+        svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
+            .selectAll('path')
+            .style("stroke-width", function(){ return this.style.strokeWidth * size_rap; });
+
     }
   }
 }
@@ -1670,7 +1676,7 @@ function remove_layer_cleanup(name){
 
      // Making some clean-up regarding the result layer :
     if(current_layers[name].is_result){
-        map.selectAll([".lgdf_", name].join('')).remove();
+        svg_legend.selectAll([".lgdf_", name].join('')).remove();
         if(result_data.hasOwnProperty(name))
             delete result_data[name];
         if(current_layers[name].hasOwnProperty("key_name")
@@ -1680,7 +1686,7 @@ function remove_layer_cleanup(name){
     }
 
     // Remove the layer from the map and from the layer manager :
-    map.select(g_lyr_name).remove();
+    svg_layers.select(g_lyr_name).remove();
     document.querySelector('#sortable .' + _app.layer_to_id.get(name)).remove()
 
     // Remove the layer from the "geo export" menu :
@@ -1765,35 +1771,40 @@ function handle_click_hand(behavior){
 
 function zoom_without_redraw(){
     var rot_val = canvas_rotation_value || "";
+    var p_scale = proj.scale();
     var transform;
     if(!d3.event || !d3.event.transform || !d3.event.sourceEvent){
         transform = d3.zoomTransform(svg_map);
-        map.selectAll(".layer")
+        svg_layers.selectAll(".layer")
           .transition()
           .duration(50)
           .style("stroke-width", function(){
                 let lyr_name = _app.id_to_layer.get(this.id);
                 return current_layers[lyr_name].fixed_stroke
-                        ? this.style.strokeWidth
+                        ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw'])
+                        : current_layers[lyr_name]['proj_scale_draw'] != undefined
+                        ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / transform.k +  "px"
                         : current_layers[lyr_name]['stroke-width-const'] / transform.k +  "px";
             })
           .attr("transform", transform.toString() + rot_val);
-        map.selectAll(".scalable-legend")
+        svg_legend.selectAll(".scalable-legend")
           .transition()
           .duration(50)
           .attr("transform", transform.toString() + rot_val);
     } else {
-        map.selectAll(".layer")
+        svg_layers.selectAll(".layer")
           .transition()
           .duration(50)
           .style("stroke-width", function(){
                 let lyr_name = _app.id_to_layer.get(this.id);
                 return current_layers[lyr_name].fixed_stroke
-                        ? this.style.strokeWidth
+                        ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw'])
+                        : current_layers[lyr_name]['proj_scale_draw'] != undefined
+                        ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / d3.event.transform.k +  "px"
                         : current_layers[lyr_name]['stroke-width-const'] / d3.event.transform.k +  "px";
             })
           .attr("transform", d3.event.transform + rot_val);
-        map.selectAll(".scalable-legend")
+        svg_legend.selectAll(".scalable-legend")
           .transition()
           .duration(50)
           .attr("transform",  d3.event.transform + rot_val);
@@ -1818,7 +1829,7 @@ function zoom_without_redraw(){
 
 function redraw_legends_symbols(targeted_node){
     if(!targeted_node)
-        var legend_nodes = document.querySelectorAll("#legend_root2");
+        var legend_nodes = legend_node.querySelectorAll("#legend_root2");
     else
         var legend_nodes = [targeted_node];
 
@@ -1901,7 +1912,7 @@ function rotate_global(angle){
     canvas_rotation_value = ["rotate(", angle, ")"].join('');
     let zoom_transform = d3.zoomTransform(svg_map);
 
-    map.selectAll("g.layer")
+    svg_layers.selectAll(".layer")
       .transition()
       .duration(10)
       .attr("transform", [canvas_rotation_value,
@@ -1940,16 +1951,16 @@ function handleClipPath(proj_name){
           .append("use")
             .attr("xlink:href", "#sphere");
 
-        map.selectAll(".layer")
+        svg_layers.selectAll(".layer")
             .attr("clip-path", "url(#clip)");
 
-        svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
+        // svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
     } else {
         let defs_sphere = defs.node().querySelector("#sphere"),
             defs_clipPath = defs.node().querySelector("clipPath");
         if(defs_sphere){ defs_sphere.remove(); }
         if(defs_clipPath){ defs_clipPath.remove(); }
-        map.selectAll(".layer")
+        svg_layers.selectAll(".layer")
                 .attr("clip-path", null);
     }
 }
@@ -1957,19 +1968,20 @@ function handleClipPath(proj_name){
 function change_projection(proj_name) {
     var new_proj_name = proj_name.split('()')[0].split('.')[1];
 
+    let prev_rotate = proj.rotate();
     // Update global variables:
     proj = eval(proj_name);
     path = d3.geoPath().projection(proj).pointRadius(4);
     t = proj.translate();
     s = proj.scale();
 
-    // Reset the projection center input :
-    document.getElementById("form_projection_center").value = 0;
-    document.getElementById("proj_center_value_txt").value = 0;
+    // // Reset the projection center input :
+    // document.getElementById("form_projection_center").value = 0;
+    // document.getElementById("proj_center_value_txt").value = 0;
 
     // Do the reprojection :
-    proj.translate([t[0], t[1]]).scale(s);
-    map.selectAll(".layer").selectAll("path").attr("d", path);
+    proj.translate(t).scale(s).rotate(prev_rotate);
+    svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
 
     // Set specifics mouse events according to the projection :
     if(new_proj_name.indexOf('Orthographic') > -1){
@@ -1993,16 +2005,16 @@ function change_projection(proj_name) {
         d3.selectAll(".options_ortho").remove();
     }
 
-    map.select("svg").on("mousedown", null)
-                    .on("mousemove", null)
-                    .on("mouseup", null);
+    // map.select("svg").on("mousedown", null)
+    //                 .on("mousemove", null)
+    //                 .on("mouseup", null);
 
     // Reset the scale of the projection and the center of the view :
     let layer_name = Object.getOwnPropertyNames(user_data)[0]
                 || Object.getOwnPropertyNames(result_data)[0]
                 || null;
     if(!layer_name){
-        let layers = document.getElementsByClassName("layer");
+        let layers = layers_node.getElementsByClassName("layer");
         layer_name = layers.length > 0 ? _app.id_to_layer.get(layers[layers.length - 1].id) : null;
     }
     if(layer_name){
@@ -2047,8 +2059,8 @@ function handle_active_layer(name){
         eye_closed.onclick = func;
         parent_div.replaceChild(eye_closed, selec);
     }
-    map.select("#"+_app.layer_to_id.get(name)).style("visibility", fill_value == 0 ? "hidden" : "initial");
-    map.selectAll(".lgdf_" + _app.layer_to_id.get(name)).style("visibility", fill_value == 0 ? "hidden" : "initial");
+    svg_layers.select("#"+_app.layer_to_id.get(name)).style("visibility", fill_value == 0 ? "hidden" : "initial");
+    svg_layers.selectAll(".lgdf_" + _app.layer_to_id.get(name)).style("visibility", fill_value == 0 ? "hidden" : "initial");
 
     if(at_end){
         displayInfoOnMove();
@@ -2057,11 +2069,11 @@ function handle_active_layer(name){
 
 // Function to handle the title add and changes
 function handle_title(txt){
-    var title = d3.select("#map_title").select("text");
+    var title = svg_legend.select("#map_title").select("text");
     if(title.node()){
         title.text(txt);
     } else {
-        map.append("g")
+        svg_legend.append("g")
              .attrs({"class": "legend legend_feature title", "id": "map_title"})
              .style("cursor", "pointer")
           .insert("text")
@@ -2080,7 +2092,7 @@ function handle_title(txt){
 }
 
 function handle_title_properties(){
-    var title = d3.select("#map_title").select("text");
+    var title = svg_legend.select("#map_title").select("text");
     if(!title.node() || title.text() == ""){
         swal({title: "",
               text: i18next.t("app_page.common.error_no_title"),
@@ -2186,15 +2198,15 @@ function handle_proj_center_button(param){
     let current_rotation = proj.rotate();
     if(param[0]){
         proj.rotate([param[0], current_rotation[1], current_rotation[2]]);
-        map.selectAll(".layer").selectAll("path").attr("d", path);
+        svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
     }
     if(param[1]){
         proj.rotate([current_rotation[0], param[1] - h/2, current_rotation[2]]);
-        map.selectAll(".layer").selectAll("path").attr("d", path);
+        svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
     }
     if(param[2]){
         proj.rotate([current_rotation[0], current_rotation[1], param[2] - h/2]);
-        map.selectAll(".layer").selectAll("path").attr("d", path);
+        svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
     }
     reproj_symbol_layer();
 }
@@ -2242,8 +2254,8 @@ function canvas_mod_size(shape){
 function patchSvgForFonts(){
     function getListUsedFonts(){
         let elems = [
-            svg_map.getElementsByTagName('text'),
-            svg_map.getElementsByTagName('p')
+            legend_node.getElementsByTagName('text'),
+            legend_node.getElementsByTagName('p')
         ];
         let needed_definitions = [];
         elems.map(d => d ? d : []);
@@ -2271,12 +2283,12 @@ function patchSvgForFonts(){
         let fonts_to_add = needed_definitions.map(name => String(fonts_definitions[customs_fonts.indexOf(name)].cssText));
         let style_elem = document.createElement("style");
         style_elem.innerHTML = fonts_to_add.join(' ');
-        svg_map.querySelector("defs").appendChild(style_elem);
+        defs.node().appendChild(style_elem);
     }
 }
 
 function unpatchSvgForFonts(){
-    let defs_style = svg_map.querySelector("defs").querySelector("style");
+    let defs_style = defs.node().querySelector("style");
     if(defs_style)
         defs_style.remove();
 }
@@ -2379,7 +2391,7 @@ function _export_compo_png(type="web", scalefactor=1, output_name){
     let dimensions_foreign_obj = patchSvgForForeignObj();
     patchSvgForFonts();
     var targetCanvas = d3.select("body").append("canvas").attrs({id: "canvas_map_export", height: h, width: w}).node(),
-        targetSVG = document.querySelector("#svg_map"),
+        targetSVG = document.getElementById("svg_map"),
         mime_type = "image/png",
         svg_xml,
         ctx,

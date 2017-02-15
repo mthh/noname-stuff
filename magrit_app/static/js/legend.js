@@ -10,11 +10,11 @@ function handle_legend(layer){
     let state = current_layers[layer].renderer;
     if(state != undefined){
         let class_name = [".lgdf", _app.layer_to_id.get(layer)].join('_');
-        if(map.selectAll(class_name).node()){
-            if(!map.selectAll(class_name).attr("display"))
-                map.selectAll(class_name).attr("display", "none");
+        if(svg_legend.selectAll(class_name).node()){
+            if(!svg_legend.selectAll(class_name).attr("display"))
+                svg_legend.selectAll(class_name).attr("display", "none");
             else {
-                map.selectAll(class_name).attr("display", null);
+                svg_legend.selectAll(class_name).attr("display", null);
                 // Redisplay the legend(s) and also
                 // verify if still in the visible part
                 // of the map, if not, move them in:
@@ -26,7 +26,7 @@ function handle_legend(layer){
                     limit_right = map_xy0.x + +w + tol,
                     limit_top = map_xy0.y - tol,
                     limit_bottom = map_xy0.y + +h + tol;
-                let legends = svg_map.getElementsByClassName(class_name.slice(1, class_name.length));
+                let legends = legend_node.getElementsByClassName(class_name.slice(1, class_name.length));
                 for(let i = 0; i < legends.length; i++){
                     let bbox_legend = legends[i].getBoundingClientRect();
                     if(bbox_legend.left < limit_left || bbox_legend.left > limit_right
@@ -36,7 +36,6 @@ function handle_legend(layer){
             }
         } else {
             createLegend(layer, "");
-            up_legends();
         }
     }
 }
@@ -106,60 +105,60 @@ function createLegend(layer, title){
     }
 }
 
-function up_legend(legend_node){
-    let lgd_features = svg_map.getElementsByClassName("legend"),
+function up_legend(legend_elem){
+    let lgd_features = legend_node.getElementsByClassName("legend"),
         nb_lgd_features = +lgd_features.length,
         self_position;
     for(let i=0; i<nb_lgd_features; i++){
-        if(lgd_features[i].id == legend_node.id
-            && lgd_features[i].classList == legend_node.classList){
+        if(lgd_features[i].id == legend_elem.id
+            && lgd_features[i].classList == legend_elem.classList){
                 self_position = i;
         }
     }
     if(self_position == nb_lgd_features - 1){
         return;
     } else {
-        svg_map.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
+        legend_node.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
     }
 }
 
-function down_legend(legend_node){
-    let lgd_features = svg_map.getElementsByClassName("legend"),
+function down_legend(legend_elem){
+    let lgd_features = legend_node.getElementsByClassName("legend"),
         nb_lgd_features = +lgd_features.length,
         self_position;
     for(let i=0; i<nb_lgd_features; i++){
-        if(lgd_features[i].id == legend_node.id
-            && lgd_features[i].classList == legend_node.classList){
+        if(lgd_features[i].id == legend_elem.id
+            && lgd_features[i].classList == legend_elem.classList){
                 self_position = i;
         }
     }
     if(self_position == 0){
         return;
     } else {
-        svg_map.insertBefore(lgd_features[self_position], lgd_features[self_position - 1]);
+        legend_node.insertBefore(lgd_features[self_position], lgd_features[self_position - 1]);
     }
 }
 
-function make_legend_context_menu(legend_node, layer){
+function make_legend_context_menu(legend_elem, layer){
    let context_menu = new ContextMenu(),
        getItems = () =>  [
-        {"name": i18next.t("app_page.common.edit_style"), "action": () => {  createlegendEditBox(legend_node.attr("id"), layer);  }},
-        {"name": i18next.t("app_page.common.up_element"), "action": () => {  up_legend(legend_node.node());  }},
-        {"name": i18next.t("app_page.common.down_element"), "action": () => { down_legend(legend_node.node()); }},
+        {"name": i18next.t("app_page.common.edit_style"), "action": () => {  createlegendEditBox(legend_elem.attr("id"), layer);  }},
+        {"name": i18next.t("app_page.common.up_element"), "action": () => {  up_legend(legend_elem.node());  }},
+        {"name": i18next.t("app_page.common.down_element"), "action": () => { down_legend(legend_elem.node()); }},
         {"name": i18next.t("app_page.common.hide"), "action": () => {
-            if(!(legend_node.attr("display") == "none"))
-                legend_node.attr("display", "none");
+            if(!(legend_elem.attr("display") == "none"))
+                legend_elem.attr("display", "none");
             else
-                legend_node.attr("display", null);
+                legend_elem.attr("display", null);
         }}
     ];
-    legend_node.on("dblclick", () => {
+    legend_elem.on("dblclick", () => {
         d3.event.stopPropagation();
         d3.event.preventDefault();
-        createlegendEditBox(legend_node.attr("id"), layer);
+        createlegendEditBox(legend_elem.attr("id"), layer);
         });
 
-    legend_node.on("contextmenu", () => {
+    legend_elem.on("contextmenu", () => {
         context_menu.showMenu(d3.event,
                               document.querySelector("body"),
                               getItems());
@@ -254,7 +253,7 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
         breaks = current_layers[layer].breaks,
         nb_class = breaks.length;
 
-    var legend_root = map.insert('g')
+    var legend_root = svg_legend.insert('g')
         .attrs({id: 'legend_root_links', class: tmp_class_name, transform: 'translate(0,0)', rounding_precision: rounding_precision, layer_field: field, layer_name: layer})
         .styles({cursor: 'grab', font: '11px "Enriqueta",arial,serif'});
 
@@ -276,7 +275,7 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
     if(current_layers[layer].renderer == "DiscLayer") {
     // Todo use the same way to store the threshold for links and disclayer
     // in order to avoid theses condition
-        let values = Array.prototype.map.call(svg_map.querySelector('#' + _app.layer_to_id.get(layer)).querySelectorAll('path'),
+        let values = Array.prototype.map.call(layers_node.querySelector('#' + _app.layer_to_id.get(layer)).querySelectorAll('path'),
             d => +d.__data__.properties["disc_value"]);
         current_min_value = current_min_value != 1
                     ? values[Math.round(current_min_value * current_layers[layer].n_features)]
@@ -407,7 +406,7 @@ function createLegend_symbol(layer, field, title, subtitle, nested = "false", re
     var color_symb_lgd = (current_layers[layer].renderer === "PropSymbolsChoro" || current_layers[layer].renderer === "PropSymbolsTypo" || current_layers[layer].fill_color.two !== undefined || current_layers[layer].fill_color.random !== undefined)
                         ? "#FFF" : current_layers[layer].fill_color.single;
 
-    var legend_root = map.insert('g')
+    var legend_root = svg_legend.insert('g')
         .styles({cursor: 'grab', font: '11px "Enriqueta",arial,serif'})
         .attrs({id: 'legend_root2', class: tmp_class_name, transform: 'translate(0,0)', layer_name: layer,
                 nested: nested, rounding_precision: rounding_precision, layer_field: field});
@@ -597,7 +596,7 @@ function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill
 
     boxgap = +boxgap;
 
-    var legend_root = map.insert('g')
+    var legend_root = svg_legend.insert('g')
         .styles({cursor: 'grab', font: '11px "Enriqueta",arial,serif'})
         .attrs({id: 'legend_root', class: tmp_class_name, layer_field: field,
                 transform: 'translate(0,0)', 'boxgap': boxgap,
@@ -729,17 +728,17 @@ function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill
 function createlegendEditBox(legend_id, layer_name){
     function bind_selections(){
         box_class = [layer_name, "_legend_popup"].join('');
-        legend_node = svg_map.querySelector(["#", legend_id, ".lgdf_", _app.layer_to_id.get(layer_name)].join(''));
-        title_content = legend_node.querySelector("#legendtitle");
-        subtitle_content = legend_node.querySelector("#legendsubtitle");
-        note_content = legend_node.querySelector("#legend_bottom_note");
-        no_data_txt = legend_node.querySelector("#no_data_txt");
-        legend_node_d3 = d3.select(legend_node);
-        legend_boxes = legend_node_d3.selectAll(["#", legend_id, " .lg"].join('')).select("text");
+        legend_elem = legend_node.querySelector(["#", legend_id, ".lgdf_", _app.layer_to_id.get(layer_name)].join(''));
+        title_content = legend_elem.querySelector("#legendtitle");
+        subtitle_content = legend_elem.querySelector("#legendsubtitle");
+        note_content = legend_elem.querySelector("#legend_bottom_note");
+        no_data_txt = legend_elem.querySelector("#no_data_txt");
+        legend_elem_d3 = d3.select(legend_elem);
+        legend_boxes = legend_elem_d3.selectAll(["#", legend_id, " .lg"].join('')).select("text");
     };
 
-    var box_class, legend_node, title_content, subtitle_content, note_content, source_content;
-    var legend_node_d3, legend_boxes, no_data_txt, rect_fill_value = {}, original_rect_fill_value;
+    var box_class, legend_elem, title_content, subtitle_content, note_content, source_content;
+    var legend_elem_d3, legend_boxes, no_data_txt, rect_fill_value = {}, original_rect_fill_value;
 
     bind_selections();
     if(document.querySelector("." + box_class)) document.querySelector("." + box_class).remove();
@@ -752,10 +751,10 @@ function createlegendEditBox(legend_id, layer_name){
         no_data_txt: no_data_txt != null ? no_data_txt.textContent : null
         }; //, source_content: source_content.textContent ? source_content.textContent : ""
 
-    if(legend_node.getAttribute("visible_rect") == "true"){
+    if(legend_elem.getAttribute("visible_rect") == "true"){
         rect_fill_value = {
-            color: legend_node.querySelector("#under_rect").style.fill,
-            opacity: legend_node.querySelector("#under_rect").style.fillOpacity
+            color: legend_elem.querySelector("#under_rect").style.fill,
+            opacity: legend_elem.querySelector("#under_rect").style.fillOpacity
         }
         original_rect_fill_value = cloneObj(rect_fill_value);
     }
@@ -773,15 +772,16 @@ function createlegendEditBox(legend_id, layer_name){
                 }
                 rect_fill_value = original_rect_fill_value;
             }
-            make_underlying_rect(legend_node_d3,
-                                 legend_node_d3.select("#under_rect"),
+            make_underlying_rect(legend_elem_d3,
+                                 legend_elem_d3.select("#under_rect"),
                                  rect_fill_value);
             bind_selections();
         });
-    document.getElementsByClassName(box_class)[0].querySelector('.modal-dialog').style.width = '375px';
-    var box_body = d3.select([".", box_class].join('')).select(".modal-body"),
+    let box = document.getElementsByClassName(box_class)[0];
+    box.querySelector('.modal-header').style.overflowWrap = "break-word";
+    box.querySelector('.modal-dialog').style.width = '375px';
+    var box_body = d3.select(box).select(".modal-body"),
         current_nb_dec;
-
     box_body.append('p').style('text-align', 'center')
         .insert('h3').html(i18next.t("app_page.legend_style_box.subtitle"));
 
@@ -860,8 +860,8 @@ function createlegendEditBox(legend_id, layer_name){
         }
         max_nb_left = max_nb_left > 2 ? max_nb_left : 2;
         if(max_nb_decimals > 0 || max_nb_left >= 2){
-            if(legend_node.getAttribute("rounding_precision"))
-                current_nb_dec = legend_node.getAttribute("rounding_precision");
+            if(legend_elem.getAttribute("rounding_precision"))
+                current_nb_dec = legend_elem.getAttribute("rounding_precision");
             else {
                 let nbs = [],
                     nb_dec = [];
@@ -884,14 +884,14 @@ function createlegendEditBox(legend_id, layer_name){
                 .on('change', function(){
                     let nb_float = +this.value;
                     d3.select("#precision_change_txt").html(nb_float);
-                    legend_node.setAttribute("rounding_precision", nb_float);
+                    legend_elem.setAttribute("rounding_precision", nb_float);
                     if(legend_id === "legend_root"){
                         for(let i = 0; i < legend_boxes._groups[0].length; i++){
                             let values = legend_boxes._groups[0][i].__data__.value.split(' - ');
                             legend_boxes._groups[0][i].innerHTML = round_value(+values[1], nb_float);
                         }
                         let min_val = +legend_boxes._groups[0][legend_boxes._groups[0].length - 1].__data__.value.split(' - ')[0];
-                        legend_node.querySelector('#lgd_choro_min_val').innerHTML = round_value(min_val, nb_float);
+                        legend_elem.querySelector('#lgd_choro_min_val').innerHTML = round_value(min_val, nb_float);
                     } else if (legend_id === "legend_root2") {
                         for(let i = 0; i < legend_boxes._groups[0].length; i++){
                             let value = legend_boxes._groups[0][i].__data__.value;
@@ -903,7 +903,7 @@ function createlegendEditBox(legend_id, layer_name){
                             legend_boxes._groups[0][i].innerHTML = round_value(+value, nb_float);
                         }
                         let min_val = +legend_boxes._groups[0][legend_boxes._groups[0].length - 1].__data__.value[0];
-                        legend_node.querySelector('#lgd_choro_min_val').innerHTML = round_value(min_val, nb_float);
+                        legend_elem.querySelector('#lgd_choro_min_val').innerHTML = round_value(min_val, nb_float);
                     }
                 });
             e.append('span')
@@ -914,25 +914,25 @@ function createlegendEditBox(legend_id, layer_name){
     }
 
     if(legend_id === "legend_root"){
-        let current_state = +legend_node.getAttribute("boxgap") == 0 ? true : false;
+        let current_state = +legend_elem.getAttribute("boxgap") == 0 ? true : false;
         let gap_section = box_body.insert("p");
         gap_section.append("input")
             .style('margin-left', '0px')
             .attrs({"type": "checkbox", id: 'style_lgd'})
             .on("change", function(){
                 let rendered_field = current_layers[layer_name].rendered_field2 ? current_layers[layer_name].rendered_field2 :  current_layers[layer_name].rendered_field;
-                legend_node = svg_map.querySelector(["#legend_root.lgdf_", _app.layer_to_id.get(layer_name)].join(''));
-                let boxgap = +legend_node.getAttribute("boxgap") == 0 ? 4 : 0;
-                let rounding_precision = legend_node.getAttribute("rounding_precision");
-                let transform_param = legend_node.getAttribute("transform"),
-                    lgd_title = legend_node.querySelector("#legendtitle").innerHTML,
-                    lgd_subtitle = legend_node.querySelector("#legendsubtitle").innerHTML;
+                legend_elem = legend_node.querySelector(["#legend_root.lgdf_", _app.layer_to_id.get(layer_name)].join(''));
+                let boxgap = +legend_elem.getAttribute("boxgap") == 0 ? 4 : 0;
+                let rounding_precision = legend_elem.getAttribute("rounding_precision");
+                let transform_param = legend_elem.getAttribute("transform"),
+                    lgd_title = legend_elem.querySelector("#legendtitle").innerHTML,
+                    lgd_subtitle = legend_elem.querySelector("#legendsubtitle").innerHTML;
 
-                legend_node.remove();
+                legend_elem.remove();
                 createLegend_choro(layer_name, rendered_field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision);
                 bind_selections();
                 if(transform_param)
-                    svg_map.querySelector(["#legend_root.lgdf_", _app.layer_to_id.get(layer_name)].join('')).setAttribute("transform", transform_param);
+                    legend_node.querySelector(["#legend_root.lgdf_", _app.layer_to_id.get(layer_name)].join('')).setAttribute("transform", transform_param);
             });
         gap_section.append('label')
             .attrs({'for': 'style_lgd', 'class': 'i18n', 'data-i18n': '[html]app_page.legend_style_box.gap_boxes'})
@@ -940,25 +940,25 @@ function createlegendEditBox(legend_id, layer_name){
 
         document.getElementById("style_lgd").checked = current_state;
     } else if (legend_id == "legend_root2"){
-        let current_state = legend_node.getAttribute("nested") == "true" ? true : false;
+        let current_state = legend_elem.getAttribute("nested") == "true" ? true : false;
         let gap_section = box_body.insert("p");
         gap_section.append("input")
                 .style('margin-left', '0px')
                 .attrs({id: 'style_lgd', type: 'checkbox'})
                 .on("change", function(){
-                    legend_node = svg_map.querySelector(["#legend_root2.lgdf_", _app.layer_to_id.get(layer_name)].join(''))
+                    legend_elem = legend_node.querySelector(["#legend_root2.lgdf_", _app.layer_to_id.get(layer_name)].join(''))
                     let rendered_field = current_layers[layer_name].rendered_field;
-                    let nested = legend_node.getAttribute("nested") == "true" ? "false" : "true";
-                    let rounding_precision = legend_node.getAttribute("rounding_precision");
-                    let transform_param = legend_node.getAttribute("transform"),
-                        lgd_title = legend_node.querySelector("#legendtitle").innerHTML,
-                        lgd_subtitle = legend_node.querySelector("#legendsubtitle").innerHTML;
+                    let nested = legend_elem.getAttribute("nested") == "true" ? "false" : "true";
+                    let rounding_precision = legend_elem.getAttribute("rounding_precision");
+                    let transform_param = legend_elem.getAttribute("transform"),
+                        lgd_title = legend_elem.querySelector("#legendtitle").innerHTML,
+                        lgd_subtitle = legend_elem.querySelector("#legendsubtitle").innerHTML;
 
-                    legend_node.remove();
+                    legend_elem.remove();
                     createLegend_symbol(layer_name, rendered_field, lgd_title, lgd_subtitle, nested, rect_fill_value, rounding_precision);
                     bind_selections();
                     if(transform_param)
-                        svg_map.querySelector(["#legend_root2.lgdf_", _app.layer_to_id.get(layer_name)].join('')).setAttribute("transform", transform_param);
+                        legend_node.querySelector(["#legend_root2.lgdf_", _app.layer_to_id.get(layer_name)].join('')).setAttribute("transform", transform_param);
                 });
       gap_section.append('label')
           .attrs({'for': 'style_lgd', 'class': 'i18n', 'data-i18n' : '[html]app_page.legend_style_box.nested_symbols'})
@@ -988,8 +988,8 @@ function createlegendEditBox(legend_id, layer_name){
                 rectangle_options2.style("display", "none");
                 rect_fill_value = {};
             }
-            make_underlying_rect(legend_node_d3,
-                                 legend_node_d3.select("#under_rect"),
+            make_underlying_rect(legend_elem_d3,
+                                 legend_elem_d3.select("#under_rect"),
                                  rect_fill_value
                                  );
         });
@@ -1004,8 +1004,8 @@ function createlegendEditBox(legend_id, layer_name){
                 value: rect_fill_value.color === undefined ? "#ffffff" : rgb2hex(rect_fill_value.color)})
         .on("change", function(){
             rect_fill_value = {color: this.value, opacity: 1};
-            make_underlying_rect(legend_node_d3,
-                                 legend_node_d3.select("#under_rect"),
+            make_underlying_rect(legend_elem_d3,
+                                 legend_elem_d3.select("#under_rect"),
                                  rect_fill_value
                                  );
         });
@@ -1013,10 +1013,10 @@ function createlegendEditBox(legend_id, layer_name){
 
 function move_legends(){
     let legends = [
-        svg_map.querySelectorAll("#legend_root"),
-        svg_map.querySelectorAll("#legend_root2"),
-        svg_map.querySelectorAll("#legend_root_links"),
-        svg_map.querySelectorAll('#scale_bar.legend')
+        legend_node.querySelectorAll("#legend_root"),
+        legend_node.querySelectorAll("#legend_root2"),
+        legend_node.querySelectorAll("#legend_root_links"),
+        legend_node.querySelectorAll('#scale_bar.legend')
         ];
 
     let xy0_map = get_map_xy0(),

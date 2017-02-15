@@ -2,7 +2,7 @@
 
 class UserArrow {
     constructor(id, origin_pt, destination_pt, parent=undefined, untransformed=false){
-        this.parent = parent || svg_map;
+        this.parent = parent || legend_node;
         this.svg_elem = d3.select(this.parent);
         this.id = id;
         this.lineWeight = 4;
@@ -563,7 +563,7 @@ var scaleBar = {
                           () => { null; });
             return;
         }
-        let scale_gp = map.append("g").attr("id", "scale_bar").attr("class", "legend scale"),
+        let scale_gp = svg_legend.append("g").attr("id", "scale_bar").attr("class", "legend scale"),
             x_pos = 40,
             y_pos = h - 100,
             bar_size = 50,
@@ -774,7 +774,7 @@ var northArrow = {
             y_pos = h - 100,
             self = this;
 
-        let arrow_gp = map.append("g")
+        let arrow_gp = svg_legend.append("g")
                         .attr("id", "north_arrow")
                         .attr("class", "legend")
                         .attr("scale", 1)
@@ -952,7 +952,7 @@ var northArrow = {
 
 class UserEllipse {
     constructor(id, origin_pt, parent=undefined, untransformed=false){
-        this.parent = parent || svg_map;
+        this.parent = parent || legend_node;
         this.svg_elem = d3.select(this.parent);
         this.id = id;
         this.strokeWeight = 4;

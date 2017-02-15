@@ -28,7 +28,7 @@ function make_single_color_menu(layer, fill_prev, symbol = "path"){
           .style("float", "right")
           .attrs({type: 'color', "value": last_color})
           .on('change', function(){
-                map.select(g_lyr_name)
+                svg_layers.select(g_lyr_name)
                     .selectAll(symbol)
                     .transition()
                     .style("fill", this.value);
@@ -43,7 +43,7 @@ function make_random_color(layer, symbol = "path"){
         .styles({"cursor": "pointer", "text-align": "center"})
         .html(i18next.t("app_page.layer_style_popup.toggle_colors"))
         .on("click", function(d,i){
-            map.select("#" + _app.layer_to_id.get(layer))
+            svg_layers.select("#" + _app.layer_to_id.get(layer))
                 .selectAll(symbol)
                 .transition()
                 .style("fill", () => Colors.names[Colors.random()]);
@@ -53,7 +53,7 @@ function make_random_color(layer, symbol = "path"){
 }
 
 function fill_categorical(layer, field_name, symbol, color_cat_map){
-    map.select("#"+_app.layer_to_id.get(layer))
+    svg_layers.select("#"+_app.layer_to_id.get(layer))
         .selectAll(symbol)
         .transition()
         .style("fill", d => color_cat_map.get(d.properties[field_name]));
@@ -130,7 +130,7 @@ function createStyleBoxTypoSymbols(layer_name){
     let existing_box = document.querySelector(".styleBox");
     if(existing_box) existing_box.remove();
 
-    var selection = map.select("#" + _app.layer_to_id.get(layer_name)).selectAll("image"),
+    var selection = svg_layers.select("#" + _app.layer_to_id.get(layer_name)).selectAll("image"),
         ref_layer_name = current_layers[layer_name].ref_layer_name,
         symbols_map = current_layers[layer_name].symbols_map,
         rendered_field = current_layers[layer_name].rendered_field;
@@ -259,7 +259,7 @@ function createStyleBoxLabel(layer_name){
     let existing_box = document.querySelector(".styleBox");
     if(existing_box) existing_box.remove();
 
-    var selection = map.select("#" + _app.layer_to_id.get(layer_name)).selectAll("text"),
+    var selection = svg_layers.select("#" + _app.layer_to_id.get(layer_name)).selectAll("text"),
         ref_layer_name = current_layers[layer_name].ref_layer_name;
 
     var prev_settings = [],
@@ -348,8 +348,8 @@ function createStyleBoxGraticule(layer_name){
     let existing_box = document.querySelector(".styleBox");
     if(existing_box) existing_box.remove();
     let current_params = cloneObj(current_layers["Graticule"]);
-    let selection = map.select("#Graticule > path");
-    let selection_strokeW = map.select("#Graticule");
+    let selection = svg_layers.select("#Graticule > path");
+    let selection_strokeW = svg_layers.select("#Graticule");
 
     make_confirm_dialog2("styleBox", layer_name, {top: true, widthFitContent: true, draggable: true})
         .then(function(confirmed){
@@ -401,15 +401,15 @@ function createStyleBoxGraticule(layer_name){
                 let step_val = +this.value,
                     dasharray_val = +document.getElementById("graticule_dasharray_txt").value;
                 current_layers["Graticule"].step = step_val;
-                map.select("#Graticule").remove()
-                map.append("g").attrs({id: "Graticule", class: "layer"})
-                               .append("path")
-                               .datum(d3.geoGraticule().step([step_val, step_val]))
-                               .attrs({class: "graticule", d: path, "clip-path": "url(#clip)"})
-                               .styles({fill: "none", "stroke": current_layers["Graticule"].fill_color.single, "stroke-dasharray": dasharray_val});
+                svg_layers.select("#Graticule").remove()
+                svg_layers.append("g").attrs({id: "Graticule", class: "layer"})
+                    .append("path")
+                    .datum(d3.geoGraticule().step([step_val, step_val]))
+                    .attrs({class: "graticule", d: path, "clip-path": "url(#clip)"})
+                    .styles({fill: "none", "stroke": current_layers["Graticule"].fill_color.single, "stroke-dasharray": dasharray_val});
                 zoom_without_redraw();
-                selection = map.select("#Graticule").selectAll("path");
-                selection_strokeW = map.select("#Graticule");
+                selection = svg_layers.select("#Graticule").selectAll("path");
+                selection_strokeW = svg_layers.select("#Graticule");
                 popup.select("#graticule_step_txt").attr("value", step_val);
             });
     steps_choice.append("input")
@@ -448,7 +448,7 @@ function createStyleBox(layer_name){
         rendering_params = null,
         renderer = current_layers[layer_name].renderer,
         g_lyr_name = "#" + _app.layer_to_id.get(layer_name),
-        selection = map.select(g_lyr_name).selectAll("path"),
+        selection = svg_layers.select(g_lyr_name).selectAll("path"),
         opacity = selection.style('fill-opacity');
 
     var lgd_to_change;
@@ -469,7 +469,7 @@ function createStyleBox(layer_name){
         stroke_prev = rgb2hex(stroke_prev);
 
     var table = [];
-    Array.prototype.forEach.call(svg_map.querySelector(g_lyr_name).querySelectorAll('path'), d => {
+    Array.prototype.forEach.call(layers_node.querySelector(g_lyr_name).querySelectorAll('path'), d => {
         table.push(d.__data__.properties);
     });
     if(layer_name != "Sphere")
@@ -550,8 +550,8 @@ function createStyleBox(layer_name){
                 // Reset to original values the rendering parameters if "no" is clicked
                 selection.style('fill-opacity', opacity)
                          .style('stroke-opacity', border_opacity);
-                let zoom_scale = +d3.zoomTransform(map.node()).k;
-                map.select(g_lyr_name).style('stroke-width', stroke_width/zoom_scale + "px");
+                let zoom_scale = +d3.zoomTransform(svg_map).k;
+                svg_layers.select(g_lyr_name).style('stroke-width', stroke_width/zoom_scale + "px");
                 current_layers[layer_name]['stroke-width-const'] = stroke_width;
                 let fill_meth = Object.getOwnPropertyNames(fill_prev)[0];
                 if(type === "Point" && !renderer) {
@@ -922,8 +922,8 @@ function createStyleBox(layer_name){
             .styles({"width": "60px", "float": "right"})
             .on('change', function(){
                 let val = +this.value;
-                let zoom_scale = +d3.zoomTransform(map.node()).k;
-                map.select(g_lyr_name).style("stroke-width", (val / zoom_scale) + "px");
+                let zoom_scale = +d3.zoomTransform(svg_map).k;
+                svg_layers.select(g_lyr_name).style("stroke-width", (val / zoom_scale) + "px");
                 current_layers[layer_name]['stroke-width-const'] = val;
               });
     }
@@ -1005,7 +1005,7 @@ function createStyleBox_ProbSymbol(layer_name){
         type_method = current_layers[layer_name].renderer,
         type_symbol = current_layers[layer_name].symbol,
         field_used = current_layers[layer_name].rendered_field,
-        selection = map.select(g_lyr_name).selectAll(type_symbol),
+        selection = svg_layers.select(g_lyr_name).selectAll(type_symbol),
         rendering_params,
         old_size = [current_layers[layer_name].size[0],
                     current_layers[layer_name].size[1]];
@@ -1018,6 +1018,8 @@ function createStyleBox_ProbSymbol(layer_name){
     var fill_prev = cloneObj(current_layers[layer_name].fill_color),
         prev_col_breaks;
 
+    var ratio = proj.scale() / current_layers[layer_name].proj_scale_draw;
+
     var d_values = result_data[layer_name].map(v => +v[field_used]);
 
     let redraw_prop_val = function(prop_values){
@@ -1025,18 +1027,19 @@ function createStyleBox_ProbSymbol(layer_name){
 
         if(type_symbol === "circle") {
             for(let i=0, len = prop_values.length; i < len; i++){
-                selec[i].setAttribute('r', prop_values[i])
+                selec[i].setAttribute('r', prop_values[i] * ratio)
             }
         } else if(type_symbol === "rect") {
             for(let i=0, len = prop_values.length; i < len; i++){
                 let old_rect_size = +selec[i].getAttribute('height'),
-                    centr = [+selec[i].getAttribute("x") + (old_rect_size/2) - (prop_values[i] / 2),
-                             +selec[i].getAttribute("y") + (old_rect_size/2) - (prop_values[i] / 2)];
+                    v = ratio * prop_values[i],
+                    centr = [+selec[i].getAttribute("x") + (old_rect_size/2) - (v / 2),
+                             +selec[i].getAttribute("y") + (old_rect_size/2) - (v / 2)];
 
                 selec[i].setAttribute('x', centr[0]);
                 selec[i].setAttribute('y', centr[1]);
-                selec[i].setAttribute('height', prop_values[i]);
-                selec[i].setAttribute('width', prop_values[i]);
+                selec[i].setAttribute('height', v);
+                selec[i].setAttribute('width', v);
             }
         }
     }
@@ -1109,7 +1112,7 @@ function createStyleBox_ProbSymbol(layer_name){
                 }
             } else {
                 selection.style('fill-opacity', opacity);
-                map.select(g_lyr_name).style('stroke-width', stroke_width);
+                svg_layers.select(g_lyr_name).style('stroke-width', stroke_width);
                 current_layers[layer_name]['stroke-width-const'] = stroke_width;
                 let fill_meth = Object.getOwnPropertyNames(fill_prev)[0];
                 if(fill_meth == "single") {
@@ -1248,7 +1251,7 @@ function createStyleBox_ProbSymbol(layer_name){
             popup.select("#fill_color_section").html("").on("click", null);
             if (this.value == "single"){
                 make_single_color_menu(layer_name, fill_prev, type_symbol);
-                map.select(g_lyr_name)
+                svg_layers.select(g_lyr_name)
                     .selectAll(type_symbol)
                     .transition()
                     .style("fill", fill_prev.single);

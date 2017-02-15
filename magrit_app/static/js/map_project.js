@@ -157,6 +157,9 @@ function get_map_template(){
             layer_style_i.legend = lgd[0].id == "legend_root" ? [get_legend_info(lgd[0]), get_legend_info(lgd[1])] : [get_legend_info(lgd[1]), get_legend_info(lgd[0])];
         }
 
+        if(current_layer_prop['proj_scale_draw'])
+            layer_style_i['proj_scale_draw'] = current_layer_prop['proj_scale_draw']
+
         if(current_layer_prop["stroke-width-const"])
             layer_style_i["stroke-width-const"] = current_layer_prop["stroke-width-const"];
 
@@ -189,7 +192,7 @@ function get_map_template(){
         } else if(current_layer_prop.renderer.indexOf("PropSymbols") > -1){
             let type_symbol = current_layer_prop.symbol;
             selection = map.select("#" + layer_id).selectAll(type_symbol);
-            let features = Array.prototype.map.call(svg_map.querySelector("#" + layer_id).getElementsByTagName(type_symbol), function(d){ return d.__data__; });
+            let features = Array.prototype.map.call(layers_node.querySelector("#" + layer_id).getElementsByTagName(type_symbol), function(d){ return d.__data__; });
             layer_style_i.symbol = type_symbol;
             layer_style_i.rendered_field = current_layer_prop.rendered_field;
             if(current_layer_prop.rendered_field2)
@@ -365,7 +368,11 @@ function apply_user_preferences(json_pref){
         }
         let _l, _ll;
         // Make sure there is no layers and legend/layout features on the map :
-        _l = svg_map.childNodes;  _ll = _l.length;
+        _l = legend_node.childNodes;  _ll = _l.length;
+        for(let i = _ll-1; i > -1; i--){ _l[i].remove(); }
+        _l = defs.node().childNodes;  _ll = _l.length;
+        for(let i = _ll-1; i > -1; i--){ _l[i].remove(); }
+        _l = layers_node.childNodes;  _ll = _l.length;
         for(let i = _ll-1; i > -1; i--){ _l[i].remove(); }
         // And in the layer manager :
         _l = layer_list.node().childNodes;  _ll = _l.length;
@@ -449,13 +456,13 @@ function apply_user_preferences(json_pref){
             if(map_config.layout_features.arrow){
                 for(let i = 0; i < map_config.layout_features.arrow.length; i++){
                     let ft = map_config.layout_features.arrow[i];
-                    new UserArrow(ft.id, ft.pt1, ft.pt2, svg_map, true);
+                    new UserArrow(ft.id, ft.pt1, ft.pt2, legend_node, true);
                 }
             }
             if(map_config.layout_features.user_ellipse){
                 for(let i = 0; i < map_config.layout_features.user_ellipse.length; i++) {
                     let ft = map_config.layout_features.user_ellipse[i];
-                    let ellps = new UserEllipse(ft.id, [ft.cx, ft.cy], svg_map, true);
+                    let ellps = new UserEllipse(ft.id, [ft.cx, ft.cy], legend_node, true);
                     let ellps_node = ellps.ellipse.node().querySelector("ellipse");
                     ellps_node.setAttribute('rx', ft.rx);
                     ellps_node.setAttribute('ry', ft.ry);
@@ -466,7 +473,7 @@ function apply_user_preferences(json_pref){
             if(map_config.layout_features.text_annot){
                 for(let i = 0; i < map_config.layout_features.text_annot.length; i++) {
                     let ft = map_config.layout_features.text_annot[i];
-                    let new_txt_bow = new Textbox(svg_map, ft.id, [ft.position_x, ft.position_y]);
+                    let new_txt_bow = new Textbox(legend_node, ft.id, [ft.position_x, ft.position_y]);
                     let inner_p = new_txt_bow.text_annot.select("p").node();
                     inner_p.innerHTML = ft.content;
                     inner_p.style = ft.style;
@@ -485,7 +492,6 @@ function apply_user_preferences(json_pref){
                 }
             }
         }
-        up_legends();
     }
 
     var done = 0;
@@ -511,13 +517,12 @@ function apply_user_preferences(json_pref){
     proj.scale(s).translate(t).rotate(map_config.projection_rotation);
     document.getElementById('form_projection_center').value = map_config.projection_rotation[0];
     document.getElementById('proj_center_value_txt').value = map_config.projection_rotation[0];
-    defs = map.append("defs");
     {
       let proj_select = document.getElementById('form_projection');
       proj_select.value = Array.prototype.filter.call(proj_select.options, function(d){ if(d.text == current_proj_name) { return d;}})[0].value;
     }
     path = d3.geoPath().projection(proj).pointRadius(4);
-    map.selectAll(".layer").selectAll("path").attr("d", path);
+    svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
 
     // Set the background color of the map :
     map.style("background-color", map_config.background_color);
@@ -564,7 +569,7 @@ function apply_user_preferences(json_pref){
                     document.getElementById('btn_type_fields').removeAttribute('disabled');
                 }
                 let layer_id = _app.layer_to_id.get(layer_name);
-                let layer_selec = map.select("#" + layer_id);
+                let layer_selec = svg_layers.select("#" + layer_id);
 
                 current_layer_prop.rendered_field = _layer.rendered_field;
                 if( _layer['stroke-width-const']){
@@ -674,7 +679,8 @@ function apply_user_preferences(json_pref){
                   symbol: _layer.symbol,
                   nb_features: geojson_pt_layer.features.length,
                   ref_layer_name: _layer.ref_layer_name,
-                  renderer: _layer.renderer
+                  renderer: _layer.renderer,
+                  proj_scale_draw: _layer.proj_scale_draw
               };
               make_prop_symbols(rendering_params, geojson_pt_layer);
               if(_layer.renderer == "PropSymbolsTypo"){
@@ -693,7 +699,7 @@ function apply_user_preferences(json_pref){
                   rehandle_legend(layer_name, _layer.legend);
               }
               current_layers[layer_name]['stroke-width-const'] = _layer['stroke-width-const'];
-              map.select('#' + _app.layer_to_id.get(layer_name))
+              svg_layers.select('#' + _app.layer_to_id.get(layer_name))
                   .selectAll(_layer.symbol)
                   .styles({'stroke-width': _layer['stroke-width-const'] + "px",
                            'fill-opacity': fill_opacity,
@@ -726,7 +732,7 @@ function apply_user_preferences(json_pref){
               _app.layer_to_id.set(layer_name, layer_id);
               _app.id_to_layer.set(layer_id, layer_name);
               // Add the features at there original positions :
-              map.append("g").attrs({id: layer_id, class: "layer"})
+              svg_layers.append("g").attrs({id: layer_id, class: "layer"})
                   .selectAll("image")
                   .data(new_layer_data.features).enter()
                   .insert("image")
@@ -778,15 +784,13 @@ function apply_user_preferences(json_pref){
 }
 
 function reorder_layers(desired_order){
-    let layers = svg_map.getElementsByClassName('layer'),
-        parent = layers[0].parentNode,
+    let layers = layers_node.getElementsByClassName('layer'),
         nb_layers = desired_order.length;
     desired_order = desired_order.map(el => _app.layer_to_id.get(el))
     for(let i = 0; i < nb_layers; i++){
         if(document.getElementById(desired_order[i]))
-          parent.insertBefore(document.getElementById(desired_order[i]), parent.firstChild);
+          layers_node.insertBefore(document.getElementById(desired_order[i]), layers_node.firstChild);
     }
-    svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
 }
 
 function reorder_elem_list_layer(desired_order){
@@ -810,7 +814,7 @@ function rehandle_legend(layer_name, properties){
         } else if(prop.type == 'legend_root_links'){
             createLegend_discont_links(layer_name, prop.field, prop.title, prop.subtitle, prop.visible_rect, prop.rounding_precision)
         }
-        let lgd = svg_map.querySelector('#' + prop.type + '.lgdf_' + _app.layer_to_id.get(layer_name));
+        let lgd = legend_node.querySelector('#' + prop.type + '.lgdf_' + _app.layer_to_id.get(layer_name));
         lgd.setAttribute('transform', prop.transform);
         lgd.setAttribute('display', prop.display);
     }

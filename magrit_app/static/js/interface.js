@@ -851,7 +851,7 @@ function add_layer_topojson(text, options){
         current_layers[lyr_name_to_add].is_result = true;
     }
 
-    map.append("g").attr("id", lyr_id)
+    svg_layers.append("g").attr("id", lyr_id)
         .attr("class", data_to_load ? "targeted_layer layer" : "layer")
         .styles({"stroke-linecap": "round", "stroke-linejoin": "round"})
         .selectAll(".subunit")
@@ -953,7 +953,7 @@ function add_layer_topojson(text, options){
     }
 
     layers_listed.insertBefore(li, layers_listed.childNodes[0])
-    up_legends();
+    // up_legends();
     handleClipPath(current_proj_name);
     binds_layers_buttons(lyr_name_to_add);
     if(!skip_rescale){
@@ -993,7 +993,7 @@ function add_layer_topojson(text, options){
 function scale_to_lyr(name){
     var symbol = current_layers[name].symbol || "path",
         bbox_layer_path = undefined;
-    map.select("#"+_app.layer_to_id.get(name)).selectAll(symbol).each( (d,i) => {
+    svg_layers.select("#"+_app.layer_to_id.get(name)).selectAll(symbol).each( (d,i) => {
         var bbox_path = path.bounds(d);
         if(bbox_layer_path === undefined){
             bbox_layer_path = bbox_path;
@@ -1006,8 +1006,10 @@ function scale_to_lyr(name){
         }
     });
     s = 0.95 / Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h) * proj.scale();
-    proj.scale(s).translate([0,0]);
-    map.selectAll(".layer").selectAll("path").attr("d", path);
+    t = [0, 0];
+    proj.scale(s).translate(t);
+    svg_layers.selectAll(".layer").selectAll("path").attr("d", path);
+    reproj_symbol_layer();
 };
 
 /**
@@ -1019,7 +1021,7 @@ function scale_to_lyr(name){
 function center_map(name){
     var symbol = current_layers[name].symbol || "path",
         bbox_layer_path = undefined;
-    map.select("#" + _app.layer_to_id.get(name)).selectAll(symbol).each(function(d, i){
+    svg_layers.select("#" + _app.layer_to_id.get(name)).selectAll(symbol).each(function(d, i){
         let bbox_path = path.bounds(d);
         if(!bbox_layer_path)
             bbox_layer_path = bbox_path;
@@ -1042,8 +1044,8 @@ function center_map(name){
 function setSphereBottom(){
     let layers_list = document.querySelector(".layer_list");
     layers_list.appendChild(layers_list.childNodes[0]);
-    svg_map.insertBefore(svg_map.querySelector('#Sphere'), svg_map.childNodes[0]);
-    svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
+    let layers = svg_layers.node();
+    layers.insertBefore(layers.querySelector('#Sphere'), layers.childNodes[0]);
  }
 
 
@@ -1077,7 +1079,7 @@ function add_layout_feature(selected_feature, options = {}){
         options.stroke_opacity = options.stroke_opacity || 1;
         options.stroke = options.stroke || "#ffffff";
         current_layers["Sphere"] = {"type": "Polygon", "n_features":1, "stroke-width-const": +options.stroke_width.slice(0,-2), "fill_color" : {single: options.fill}};
-        map.append("g")
+        svg_layers.append("g")
             .attrs({id: "Sphere", class: "layer"})
             .styles({'stroke-width': options.stroke_width})
             .append("path")
@@ -1094,7 +1096,7 @@ function add_layout_feature(selected_feature, options = {}){
         options.stroke_opacity = options.stroke_opacity || 1;
         options.stroke_dasharray = options.stroke_dasharray || 5;
         options.step = options.step || 10;
-        map.append("g").attrs({id: "Graticule", class: "layer"})
+        svg_layers.append("g").attrs({id: "Graticule", class: "layer"})
                 .styles({'stroke-width': options.stroke_width})
                 .append("path")
                 .datum(d3.geoGraticule().step([options.step, options.step]))
@@ -1110,7 +1112,7 @@ function add_layout_feature(selected_feature, options = {}){
             dasharray: options.stroke_dasharray,
             };
         create_li_layer_elem("Graticule", null, "Line", "sample");
-        up_legends();
+        // up_legends();
         zoom_without_redraw();
     } else if (selected_feature == "scale"){
         if(!(scaleBar.displayed)){
@@ -1155,57 +1157,6 @@ function add_layout_feature(selected_feature, options = {}){
     }
 }
 
-// function handleCreateFreeDraw(){
-//     let start_point,
-//         tmp_start_point,
-//         active_line,
-//         drawing_data = { "lines": [] };
-//
-//     let render_line = d3.line().x(d => d[0]).y(d => d[1]);
-//     let draw_calc = map.append("g")
-//                         .append("rect")
-//                         .attrs({class: "draw_calc", x: 0, y: 0, width: w, height: h})
-//                         .style("opacity", 0.1).style("fill", "grey");
-//
-//     function redraw() {
-//       var lines;
-//       lines = draw_calc.selectAll('.line').data(drawing_data.lines);
-//       lines.enter().append('path').attrs({
-//         "class": 'line',
-//         stroke: function(d) {
-//           return d.color;
-//         }
-//       });
-//       lines.attr("d", function(d) { return render_line(d.points);});
-//       return lines.exit();
-//     };
-//
-//     let drag = d3.drag()
-//            .on('start', function() {
-//               active_line = {
-//                 points: [],
-//                 color: "black"
-//               };
-//               drawing_data.lines.push(active_line);
-//               return redraw();
-//             })
-//             .on('drag', function() {
-//               active_line.points.push([d3.event.x, d3.event.y]);
-//               console.log(drawing_data);
-//               return redraw();
-//             })
-//             .on('end', function() {
-//               if (active_line.points.length === 0) {
-//                 drawing_data.lines.pop();
-//               }
-//               active_line = null;
-//               console.log(drawing_data);
-//               return;
-//             });
-//     zoom.on("zoom", null);
-//     draw_calc.call(drag);
-// }
-
 function add_single_symbol(symbol_dataurl, x, y, width="30px", height="30px"){
     let context_menu = new ContextMenu(),
         getItems = (self_parent) => [
@@ -1217,7 +1168,7 @@ function add_single_symbol(symbol_dataurl, x, y, width="30px", height="30px"){
 
     x = x || w / 2;
     y = y || h / 2;
-    return map.append("g")
+    return svg_legend.append("g")
         .attrs({class: "legend_features legend single_symbol"})
         .insert("image")
         .attrs({"x": x, "y": y, "width": width, "height": width,
@@ -1225,7 +1176,7 @@ function add_single_symbol(symbol_dataurl, x, y, width="30px", height="30px"){
         .on("mouseover", function(){ this.style.cursor = "pointer";})
         .on("mouseout", function(){ this.style.cursor = "initial";})
         .on("dblclick contextmenu", function(){
-            context_menu.showMenu(d3.event, document.querySelector("body"), getItems(this));
+            context_menu.showMenu(d3.event, document.body, getItems(this));
             })
         .call(drag_elem_geo);
 }
@@ -1340,7 +1291,7 @@ function add_simplified_land_layer(options = {}){
             "stroke-width-const": +options.stroke_width.slice(0,-2),
             "fill_color": {single: options.fill}
         };
-        map.append("g")
+        svg_layers.append("g")
             .attrs({id: "World", class: "layer"})
             .style("stroke-width", options.stroke_width)
             .selectAll('.subunit')
@@ -1441,7 +1392,7 @@ function handleClickAddEllipse(){
             }, 1000);
             map.style("cursor", "")
                 .on("click", null);
-            new UserEllipse(ellipse_id, start_point, svg_map);
+            new UserEllipse(ellipse_id, start_point, svg_legend.node());
         });
 }
 
@@ -1449,7 +1400,7 @@ function handleClickTextBox(text_box_id){
     map.style("cursor", "crosshair")
         .on("click", function(){
             map.style("cursor", "").on("click", null);
-            let text_box = new Textbox(svg_map, text_box_id, [d3.event.layerX, d3.event.layerY]);
+            let text_box = new Textbox(svg_legend.node(), text_box_id, [d3.event.layerX, d3.event.layerY]);
             setTimeout(_ => { text_box.editStyle(); }, 350);
         });
 }
@@ -1514,7 +1465,7 @@ function handleClickAddArrow(){
                 }, 1000);
                 map.style("cursor", "")
                     .on("click", null);
-                new UserArrow(arrow_id, start_point, end_point, svg_map);
+                new UserArrow(arrow_id, start_point, end_point, svg_legend.node());
             }
         });
 }

@@ -1249,7 +1249,7 @@ function render_stewart(){
           current_layers[n_layer_name].colors_breaks = colors_breaks;
           current_layers[n_layer_name].rendered_field = field1_n;
           current_layers[n_layer_name].color_palette = {name: "Oranges", reversed: true};
-          map.select("#" + _app.layer_to_id.get(n_layer_name))
+          svg_layers.select("#" + _app.layer_to_id.get(n_layer_name))
                   .selectAll("path")
                   .styles( (d,i) => ({'fill': col_pal[nb_class - 1 - i], 'fill_opacity': 1, 'stroke-opacity': 0}));
           handle_legend(n_layer_name);
@@ -1462,7 +1462,7 @@ var fields_Anamorphose = {
                         current_layers[n_layer_name].scale_max = 1;
                         current_layers[n_layer_name].ref_layer_name = layer;
                         current_layers[n_layer_name].scale_byFeature = transform;
-                        map.select("#" + _app.layer_to_id.get(n_layer_name))
+                        svg_layers.select("#" + _app.layer_to_id.get(n_layer_name))
                                 .selectAll("path")
                                 .style("fill-opacity", 0.8)
                                 .style("stroke", "black")
@@ -1507,7 +1507,7 @@ var fields_Anamorphose = {
                         current_layers[n_layer_name]['stroke-width-const'] = 0.8;
                         current_layers[n_layer_name].renderer = "Carto_doug";
                         current_layers[n_layer_name].rendered_field = field_name;
-                        map.select("#" + _app.layer_to_id.get(n_layer_name))
+                        svg_layers.select("#" + _app.layer_to_id.get(n_layer_name))
                             .selectAll("path")
                             .style("fill", function(){ return Colors.random(); })
                             .style("fill-opacity", 0.8)
@@ -1613,6 +1613,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
         ref_value = rendering_params.ref_value,
         symbol_type = rendering_params.symbol,
         layer_to_add = rendering_params.new_name,
+        proj_scale_draw = rendering_params.proj_scale_draw || proj.scale(),
         zs = d3.zoomTransform(svg_map).k,
         propSize = new PropSizer(ref_value, ref_size, symbol_type);
 
@@ -1691,7 +1692,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
     _app.id_to_layer.set(layer_id, layer_to_add);
     result_data[layer_to_add] = []
     if(symbol_type === 'circle'){
-      map.append("g")
+      svg_layers.append("g")
         .attr("id", layer_id)
         .attr("class", "result_layer layer")
         .selectAll('circle')
@@ -1711,7 +1712,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
         .style("stroke", "black")
         .style("stroke-width", 1 / zs);
     } else if(symbol_type === "rect"){
-      map.append("g")
+      svg_layers.append("g")
         .attr("id", layer_id)
         .attr("class", "result_layer layer")
         .selectAll('circle')
@@ -1743,6 +1744,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
         "stroke-width-const": 1,
         "is_result": true,
         "ref_layer_name": layer,
+        "proj_scale_draw": proj_scale_draw
         };
 
     if(rendering_params.fill_color.two != undefined){
@@ -1755,7 +1757,6 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
     if(rendering_params.break_val != undefined){
         current_layers[layer_to_add]["break_val"] = rendering_params.break_val;
     }
-    up_legends();
     create_li_layer_elem(layer_to_add, nb_features, ["Point", "prop"], "result");
     return;
 }
@@ -1770,7 +1771,7 @@ function render_categorical(layer, rendering_params){
     var colorsByFeature = rendering_params.colorByFeature,
         color_map = rendering_params.color_map,
         field = rendering_params.rendered_field;
-    var layer_to_render = map.select("#" + _app.layer_to_id.get(layer));
+    var layer_to_render = svg_layers.select("#" + _app.layer_to_id.get(layer));
     layer_to_render
         .style("opacity", 1)
         .style("stroke-width", 0.75/d3.zoomTransform(svg_map).k + "px");
@@ -1803,7 +1804,7 @@ function render_choro(layer, rendering_params){
                         no_data: rendering_params.no_data,
                         type: rendering_params.type,
                         breaks: breaks}
-    var layer_to_render = map.select("#"+_app.layer_to_id.get(layer));
+    var layer_to_render = svg_layers.select("#"+_app.layer_to_id.get(layer));
     layer_to_render
         .style("opacity", 1)
         .style("stroke-width", 0.75/d3.zoomTransform(svg_map).k, + "px");
@@ -2307,7 +2308,7 @@ var render_discont = function(){
         }
 
         breaks = breaks.map(ft => [ft[0], ft[1]]).filter(d => d[1] !== undefined);
-        let result_layer = map.append("g").attr("id", id_layer)
+        let result_layer = svg_layers.append("g").attr("id", id_layer)
                 .styles({"stroke-linecap": "round", "stroke-linejoin": "round"})
                 .attr("class", "result_layer layer");
 
@@ -2319,13 +2320,14 @@ var render_discont = function(){
             let val = d_res[i][0],
                 p_size = class_size[serie.getClass(val)],
                 elem = result_layer.append("path")
-                        .datum(d_res[i][2])
-                        .attrs({d: path, id: ["feature", i].join('_')})
-                        .styles({stroke: user_color, "stroke-width": p_size, "fill": "transparent", "stroke-opacity": 1});
+                    .datum(d_res[i][2])
+                    .attrs({d: path, id: ["feature", i].join('_')})
+                    .styles({stroke: user_color, "stroke-width": p_size, "fill": "transparent", "stroke-opacity": 1})
+                    .node();
             data_result.push(d_res[i][1]);
-            elem.node().__data__.geometry = d_res[i][2];
-            elem.node().__data__.properties = data_result[i];
-            elem.node().__data__.properties['prop_val'] = p_size;
+            elem.__data__.geometry = d_res[i][2];
+            elem.__data__.properties = data_result[i];
+            elem.__data__.properties['prop_val'] = p_size;
         }
         document.getElementById("overlay").style.display = "none";
         current_layers[new_layer_name] = {
@@ -2339,7 +2341,8 @@ var render_discont = function(){
             "fixed_stroke": true,
             "ref_layer_name": layer,
             "fill_color": { "single": user_color },
-            "n_features": nb_ft
+            "n_features": nb_ft,
+            "proj_scale_draw": proj.scale()
             };
         create_li_layer_elem(new_layer_name, nb_ft, ["Line", "discont"], "result");
 
@@ -2352,7 +2355,6 @@ var render_discont = function(){
         }
 
         d3.select('#layer_to_export').append('option').attr('value', new_layer_name).text(new_layer_name);
-        up_legends();
         zoom_without_redraw();
         switch_accordion_section();
         handle_legend(new_layer_name);
@@ -2661,7 +2663,7 @@ function render_TypoSymbols(rendering_params, new_name){
             {"name": i18next.t("app_page.common.delete"), "action": () => {self_parent.style.display = "none"; }}
     ];
 
-    map.append("g").attrs({id: layer_id, class: "layer"})
+    svg_layers.append("g").attrs({id: layer_id, class: "layer"})
         .selectAll("image")
         .data(new_layer_data.features).enter()
         .insert("image")
@@ -2693,9 +2695,9 @@ function render_TypoSymbols(rendering_params, new_name){
         "is_result": true,
         "symbol": "image",
         "ref_layer_name": layer_name,
+        "proj_scale_draw": proj.scale()
         };
     handle_legend(layer_to_add);
-    up_legends();
     zoom_without_redraw();
     switch_accordion_section();
 }
@@ -3057,7 +3059,7 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
 
               let new_layer_name = add_layer_topojson(data, options);
               if(!new_layer_name) return;
-              let layer_to_render = map.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
+              let layer_to_render = svg_layers.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
                   fij_field_name = field_fij,
                   fij_values = result_data[new_layer_name].map(obj => +obj[fij_field_name]),
                   nb_ft = fij_values.length,
@@ -3079,6 +3081,7 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
               current_layers[new_layer_name].rendered_field = fij_field_name;
               current_layers[new_layer_name].ref_layer_name = ref_layer;
               current_layers[new_layer_name].min_display = 0;
+              current_layers[new_layer_name].proj_scale_draw = proj.scale();
 
               let links_byId = current_layers[new_layer_name].linksbyId;
 
@@ -3111,6 +3114,7 @@ var render_label = function(layer, rendering_params, options){
                     ? check_layer_name(rendering_params.uo_layer_name)
                     : check_layer_name("Labels_" + layer);
     let layer_id = encodeId(layer_to_add);
+    let proj_scale_draw = rendering_params.proj_scale_draw || proj.scale();
     _app.layer_to_id.set(layer_to_add, layer_id);
     _app.id_to_layer.set(layer_id, layer_to_add);
     let nb_ft;
@@ -3140,7 +3144,7 @@ var render_label = function(layer, rendering_params, options){
             {"name": i18next.t("app_page.common.delete"), "action": () => { self_parent.style.display = "none"; }}
         ];
 
-    map.append("g").attrs({id: layer_id, class: "layer result_layer"})
+    svg_layers.append("g").attrs({id: layer_id, class: "layer result_layer"})
         .selectAll("text")
         .data(new_layer_data).enter()
         .insert("text")
@@ -3173,9 +3177,9 @@ var render_label = function(layer, rendering_params, options){
         "is_result": true,
         "ref_layer_name": layer,
         "default_size": font_size,
-        "default_font": selected_font
+        "default_font": selected_font,
+        "proj_scale_draw": proj_scale_draw
         };
-    up_legends();
     zoom_without_redraw();
     return layer_to_add;
 }
