@@ -1421,10 +1421,10 @@ function reproj_lgd_elem(){
 
 function reproj_symbol_layer(){
   for(let lyr_name in current_layers){
-    if(current_layers[lyr_name].renderer
-        && (current_layers[lyr_name].renderer.indexOf('PropSymbol') > -1
-            || current_layers[lyr_name].renderer.indexOf('TypoSymbols')  > -1
-            || current_layers[lyr_name].renderer.indexOf('Label')  > -1 )){
+    if(!current_layers[lyr_name].renderer){
+        continue;
+    }
+    if(current_layers[lyr_name].symbol != undefined){
       let symbol = current_layers[lyr_name].symbol;
 
       let size_rap = current_layers[lyr_name].proj_scale_draw === undefined ? 1 : proj.scale() / current_layers[lyr_name].proj_scale_draw;
@@ -1441,8 +1441,8 @@ function reproj_symbol_layer(){
               .selectAll(symbol)
               .attrs(function(d,i){
                 let coords = path.centroid(d.geometry),
-                    size = size_rap * +this.getAttribute('width').slice(0, -2) / 2;
-                return { 'x': coords[0] - size, 'y': coords[1] - size };
+                    size = size_rap * +this.getAttribute('width').slice(0, -2);
+                return { 'x': coords[0] - size / 2, 'y': coords[1] - size / 2, width: size + "px", height: size + "px"};
               });
       } else if(symbol == "circle"){ // Reproject Prop Symbol :
           svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
@@ -1471,12 +1471,17 @@ function reproj_symbol_layer(){
                 };
               });
       }
-    } else if (current_layers[lyr_name].renderer && (
-                current_layers[lyr_name].renderer == "DiscLayer" || current_layers[lyr_name].renderer == "Links")){
+    } else if (current_layers[lyr_name].renderer == "Links"){
         let size_rap = proj.scale() / current_layers[lyr_name].proj_scale_draw;
         svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
             .selectAll('path')
-            .style("stroke-width", function(){ return this.style.strokeWidth * size_rap; });
+            .style("stroke-width", (d,i) => size_rap * current_layers[lyr_name].linksbyId[i][2]);
+
+    } else if (current_layers[lyr_name].renderer == "DiscLayer"){
+        let size_rap = proj.scale() / current_layers[lyr_name].proj_scale_draw;
+        svg_layers.select("#"+_app.layer_to_id.get(lyr_name))
+            .selectAll('path')
+            .style("stroke-width", (d,i) => +d.properties.prop_val * size_rap );
 
     }
   }
@@ -1781,7 +1786,7 @@ function zoom_without_redraw(){
           .style("stroke-width", function(){
                 let lyr_name = _app.id_to_layer.get(this.id);
                 return current_layers[lyr_name].fixed_stroke
-                        ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw'])
+                        ? this.style.strokeWidth
                         : current_layers[lyr_name]['proj_scale_draw'] != undefined
                         ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / transform.k +  "px"
                         : current_layers[lyr_name]['stroke-width-const'] / transform.k +  "px";
@@ -1798,7 +1803,7 @@ function zoom_without_redraw(){
           .style("stroke-width", function(){
                 let lyr_name = _app.id_to_layer.get(this.id);
                 return current_layers[lyr_name].fixed_stroke
-                        ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw'])
+                        ? this.style.strokeWidth
                         : current_layers[lyr_name]['proj_scale_draw'] != undefined
                         ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / d3.event.transform.k +  "px"
                         : current_layers[lyr_name]['stroke-width-const'] / d3.event.transform.k +  "px";

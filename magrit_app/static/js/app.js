@@ -1190,8 +1190,11 @@ function reproj_lgd_elem(){
 */
 
 function reproj_symbol_layer() {
-    for (var lyr_name in current_layers) {
-        if (current_layers[lyr_name].renderer && (current_layers[lyr_name].renderer.indexOf('PropSymbol') > -1 || current_layers[lyr_name].renderer.indexOf('TypoSymbols') > -1 || current_layers[lyr_name].renderer.indexOf('Label') > -1)) {
+    var _loop3 = function _loop3(lyr_name) {
+        if (!current_layers[lyr_name].renderer) {
+            return "continue";
+        }
+        if (current_layers[lyr_name].symbol != undefined) {
             (function () {
                 var symbol = current_layers[lyr_name].symbol;
 
@@ -1207,8 +1210,8 @@ function reproj_symbol_layer() {
                     // Reproject pictograms :
                     svg_layers.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).attrs(function (d, i) {
                         var coords = path.centroid(d.geometry),
-                            size = size_rap * +this.getAttribute('width').slice(0, -2) / 2;
-                        return { 'x': coords[0] - size, 'y': coords[1] - size };
+                            size = size_rap * +this.getAttribute('width').slice(0, -2);
+                        return { 'x': coords[0] - size / 2, 'y': coords[1] - size / 2, width: size + "px", height: size + "px" };
                     });
                 } else if (symbol == "circle") {
                     // Reproject Prop Symbol :
@@ -1238,14 +1241,27 @@ function reproj_symbol_layer() {
                     });
                 }
             })();
-        } else if (current_layers[lyr_name].renderer && (current_layers[lyr_name].renderer == "DiscLayer" || current_layers[lyr_name].renderer == "Links")) {
+        } else if (current_layers[lyr_name].renderer == "Links") {
             (function () {
                 var size_rap = proj.scale() / current_layers[lyr_name].proj_scale_draw;
-                svg_layers.select("#" + _app.layer_to_id.get(lyr_name)).selectAll('path').style("stroke-width", function () {
-                    return this.style.strokeWidth * size_rap;
+                svg_layers.select("#" + _app.layer_to_id.get(lyr_name)).selectAll('path').style("stroke-width", function (d, i) {
+                    return size_rap * current_layers[lyr_name].linksbyId[i][2];
+                });
+            })();
+        } else if (current_layers[lyr_name].renderer == "DiscLayer") {
+            (function () {
+                var size_rap = proj.scale() / current_layers[lyr_name].proj_scale_draw;
+                svg_layers.select("#" + _app.layer_to_id.get(lyr_name)).selectAll('path').style("stroke-width", function (d, i) {
+                    return +d.properties.prop_val * size_rap;
                 });
             })();
         }
+    };
+
+    for (var lyr_name in current_layers) {
+        var _ret6 = _loop3(lyr_name);
+
+        if (_ret6 === "continue") continue;
     }
 }
 
@@ -1519,13 +1535,13 @@ function zoom_without_redraw() {
         transform = d3.zoomTransform(svg_map);
         svg_layers.selectAll(".layer").transition().duration(50).style("stroke-width", function () {
             var lyr_name = _app.id_to_layer.get(this.id);
-            return current_layers[lyr_name].fixed_stroke ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw']) : current_layers[lyr_name]['proj_scale_draw'] != undefined ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / transform.k + "px" : current_layers[lyr_name]['stroke-width-const'] / transform.k + "px";
+            return current_layers[lyr_name].fixed_stroke ? this.style.strokeWidth : current_layers[lyr_name]['proj_scale_draw'] != undefined ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / transform.k + "px" : current_layers[lyr_name]['stroke-width-const'] / transform.k + "px";
         }).attr("transform", transform.toString() + rot_val);
         svg_legend.selectAll(".scalable-legend").transition().duration(50).attr("transform", transform.toString() + rot_val);
     } else {
         svg_layers.selectAll(".layer").transition().duration(50).style("stroke-width", function () {
             var lyr_name = _app.id_to_layer.get(this.id);
-            return current_layers[lyr_name].fixed_stroke ? this.style.strokeWidth / (p_scale / current_layers[lyr_name]['proj_scale_draw']) : current_layers[lyr_name]['proj_scale_draw'] != undefined ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / d3.event.transform.k + "px" : current_layers[lyr_name]['stroke-width-const'] / d3.event.transform.k + "px";
+            return current_layers[lyr_name].fixed_stroke ? this.style.strokeWidth : current_layers[lyr_name]['proj_scale_draw'] != undefined ? current_layers[lyr_name]['stroke-width-const'] / (p_scale / current_layers[lyr_name]['proj_scale_draw-width-const']) / d3.event.transform.k + "px" : current_layers[lyr_name]['stroke-width-const'] / d3.event.transform.k + "px";
         }).attr("transform", d3.event.transform + rot_val);
         svg_legend.selectAll(".scalable-legend").transition().duration(50).attr("transform", d3.event.transform + rot_val);
     }
@@ -1942,7 +1958,7 @@ function patchSvgForFonts() {
             return d ? d : [];
         });
         for (var j = 0; j < 2; j++) {
-            var _loop3 = function _loop3(i) {
+            var _loop4 = function _loop4(i) {
                 var font_elem = elems[j][i].style.fontFamily;
                 customs_fonts.forEach(function (font) {
                     if (font_elem.indexOf(font) > -1 && needed_definitions.indexOf(font) == -1) {
@@ -1952,7 +1968,7 @@ function patchSvgForFonts() {
             };
 
             for (var i = 0; i < elems[j].length; i++) {
-                _loop3(i);
+                _loop4(i);
             }
         }
         return needed_definitions;
