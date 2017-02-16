@@ -338,6 +338,7 @@ function make_box_type_fields(layer_name){
         container.querySelector('.btn_cancel').remove(); // Disabled cancel button to force the user to choose
         let _onclose = () => {  // Or use the default values if he use the X  close button
             current_layers[layer_name].fields_type = tmp.slice();
+            getAvailablesFunctionnalities(layer_name);
             deferred.resolve(false);
             modal_box.close();
             container.remove();
@@ -353,6 +354,7 @@ function make_box_type_fields(layer_name){
         container.querySelector('.btn_cancel').remove(); // Disabled cancel button to force the user to choose
         let _onclose = () => {  // Or use the default values if he use the X  close button
             current_layers[layer_name].fields_type = tmp.slice();
+            getAvailablesFunctionnalities(layer_name);
             deferred.resolve(false);
             modal_box.close();
             container.remove();
@@ -401,6 +403,7 @@ function make_box_type_fields(layer_name){
           if (isEscape) {
             evt.stopPropagation();
             current_layers[layer_name].fields_type = tmp.slice();
+            getAvailablesFunctionnalities(layer_name);
             deferred.resolve(false);
             modal_box.close();
             container.remove();
@@ -461,7 +464,7 @@ function getAvailablesFunctionnalities(layer_name){
     } else {
         Array.prototype.forEach.call(func_stock, d => d.style.filter = "invert(0%) saturate(100%)");
     }
-    if(fields_categ.length === 0){
+    if(fields_ratio.length === 0){
         Array.prototype.forEach.call(func_ratio, d => d.style.filter = "grayscale(100%)");
     } else {
         Array.prototype.forEach.call(func_ratio, d => d.style.filter = "invert(0%) saturate(100%)");

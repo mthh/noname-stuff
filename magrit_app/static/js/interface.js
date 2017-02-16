@@ -298,8 +298,7 @@ function prepare_drop_section(){
         function(elem){
             elem.addEventListener("dragenter", e => {
                 e.preventDefault(); e.stopPropagation();
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1)
+                if(document.body.classList.contains("no-drop"))
                     return;
                 let overlay_drop = document.getElementById("overlay_drop");
                 overlay_drop.style.display = "";
@@ -307,8 +306,7 @@ function prepare_drop_section(){
 
             elem.addEventListener("dragover", e => {
                 e.preventDefault(); e.stopPropagation();
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1)
+                if(document.body.classList.contains("no-drop"))
                     return;
                 if(timeout){
                     clearTimeout(timeout);
@@ -323,8 +321,7 @@ function prepare_drop_section(){
 
             elem.addEventListener("dragleave", e => {
                 e.preventDefault(); e.stopPropagation();
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1){
+                if(document.body.classList.contains("no-drop")){
                     document.body.classList.remove("no-drop");
                     return;
                 }
@@ -340,8 +337,7 @@ function prepare_drop_section(){
                 if(timeout){
                     clearTimeout(timeout);
                 }
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1 || !e.dataTransfer.files.length){
+                if(document.body.classList.contains("no-drop") || !e.dataTransfer.files.length){
                     document.getElementById("overlay_drop").style.display = "none";
                     return;
                 }
@@ -408,16 +404,14 @@ function prepare_drop_section(){
             elem.addEventListener("dragenter", function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1)
+                if(document.body.classList.contains("no-drop"))
                     return;
                 elem.style.border = '3px dashed green';
             });
             elem.addEventListener("dragover", function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1)
+                if(document.body.classList.contains("no-drop"))
                     return;
                 elem.style.border = '3px dashed green';
             });
@@ -425,8 +419,7 @@ function prepare_drop_section(){
                 e.preventDefault();
                 e.stopPropagation();
                 elem.style.border = '';
-                if(String.prototype.indexOf.call(
-                        document.body.classList, "no-drop") > -1)
+                if(document.body.classList.contains("no-drop"))
                     document.body.classList.remove("no-drop");
             });
             elem.addEventListener("drop", function(e) {

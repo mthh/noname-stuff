@@ -12,7 +12,9 @@ function handle_join(){
         make_confirm_dialog2("dialogBox", undefined, {html_content: i18next.t("app_page.join_box.ask_forget_join")})
             .then( confirmed => {
                 if(confirmed){
+                    valid_join_check_display();
                     field_join_map = [];
+                    remove_existing_jointure(layer_name);
                     createJoinBox(layer_name[0]);
                     }
                 });
@@ -188,7 +190,7 @@ function valid_join_on(layer_name, field1, field2){
 // the geometry layer and the other to the external dataset, in order to choose
 // the common field to do the join.
 function createJoinBox(layer){
-    var geom_layer_fields = Object.getOwnPropertyNames(user_data[layer][0]),
+    var geom_layer_fields = [...current_layers[layer].original_fields.keys()],
         ext_dataset_fields = Object.getOwnPropertyNames(joined_dataset[0][0]),
         button1 = ["<select id=button_field1>"],
         button2 = ["<select id=button_field2>"],
@@ -229,3 +231,17 @@ function createJoinBox(layer){
     d3.select("#button_field2").style("float", "left").on("change", function(){last_choice.field2 = this.value;});
 
 }
+
+const remove_existing_jointure = (layer_name) => {
+    if(!user_data[layer_name] || user_data[layer_name].length < 1)
+        return;
+    let data_layer = user_data[layer_name],
+        original_fields = current_layers[layer_name].original_fields,
+        field_difference = Object.getOwnPropertyNames(data_layer[0]).filter(f => !original_fields.has(f)),
+        nb_fields = field_difference.length;
+    for(let i = 0, nb_ft = data_layer.length; i < nb_ft; i++){
+        for(let j = 0; j < nb_fields; j++){
+            delete data_layer[i][field_difference[j]];
+        }
+    }
+};
