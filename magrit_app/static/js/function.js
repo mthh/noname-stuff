@@ -3199,67 +3199,114 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
 
       join_field_to_send[name_join_field] = user_data[ref_layer].map(obj => obj[name_join_field]);
 
-      formToSend.append("json", JSON.stringify({
-          "topojson": current_layers[ref_layer].key_name,
-          "csv_table": JSON.stringify(joined_dataset[0]),
-          "field_i": field_i,
-          "field_j": field_j,
-          "field_fij": field_fij,
-          "join_field": join_field_to_send
-          }));
+      let links_worker = new Worker('/static/js/webworker_links.js');
+      _app.webworker_to_cancel = links_worker;
+      links_worker.postMessage([topo_to_use, layer, joined_dataset[0], field_i, field_j, field_fij, join_field_to_send[name_join_field]]]);
+      links_worker.onmessage = function(e){
 
-      xhrequest("POST", '/compute/links', formToSend, true)
-          .then(data => {
-              // FIXME : should use the user selected new name if any
-              let options = {result_layer_on_add: true};
-              if(new_user_layer_name.length > 0 &&  /^\w+$/.test(new_user_layer_name)){
-                  options["choosed_name"] = new_user_layer_name;
-              }
+          let geojson_result = e.data;
+          _app.webworker_to_cancel = undefined;
+          let nb_ft = geojson_result.features.length;;
 
-              let new_layer_name = add_layer_topojson(data, options);
-              if(!new_layer_name) return;
-              let layer_to_render = map.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
-                  fij_field_name = field_fij,
-                  fij_values = result_data[new_layer_name].map(obj => +obj[fij_field_name]),
-                  nb_ft = fij_values.length,
-                  serie = new geostats(fij_values);
+          let fij_values = geojson_result.features.map(obj => +obj['intensity']),
+              nb_ft = fij_values.length,
+              serie = new geostats(fij_values);
 
-              if(user_breaks[0] < serie.min())
-                  user_breaks[0] = serie.min();
+          if(user_breaks[0] < serie.min())
+              user_breaks[0] = serie.min();
 
-              if(user_breaks[nb_class] > serie.max())
-                  user_breaks[nb_class] = serie.max();
+          if(user_breaks[nb_class] > serie.max())
+              user_breaks[nb_class] = serie.max();
 
-              serie.setClassManually(user_breaks);
+          serie.setClassManually(user_breaks);
 
-              current_layers[new_layer_name].fixed_stroke = true;
-              current_layers[new_layer_name].renderer = "Links";
-              current_layers[new_layer_name].breaks = [];
-              current_layers[new_layer_name].linksbyId = [];
-              current_layers[new_layer_name].size = [min_size, max_size];
-              current_layers[new_layer_name].rendered_field = fij_field_name;
-              current_layers[new_layer_name].ref_layer_name = ref_layer;
-              current_layers[new_layer_name].min_display = 0;
+          current_layers[new_layer_name].fixed_stroke = true;
+          current_layers[new_layer_name].renderer = "Links";
+          current_layers[new_layer_name].breaks = [];
+          current_layers[new_layer_name].linksbyId = [];
+          current_layers[new_layer_name].size = [min_size, max_size];
+          current_layers[new_layer_name].rendered_field = field_fij;
+          current_layers[new_layer_name].ref_layer_name = ref_layer;
+          current_layers[new_layer_name].min_display = 0;
 
-              let links_byId = current_layers[new_layer_name].linksbyId;
+          let links_byId = current_layers[new_layer_name].linksbyId;
 
-              for(let i = 0; i < nb_ft; ++i){
-                  let val = +fij_values[i];
-                  links_byId.push([i, val, sizes[serie.getClass(val)]]);
-              }
+          for(let i = 0; i < nb_ft; ++i){
+              let val = +fij_values[i];
+              links_byId.push([i, val, sizes[serie.getClass(val)]]);
+          }
 
-              for(let i = 0; i<nb_class; ++i)
-                  current_layers[new_layer_name].breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
+          for(let i = 0; i<nb_class; ++i)
+              current_layers[new_layer_name].breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
 
-              layer_to_render.style('fill-opacity', 0)
-                             .style('stroke-opacity', 0.8)
-                             .style("stroke-width", (d,i) => {return links_byId[i][2]});
-              switch_accordion_section();
-              handle_legend(new_layer_name);
-          }, error => {
-              display_error_during_computation();
-              console.log(error);
-          });
+          layer_to_render.style('fill-opacity', 0)
+                         .style('stroke-opacity', 0.8)
+                         .style("stroke-width", (d,i) => {return links_byId[i][2]});
+          switch_accordion_section();
+          handle_legend(new_layer_name);
+      }
+
+      // formToSend.append("json", JSON.stringify({
+      //     "topojson": current_layers[ref_layer].key_name,
+      //     "csv_table": JSON.stringify(joined_dataset[0]),
+      //     "field_i": field_i,
+      //     "field_j": field_j,
+      //     "field_fij": field_fij,
+      //     "join_field": join_field_to_send
+      //     }));
+
+      // xhrequest("POST", '/compute/links', formToSend, true)
+      //     .then(data => {
+      //         // FIXME : should use the user selected new name if any
+      //         let options = {result_layer_on_add: true};
+      //         if(new_user_layer_name.length > 0 &&  /^\w+$/.test(new_user_layer_name)){
+      //             options["choosed_name"] = new_user_layer_name;
+      //         }
+      //
+      //         let new_layer_name = add_layer_topojson(data, options);
+      //         if(!new_layer_name) return;
+      //         let layer_to_render = map.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
+      //             fij_field_name = field_fij,
+      //             fij_values = result_data[new_layer_name].map(obj => +obj[fij_field_name]),
+      //             nb_ft = fij_values.length,
+      //             serie = new geostats(fij_values);
+      //
+      //         if(user_breaks[0] < serie.min())
+      //             user_breaks[0] = serie.min();
+      //
+      //         if(user_breaks[nb_class] > serie.max())
+      //             user_breaks[nb_class] = serie.max();
+      //
+      //         serie.setClassManually(user_breaks);
+      //
+      //         current_layers[new_layer_name].fixed_stroke = true;
+      //         current_layers[new_layer_name].renderer = "Links";
+      //         current_layers[new_layer_name].breaks = [];
+      //         current_layers[new_layer_name].linksbyId = [];
+      //         current_layers[new_layer_name].size = [min_size, max_size];
+      //         current_layers[new_layer_name].rendered_field = fij_field_name;
+      //         current_layers[new_layer_name].ref_layer_name = ref_layer;
+      //         current_layers[new_layer_name].min_display = 0;
+      //
+      //         let links_byId = current_layers[new_layer_name].linksbyId;
+      //
+      //         for(let i = 0; i < nb_ft; ++i){
+      //             let val = +fij_values[i];
+      //             links_byId.push([i, val, sizes[serie.getClass(val)]]);
+      //         }
+      //
+      //         for(let i = 0; i<nb_class; ++i)
+      //             current_layers[new_layer_name].breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
+      //
+      //         layer_to_render.style('fill-opacity', 0)
+      //                        .style('stroke-opacity', 0.8)
+      //                        .style("stroke-width", (d,i) => {return links_byId[i][2]});
+      //         switch_accordion_section();
+      //         handle_legend(new_layer_name);
+      //     }, error => {
+      //         display_error_during_computation();
+      //         console.log(error);
+      //     });
 };
 
 var render_label = function(layer, rendering_params, options){
