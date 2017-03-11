@@ -49,7 +49,7 @@ function path_to_geojson(layer_name){
         });
     return JSON.stringify({
         type: "FeatureCollection",
-        crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+        // crs: { type: "name", properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" } },
         features: result_geojson
     });
 }
@@ -166,9 +166,9 @@ function copy_layer(ref_layer, new_name, type_result, fields_to_copy){
 * @param {string} layer_name
 * @param {string} url
 */
-function send_layer_server(layer_name, url){
+function send_layer_server(layer_name, url, JSON_layer){
     var formToSend = new FormData();
-    var JSON_layer = path_to_geojson(layer_name);
+    JSON_layer = JSON_layer || path_to_geojson(layer_name);
     formToSend.append("geojson", JSON_layer);
     formToSend.append("layer_name", layer_name);
     xhrequest("POST", url, formToSend, false).then(function(e){

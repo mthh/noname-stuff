@@ -590,7 +590,7 @@ function createStyleBox_Line(layer_name){
                     current_layers[layer_name].breaks = prev_breaks;
                     selection.style('fill-opacity', 0)
                              .style("stroke", fill_prev.single)
-                             .style("display", d => (+d.properties.fij > prev_min_display) ? null : "none")
+                             .style("display", d => (+d.properties.intensity > prev_min_display) ? null : "none")
                              .style("stroke-opacity", border_opacity)
                              .style("stroke-width", (d,i) => current_layers[layer_name].linksbyId[i][2]);
                 } else if (current_layers[layer_name].renderer == "DiscLayer" && prev_min_display != undefined){
@@ -695,7 +695,7 @@ function createStyleBox_Line(layer_name){
         prev_min_display = current_layers[layer_name].min_display || 0;
         prev_breaks = current_layers[layer_name].breaks.slice();
         let max_val = 0;
-        selection.each(function(d){if(+d.properties.fij > max_val) max_val = d.properties.fij;})
+        selection.each(function(d){if(+d.properties.intensity > max_val) max_val = d.properties.intensity;})
         let threshold_section = popup.append('p').attr("class", "line_elem");
         threshold_section.append("span").html(i18next.t("app_page.layer_style_popup.display_flow_larger"));
         // The legend will be updated in order to start on the minimum value displayed instead of
@@ -707,7 +707,7 @@ function createStyleBox_Line(layer_name){
                 lgd_to_change = true;
                 let val = +this.value;
                 popup.select("#larger_than").html(["<i> ", val, " </i>"].join(''));
-                selection.style("display", d => (+d.properties.fij > val) ? null : "none");
+                selection.style("display", d => (+d.properties.intensity > val) ? null : "none");
                 current_layers[layer_name].min_display = val;
             });
         threshold_section.insert('label')

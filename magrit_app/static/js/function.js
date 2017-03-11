@@ -1580,30 +1580,31 @@ function fillMenu_Anamorphose(){
     dialog_content.selectAll(".params").attr("disabled", true);
     dialog_content.selectAll(".opt_olson").style('display', 'none');
 }
-
-function getCentroids(ref_layer_selection){
-  let centroids = [];
-  for(let i = 0, nb_features = ref_layer_selection.length; i < nb_features; ++i){
-    let geom = ref_layer_selection[i].__data__.geometry;
-    if(geom.type.indexOf('Multi') < 0){
-      centroids.push(path.centroid(geom));
-    } else {
-      let areas = [];
-      for(let j = 0; j < geom.coordinates.length; j++){
-        areas.push(path.area({
-          type: geom.type,
-          coordinates: [geom.coordinates[j]]
-        }));
-      }
-      let ix_max = areas.indexOf(max_fast(areas));
-      centroids.push(path.centroid({
-        type: geom.type,
-        coordinates: [geom.coordinates[ix_max]]
-      }));
-    }
-  }
-  return centroids;
-}
+// TODO : getCentroid(geometry){ if(geometry.type.indexOf('Multi') < 0)... }
+//
+// function getCentroids(ref_layer_selection){
+//   let centroids = [];
+//   for(let i = 0, nb_features = ref_layer_selection.length; i < nb_features; ++i){
+//     let geom = ref_layer_selection[i].__data__.geometry;
+//     if(geom.type.indexOf('Multi') < 0){
+//       centroids.push(path.centroid(geom));
+//     } else {
+//       let areas = [];
+//       for(let j = 0; j < geom.coordinates.length; j++){
+//         areas.push(d3.geoArea({
+//           type: geom.type,
+//           coordinates: [geom.coordinates[j]]
+//         }));
+//       }
+//       let ix_max = areas.indexOf(max_fast(areas));
+//       centroids.push(path.centroid({
+//         type: geom.type,
+//         coordinates: [geom.coordinates[ix_max]]
+//       }));
+//     }
+//   }
+//   return centroids;
+// }
 
 function make_prop_line(rendering_params, geojson_line_layer){
     let layer = rendering_params.ref_layer_name,
@@ -1754,7 +1755,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
             } else {
               let areas = [];
               for(let j = 0; j < ft.geometry.coordinates.length; j++){
-                areas.push(path.area({
+                areas.push(d3.geoArea({
                   type: ft.geometry.type,
                   coordinates: [ft.geometry.coordinates[j]]
                 }));
@@ -2395,6 +2396,12 @@ var fields_Discont = {
 }
 
 var render_discont = function(){
+  // Discontinuity are computed in another thread to avoid blocking the ui (and so error message on large layer)
+  // (a waiting message is displayed during this time to avoid action from the user)
+  // Fetch the script as soon as we need it :
+    let discont_worker = new Worker('/static/js/webworker_discont.js');
+    _app.webworker_to_cancel = discont_worker;
+
     let layer = Object.getOwnPropertyNames(user_data)[0],
         field = document.getElementById("field_Discont").value,
         // field_id = document.getElementById("field_id_Discont").value,
@@ -2424,10 +2431,6 @@ var render_discont = function(){
 
     document.getElementById("overlay").style.display = "";
 
-    // Discontinuity are computed in another thread to avoid blocking the ui (and so error message on large layer)
-    // (a waiting message is displayed during this time to avoid action from the user)
-    let discont_worker = new Worker('/static/js/webworker_discont.js');
-    _app.webworker_to_cancel = discont_worker;
     discont_worker.postMessage([topo_to_use, layer, field, discontinuity_type, discretization_type, field_id]);
     discont_worker.onmessage = function(e){
         let [arr_tmp, d_res] = e.data;
@@ -2452,25 +2455,27 @@ var render_discont = function(){
 
         result_data[new_layer_name] = [];
         let data_result = result_data[new_layer_name],
-            result_lyr_node = result_layer.node();
+            result_lyr_node = result_layer.node(),
+            lim_display = 0.5 * nb_ft;
 
         for(let i=0; i<nb_ft; i++){
             let val = d_res[i][0],
                 p_size = class_size[serie.getClass(val)],
+                to_display = i <= lim_display ? null : "none",
                 elem = result_layer.append("path")
                         .datum(d_res[i][2])
                         .attrs({d: path, id: ["feature", i].join('_')})
-                        .styles({stroke: user_color, "stroke-width": p_size, "fill": "transparent", "stroke-opacity": 1});
+                        .styles({stroke: user_color, "stroke-width": p_size,
+                                 "fill": "none", "stroke-opacity": 1, 'display': to_display});
             data_result.push(d_res[i][1]);
             elem.node().__data__.geometry = d_res[i][2];
             elem.node().__data__.properties = data_result[i];
             elem.node().__data__.properties['prop_val'] = p_size;
         }
-        document.getElementById("overlay").style.display = "none";
         current_layers[new_layer_name] = {
             "renderer": "DiscLayer",
             "breaks": breaks,
-            "min_display": 0, // FIXME
+            "min_display": 0.5,
             "type": "Line",
             "rendered_field": field,
             "size": [0.5, 10],
@@ -2481,15 +2486,7 @@ var render_discont = function(){
             "n_features": nb_ft
             };
         create_li_layer_elem(new_layer_name, nb_ft, ["Line", "discont"], "result");
-
-
-        { // Only display the 50% most important values :
-          // TODO : reintegrate this upstream in the layer creation :
-          let lim = 0.5 * current_layers[new_layer_name].n_features;
-          result_layer.selectAll('path').style("display", (d,i) => i <= lim ? null : "none" );
-          current_layers[new_layer_name].min_display = 0.5;
-        }
-
+        document.getElementById("overlay").style.display = "none";
         d3.select('#layer_to_export').append('option').attr('value', new_layer_name).text(new_layer_name);
         zoom_without_redraw();
         switch_accordion_section();
@@ -2794,7 +2791,7 @@ function render_TypoSymbols(rendering_params, new_name){
         } else {
           let areas = [];
           for(let j = 0; j < ft.geometry.coordinates.length; j++){
-            areas.push(path.area({
+            areas.push(d3.geoArea({
               type: ft.geometry.type,
               coordinates: [ft.geometry.coordinates[j]]
             }));
@@ -3184,9 +3181,8 @@ var fields_FlowMap = {
 };
 
 function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type, new_user_layer_name){
-      let ref_layer = Object.getOwnPropertyNames(user_data)[0],
-          formToSend = new FormData(),
-          join_field_to_send = {};
+      document.getElementById("overlay").style.display = "";
+      let ref_layer = Object.getOwnPropertyNames(user_data)[0];
 
       let disc_params = fetch_min_max_table_value("FlowMap_discTable"),
           mins = disc_params.mins,
@@ -3197,19 +3193,48 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
           min_size = min_fast(sizes),
           max_size = max_fast(sizes);
 
-      join_field_to_send[name_join_field] = user_data[ref_layer].map(obj => obj[name_join_field]);
-
       let links_worker = new Worker('/static/js/webworker_links.js');
       _app.webworker_to_cancel = links_worker;
-      links_worker.postMessage([topo_to_use, layer, joined_dataset[0], field_i, field_j, field_fij, join_field_to_send[name_join_field]]]);
+
+      let join_field = user_data[ref_layer].map(obj => obj[name_join_field]);
+
+      let new_layer_name = (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name))
+                      ? check_layer_name(new_user_layer_name) : check_layer_name('Links_' + layer);
+
+      let id_layer = encodeId(new_layer_name);
+      _app.layer_to_id.set(new_layer_name, id_layer);
+      _app.id_to_layer.set(id_layer, new_layer_name);
+
+      let features = topojson.feature(_target_layer_file, _target_layer_file.objects[ref_layer]).features;
+      let _ft = new Map();
+
+      for(let i = 0, len_i = features.length; i < len_i; i++){
+          let coords;
+          let ft = features[i];
+          if(ft.geometry.type.indexOf('Multi') == -1){
+              coords = d3.geoCentroid(ft.geometry);
+          } else {
+              let areas = [];
+              for(let j = 0; j < ft.geometry.coordinates.length; j++){
+                areas.push(d3.geoArea({
+                  type: ft.geometry.type,
+                  coordinates: [ft.geometry.coordinates[j]]
+                }));
+              }
+              let ix_max = areas.indexOf(max_fast(areas));
+              coords = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+          }
+          _ft.set(join_field[i], coords);
+      }
+
+      links_worker.postMessage([_ft, joined_dataset[0], field_i, field_j, field_fij]);
       links_worker.onmessage = function(e){
 
           let geojson_result = e.data;
           _app.webworker_to_cancel = undefined;
           let nb_ft = geojson_result.features.length;;
 
-          let fij_values = geojson_result.features.map(obj => +obj['intensity']),
-              nb_ft = fij_values.length,
+          let fij_values = geojson_result.features.map(obj => +obj.properties['intensity']),
               serie = new geostats(fij_values);
 
           if(user_breaks[0] < serie.min())
@@ -3220,93 +3245,59 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
 
           serie.setClassManually(user_breaks);
 
-          current_layers[new_layer_name].fixed_stroke = true;
-          current_layers[new_layer_name].renderer = "Links";
-          current_layers[new_layer_name].breaks = [];
-          current_layers[new_layer_name].linksbyId = [];
-          current_layers[new_layer_name].size = [min_size, max_size];
-          current_layers[new_layer_name].rendered_field = field_fij;
-          current_layers[new_layer_name].ref_layer_name = ref_layer;
-          current_layers[new_layer_name].min_display = 0;
-
-          let links_byId = current_layers[new_layer_name].linksbyId;
+          let links_byId = [],
+              temp_breaks = [],
+              random_color = Colors.names[Colors.random()];
 
           for(let i = 0; i < nb_ft; ++i){
               let val = +fij_values[i];
               links_byId.push([i, val, sizes[serie.getClass(val)]]);
           }
-
           for(let i = 0; i<nb_class; ++i)
-              current_layers[new_layer_name].breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
+              temp_breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
 
-          layer_to_render.style('fill-opacity', 0)
-                         .style('stroke-opacity', 0.8)
-                         .style("stroke-width", (d,i) => {return links_byId[i][2]});
+          current_layers[new_layer_name] = {
+            'fill_color': {"single": random_color},
+            'n_features': nb_ft,
+            'type': 'Line',
+            'fixed_stroke': true,
+            'renderer': 'Links',
+            'breaks': temp_breaks,
+            'linksbyId': links_byId,
+            'size': [min_size, max_size],
+            'rendered_field': 'intensity',
+            'ref_layer_name': ref_layer,
+            'min_display': 0
+          };
+          result_data[new_layer_name] = [];
+
+          let layer_to_render = map.insert("g", '.legend')
+              .attr("id", id_layer)
+              .attr("class", "layer")
+              .styles({"stroke-linecap": "round", "stroke-linejoin": "round"})
+              .selectAll("path")
+              .data(geojson_result.features)
+              .enter().append("path")
+              .attrs({"d": path, "height": "100%", "width": "100%"})
+              .attr("id", (d, ix) => {
+                    result_data[new_layer_name].push(d.properties);
+                    return "feature_" + ix;
+                })
+              .style("stroke-width", (d,i) => links_byId[i][2])
+              .styles({"stroke": random_color,
+                       "stroke-opacity": 0.8,
+                       "fill": 'none',
+                       "fill-opacity": 0});
+
+          create_li_layer_elem(new_layer_name, nb_ft, ["Line", "flow"], "result");
+          d3.select('#layer_to_export').append('option').attr('value', new_layer_name).text(new_layer_name);
+          zoom_without_redraw();
           switch_accordion_section();
           handle_legend(new_layer_name);
+          document.getElementById("overlay").style.display = "none";
+          send_layer_server(new_layer_name, "/layers/add", JSON.stringify(geojson_result));
+          links_worker.terminate();
       }
-
-      // formToSend.append("json", JSON.stringify({
-      //     "topojson": current_layers[ref_layer].key_name,
-      //     "csv_table": JSON.stringify(joined_dataset[0]),
-      //     "field_i": field_i,
-      //     "field_j": field_j,
-      //     "field_fij": field_fij,
-      //     "join_field": join_field_to_send
-      //     }));
-
-      // xhrequest("POST", '/compute/links', formToSend, true)
-      //     .then(data => {
-      //         // FIXME : should use the user selected new name if any
-      //         let options = {result_layer_on_add: true};
-      //         if(new_user_layer_name.length > 0 &&  /^\w+$/.test(new_user_layer_name)){
-      //             options["choosed_name"] = new_user_layer_name;
-      //         }
-      //
-      //         let new_layer_name = add_layer_topojson(data, options);
-      //         if(!new_layer_name) return;
-      //         let layer_to_render = map.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
-      //             fij_field_name = field_fij,
-      //             fij_values = result_data[new_layer_name].map(obj => +obj[fij_field_name]),
-      //             nb_ft = fij_values.length,
-      //             serie = new geostats(fij_values);
-      //
-      //         if(user_breaks[0] < serie.min())
-      //             user_breaks[0] = serie.min();
-      //
-      //         if(user_breaks[nb_class] > serie.max())
-      //             user_breaks[nb_class] = serie.max();
-      //
-      //         serie.setClassManually(user_breaks);
-      //
-      //         current_layers[new_layer_name].fixed_stroke = true;
-      //         current_layers[new_layer_name].renderer = "Links";
-      //         current_layers[new_layer_name].breaks = [];
-      //         current_layers[new_layer_name].linksbyId = [];
-      //         current_layers[new_layer_name].size = [min_size, max_size];
-      //         current_layers[new_layer_name].rendered_field = fij_field_name;
-      //         current_layers[new_layer_name].ref_layer_name = ref_layer;
-      //         current_layers[new_layer_name].min_display = 0;
-      //
-      //         let links_byId = current_layers[new_layer_name].linksbyId;
-      //
-      //         for(let i = 0; i < nb_ft; ++i){
-      //             let val = +fij_values[i];
-      //             links_byId.push([i, val, sizes[serie.getClass(val)]]);
-      //         }
-      //
-      //         for(let i = 0; i<nb_class; ++i)
-      //             current_layers[new_layer_name].breaks.push([[user_breaks[i], user_breaks[i+1]], sizes[i]]);
-      //
-      //         layer_to_render.style('fill-opacity', 0)
-      //                        .style('stroke-opacity', 0.8)
-      //                        .style("stroke-width", (d,i) => {return links_byId[i][2]});
-      //         switch_accordion_section();
-      //         handle_legend(new_layer_name);
-      //     }, error => {
-      //         display_error_during_computation();
-      //         console.log(error);
-      //     });
 };
 
 var render_label = function(layer, rendering_params, options){
@@ -3338,7 +3329,7 @@ var render_label = function(layer, rendering_params, options){
             } else {
                 let areas = [];
                 for(let j = 0; j < ft.geometry.coordinates.length; j++){
-                  areas.push(path.area({
+                  areas.push(d3.geoArea({
                     type: ft.geometry.type,
                     coordinates: [ft.geometry.coordinates[j]]
                   }));
