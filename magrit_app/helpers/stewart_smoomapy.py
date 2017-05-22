@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from smoomapy import SmoothStewart
 from geopandas import GeoDataFrame
+from shapely.geometry import Polygon
 from .geo import repairCoordsPole
 from .cy_misc import get_name
+from subprocess import Popen, PIPE
 import pickle
 import ujson as json
 import os
@@ -14,9 +16,25 @@ def save_reload(result):
         os.remove(name)
     except:
         None
-    result.to_file(name)
+    result[::-1].to_file(name)
+#    p = Popen([
+#        "ogr2ogr",
+#        "-f",
+#        "GeoJSON",
+#        "-spat -180 180 -90 90",
+#        "-clipsrc spat_extent",
+#        "/dev/stdout", name],
+#        stdout=PIPE, stderr=PIPE)
+#    stdout, stderr = p.communicate()
+#    print('stdout : {}'.format(stdout))
+#    print('stderr : {}'.format(stderr))
+#    res = json.loads(stdout)
     gdf = GeoDataFrame.from_file(name)
-    res = json.loads(gdf[::-1].to_json())
+    bounds = gdf.iloc[-1].geometry.bounds
+    if bounds[0] <= -179 and bounds[1] <= -89 and bounds[2] >= 179 and bounds[3] >= 89:
+        print("aaa")
+        gdf.loc[-1, "geometry"] = Polygon([[-179.99, -89.99], [179.99, -89.99], [179.99, 89.99], [-179.99, 89.99]])
+    res = json.loads(gdf.to_json())
     for ext in ('shp', 'shx', 'prj', 'dbf', 'cpg'):
         try:
             os.remove(name.replace('shp', ext))
@@ -90,8 +108,7 @@ def quick_stewart_mod(input_geojson_points, variable_name, span,
     StePot = SmoothStewart(
         input_geojson_points, variable_name,
         span, beta, typefct, resolution,
-        variable_name2, mask, distGeo=False,
-        projDistance='+proj=natearth')
+        variable_name2, mask, distGeo=True)
     result = StePot.render(nb_class,
                            disc_kind,
                            user_defined_breaks,
