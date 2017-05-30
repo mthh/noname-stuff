@@ -174,7 +174,7 @@ function setUpInterface(reload_project) {
         var click_func = function click_func(window_name, target_url) {
             window.open(target_url, window_name, "toolbar=yes,menubar=yes,resizable=yes,scrollbars=yes,status=yes").focus();
         };
-        var box_content = '<div class="about_content">' + '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', { version: "0.2.0" }) + '</span></p>' + '<p><b>' + i18next.t('app_page.help_box.useful_links') + '</b></p>' +
+        var box_content = '<div class="about_content">' + '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', { version: _app.version }) + '</span></p>' + '<p><b>' + i18next.t('app_page.help_box.useful_links') + '</b></p>' +
         // '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.doc') + '</button></p>' +
         '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.carnet_hypotheses') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_contact">' + i18next.t('app_page.help_box.contact') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_gh">' + i18next.t('app_page.help_box.gh_link') + '</button></p>' + '<p style="font-size: 0.8em; margin:auto;"><span>' + i18next.t('app_page.help_box.credits') + '</span></p></div>';
         swal({
@@ -1024,7 +1024,8 @@ var _app = {
     targeted_layer_added: false,
     current_functionnality: undefined,
     layer_to_id: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]]),
-    id_to_layer: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]])
+    id_to_layer: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]]),
+    version: document.querySelector("#header").getAttribute('v')
 };
 
 // A bunch of references to the buttons used in the layer manager
@@ -1085,6 +1086,10 @@ function parseQuery(search) {
         return (/MSIE/i.test(navigator.userAgent) || /Trident\/\d./i.test(navigator.userAgent) || /Edge\/\d./i.test(navigator.userAgent) ? true : false
         );
     }();
+    // window.isOldMS_Firefox = (() => (/Firefox/i.test(navigator.userAgent)
+    //   && (/Windows NT 6.0/i.test(navigator.userAgent)
+    //       || /Windows NT 6.1/i.test(navigator.userAgent))) ? true : false
+    // )();
     if (window.location.search) {
         var parsed_querystring = parseQuery(window.location.search);
         params.reload = parsed_querystring.reload;
@@ -1101,7 +1106,7 @@ function parseQuery(search) {
         lng: lang,
         fallbackLng: existing_lang[0],
         backend: {
-            loadPath: 'static/locales/{{lng}}/translation.8c46f6a01232.json'
+            loadPath: 'static/locales/{{lng}}/translation.844704a56ab0.json'
         }
     }, function (err, tr) {
         if (err) {
@@ -7934,6 +7939,7 @@ var clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
     var dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute('href', blobUrl);
     dlAnchorElem.setAttribute('download', filename);
+    // if (window.isIE || window.isOldMS_Firefox) {
     if (window.isIE) {
       swal({
         title: "",
@@ -9075,38 +9081,44 @@ function handle_dataset(f, target_layer_on_add) {
 
         reader.onload = function (e) {
             var data = e.target.result;
-            var sep = data.split("\n")[0];
-            if (sep.indexOf("\t") > -1) {
-                sep = "\t";
-            } else if (sep.indexOf(";") > -1) {
-                sep = ";";
-            } else {
-                sep = ",";
-            }
-
-            var tmp_dataset = d3.dsvFormat(sep).parse(data);
-            var field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(function (el) {
-                return el.toLowerCase ? el.toLowerCase() : el;
-            });
-            if (field_names.indexOf("x") > -1 || field_names.indexOf("lat") > -1 || field_names.indexOf("latitude") > -1) {
-                if (field_names.indexOf("y") > -1 || field_names.indexOf("lon") > -1 || field_names.indexOf("longitude") > -1 || field_names.indexOf("long") > -1 || field_names.indexOf("lng") > -1) {
-                    if (target_layer_on_add && _app.targeted_layer_added) {
-                        swal({ title: i18next.t("app_page.common.error") + "!",
-                            text: i18next.t('app_page.common.error_only_one'),
-                            customClass: 'swal2_custom',
-                            type: "error",
-                            allowEscapeKey: false,
-                            allowOutsideClick: false });
-                    } else {
-                        add_csv_geom(data, name.substring(0, name.indexOf('.csv')));
-                    }
-                    return;
+            var encoding = jschardet.detect(data).encoding;
+            var new_reader = new FileReader();
+            new_reader.onload = function (ev) {
+                data = ev.target.result;
+                var sep = data.split("\n")[0];
+                if (sep.indexOf("\t") > -1) {
+                    sep = "\t";
+                } else if (sep.indexOf(";") > -1) {
+                    sep = ";";
+                } else {
+                    sep = ",";
                 }
-            }
-            dataset_name = name.substring(0, name.indexOf('.csv'));
-            add_dataset(tmp_dataset);
+
+                var tmp_dataset = d3.dsvFormat(sep).parse(data);
+                var field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(function (el) {
+                    return el.toLowerCase ? el.toLowerCase() : el;
+                });
+                if (field_names.indexOf("x") > -1 || field_names.indexOf("lat") > -1 || field_names.indexOf("latitude") > -1) {
+                    if (field_names.indexOf("y") > -1 || field_names.indexOf("lon") > -1 || field_names.indexOf("longitude") > -1 || field_names.indexOf("long") > -1 || field_names.indexOf("lng") > -1) {
+                        if (target_layer_on_add && _app.targeted_layer_added) {
+                            swal({ title: i18next.t("app_page.common.error") + "!",
+                                text: i18next.t('app_page.common.error_only_one'),
+                                customClass: 'swal2_custom',
+                                type: "error",
+                                allowEscapeKey: false,
+                                allowOutsideClick: false });
+                        } else {
+                            add_csv_geom(data, name.substring(0, name.indexOf('.csv')));
+                        }
+                        return;
+                    }
+                }
+                dataset_name = name.substring(0, name.indexOf('.csv'));
+                add_dataset(tmp_dataset);
+            };
+            new_reader.readAsText(f, encoding);
         };
-        reader.readAsText(f);
+        reader.readAsBinaryString(f);
     }
 
     if (joined_dataset.length !== 0) {

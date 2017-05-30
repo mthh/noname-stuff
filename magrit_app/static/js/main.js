@@ -219,7 +219,7 @@ function setUpInterface(reload_project)
         window.open(target_url, window_name, "toolbar=yes,menubar=yes,resizable=yes,scrollbars=yes,status=yes").focus();
       };
       let box_content = '<div class="about_content">' +
-        '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', {version: "0.2.0"}) + '</span></p>' +
+        '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', {version: _app.version}) + '</span></p>' +
         '<p><b>' + i18next.t('app_page.help_box.useful_links') + '</b></p>' +
         // '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.doc') + '</button></p>' +
         '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.carnet_hypotheses') + '</button></p>' +
@@ -1240,7 +1240,8 @@ var _app = {
     targeted_layer_added: false,
     current_functionnality: undefined,
     layer_to_id: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]]),
-    id_to_layer: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]])
+    id_to_layer: new Map([["Sphere", "Sphere"], ["World", "World"], ["Graticule", "Graticule"]]),
+    version: document.querySelector("#header").getAttribute('v')
 };
 
 // A bunch of references to the buttons used in the layer manager
@@ -1340,6 +1341,10 @@ function parseQuery(search) {
     || /Trident\/\d./i.test(navigator.userAgent)
     || /Edge\/\d./i.test(navigator.userAgent)) ? true : false
   )();
+  // window.isOldMS_Firefox = (() => (/Firefox/i.test(navigator.userAgent)
+  //   && (/Windows NT 6.0/i.test(navigator.userAgent)
+  //       || /Windows NT 6.1/i.test(navigator.userAgent))) ? true : false
+  // )();
   if (window.location.search) {
     let parsed_querystring = parseQuery(window.location.search);
     params.reload = parsed_querystring.reload;

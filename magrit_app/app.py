@@ -91,7 +91,8 @@ async def index_handler(request):
             request.app['redis_conn'].incr('single_view_onepage'),
             loop=request.app.loop)
     session['already_seen'] = True
-    return {'app_name': request.app['app_name']}
+    return {'app_name': request.app['app_name'],
+            'version': request.app['version']}
 
 
 async def geojson_to_topojson2(data, layer_name):
@@ -432,7 +433,8 @@ async def convert_extrabasemap(request):
 async def serve_main_page(request):
     session_redis = await get_session(request)
     get_user_id(session_redis, request.app['app_users'], request.app)
-    return {"app_name": request.app["app_name"]}
+    return {'app_name': request.app['app_name'],
+            'version': request.app['version']}
 
 
 @aiohttp_jinja2.template('contact_form.html')
@@ -1172,6 +1174,11 @@ def _init(loop):
         os.chdir(app_real_path)
     return init(loop)
 
+def get_version():
+    with open('__init__.py', 'r') as f:
+        ver = f.read()
+    ix = ver.find("'")
+    return ver[ix+1:ix + ver[ix+1:].find("'")+1]
 
 def create_app(app_name="Magrit"):
     # Entry point when using Gunicorn to run the application with something like :
@@ -1184,15 +1191,19 @@ def create_app(app_name="Magrit"):
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(init(loop, None))
     app['app_name'] = app_name
+    app['version'] = get_version()
     return app
-
 
 def main():
     # Entry point used when the application is started directly like :
     # $ ./magrit_app/app.py --name AppName --port 9999
     #   or when installed and started like :
     # $ magrit --name AppName --port 9999
-    arguments = docopt.docopt(__doc__, version='Magrit 0.2.0')
+    app_real_path = os.path.dirname(os.path.realpath(__file__))
+    if app_real_path != os.getcwd():
+        os.chdir(app_real_path)
+    version = get_version()
+    arguments = docopt.docopt(__doc__, version='Magrit ' + version)
     if not arguments["--port"].isnumeric():
         print(__doc__[__doc__.find("Usage:"):__doc__.find("\nOptions")])
         sys.exit("Error: Invalid port value")
@@ -1204,15 +1215,12 @@ def main():
 
     watch_change = True if arguments['--dev'] else False
 
-    app_real_path = os.path.dirname(os.path.realpath(__file__))
-    if app_real_path != os.getcwd():
-        os.chdir(app_real_path)
-
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     loop = asyncio.get_event_loop()
     asyncio.set_event_loop(loop)
     srv, app, handler = loop.run_until_complete(init(loop, port, watch_change))
     app['app_name'] = arguments["--name-app"]
+    app['version'] = version
     app['logger'].info('serving on' + str(srv.sockets[0].getsockname()))
     try:
         loop.run_forever()

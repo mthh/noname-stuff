@@ -564,7 +564,8 @@ const clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
       const dlAnchorElem = document.createElement('a');
       dlAnchorElem.setAttribute('href', blobUrl);
       dlAnchorElem.setAttribute('download', filename);
-      if(window.isIE){
+      // if (window.isIE || window.isOldMS_Firefox) {
+      if (window.isIE) {
         swal({
           title: "",
           html: '<div class="link_download"><p>' + i18next.t('app_page.common.download_link') + '</p></div>',

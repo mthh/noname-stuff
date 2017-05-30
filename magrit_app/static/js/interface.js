@@ -559,38 +559,44 @@ function handle_dataset(f, target_layer_on_add){
             name = f.name;
 
         reader.onload = function(e) {
-            var data = e.target.result;
-            let sep = data.split("\n")[0];
-            if(sep.indexOf("\t") > -1) {
-                sep = "\t";
-            } else if (sep.indexOf(";") > -1){
-                sep = ";";
-            } else {
-                sep = ",";
-            }
+            let data = e.target.result;
+            let encoding = jschardet.detect(data).encoding;
+            let new_reader = new FileReader();
+            new_reader.onload = function(ev) {
+              data = ev.target.result;
+              let sep = data.split("\n")[0];
+              if(sep.indexOf("\t") > -1) {
+                  sep = "\t";
+              } else if (sep.indexOf(";") > -1){
+                  sep = ";";
+              } else {
+                  sep = ",";
+              }
 
-            let tmp_dataset = d3.dsvFormat(sep).parse(data);
-            let field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(el => el.toLowerCase ? el.toLowerCase() : el);
-            if(field_names.indexOf("x") > -1 || field_names.indexOf("lat") > -1 || field_names.indexOf("latitude") > -1){
-                if(field_names.indexOf("y") > -1 || field_names.indexOf("lon") > -1 || field_names.indexOf("longitude") > -1 || field_names.indexOf("long") > -1 || field_names.indexOf("lng") > -1){
-                    if(target_layer_on_add && _app.targeted_layer_added){
-                        swal({title: i18next.t("app_page.common.error") + "!",
-                              text: i18next.t('app_page.common.error_only_one'),
-                              customClass: 'swal2_custom',
-                              type: "error",
-                              allowEscapeKey: false,
-                              allowOutsideClick: false});
+              let tmp_dataset = d3.dsvFormat(sep).parse(data);
+              let field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(el => el.toLowerCase ? el.toLowerCase() : el);
+              if(field_names.indexOf("x") > -1 || field_names.indexOf("lat") > -1 || field_names.indexOf("latitude") > -1){
+                  if(field_names.indexOf("y") > -1 || field_names.indexOf("lon") > -1 || field_names.indexOf("longitude") > -1 || field_names.indexOf("long") > -1 || field_names.indexOf("lng") > -1){
+                      if(target_layer_on_add && _app.targeted_layer_added){
+                          swal({title: i18next.t("app_page.common.error") + "!",
+                                text: i18next.t('app_page.common.error_only_one'),
+                                customClass: 'swal2_custom',
+                                type: "error",
+                                allowEscapeKey: false,
+                                allowOutsideClick: false});
 
-                    } else {
-                        add_csv_geom(data, name.substring(0, name.indexOf('.csv')));
-                    }
-                    return;
-                }
+                      } else {
+                          add_csv_geom(data, name.substring(0, name.indexOf('.csv')));
+                      }
+                      return;
+                  }
+              }
+              dataset_name = name.substring(0, name.indexOf('.csv'));
+              add_dataset(tmp_dataset);
             }
-            dataset_name = name.substring(0, name.indexOf('.csv'));
-            add_dataset(tmp_dataset);
+            new_reader.readAsText(f, encoding);
         };
-        reader.readAsText(f);
+        reader.readAsBinaryString(f);
     }
 
     if(joined_dataset.length !== 0){
