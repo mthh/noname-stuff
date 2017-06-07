@@ -134,6 +134,9 @@ function setUpInterface(reload_project) {
             return;
         } else if (val == 'last_projection') {
             val = tmp.name;
+        } else if (val == 'ConicConformalFrance') {
+            val = 'def_proj4';
+            _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
         }
 
         if (val == 'def_proj4') {
@@ -1106,7 +1109,7 @@ function parseQuery(search) {
         lng: lang,
         fallbackLng: existing_lang[0],
         backend: {
-            loadPath: 'static/locales/{{lng}}/translation.844704a56ab0.json'
+            loadPath: 'static/locales/{{lng}}/translation.db45f698651b.json'
         }
     }, function (err, tr) {
         if (err) {
@@ -1258,7 +1261,7 @@ function reproj_symbol_layer() {
                 // Reproject pictograms :
                 map.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).attrs(function (d, i) {
                     var coords = path.centroid(d.geometry),
-                        size = +this.getAttribute('width').slice(0, -2) / 2;
+                        size = +this.getAttribute('width').replace('px', '') / 2;
                     return { 'x': coords[0] - size, 'y': coords[1] - size };
                 });
             } else if (symbol == "circle") {
@@ -5717,7 +5720,7 @@ function make_prop_line(rendering_params, geojson_line_layer) {
     _app.layer_to_id.set(layer_to_add, layer_id);
     _app.id_to_layer.set(layer_id, layer_to_add);
     result_data[layer_to_add] = [];
-    map.insert("g", '.legend').attrs({ id: layer_id, class: 'result_layer layer' }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
+    map.insert("g", '.legend').attrs({ id: layer_id, class: 'layer' }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
         result_data[layer_to_add].push(d.properties);
         return {
             fill: 'transparent', stroke: d.properties.color, 'stroke-width': d.properties[t_field_name] };
@@ -5851,7 +5854,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
     _app.id_to_layer.set(layer_id, layer_to_add);
     result_data[layer_to_add] = [];
     if (symbol_type === 'circle') {
-        map.insert("g", '.legend').attr("id", layer_id).attr("class", "result_layer layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
+        map.insert("g", '.legend').attr("id", layer_id).attr("class", "layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
             result_data[layer_to_add].push(d.properties);
             return {
                 'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
@@ -5863,7 +5866,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
             return d.properties.color;
         }).style("stroke", "black").style("stroke-width", 1 / zs);
     } else if (symbol_type === "rect") {
-        map.insert("g", '.legend').attr("id", layer_id).attr("class", "result_layer layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
+        map.insert("g", '.legend').attr("id", layer_id).attr("class", "layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
             var size = d.properties[t_field_name];
             result_data[layer_to_add].push(d.properties);
             return {
@@ -6441,7 +6444,7 @@ var render_discont = function render_discont() {
         }).filter(function (d) {
             return d[1] !== undefined;
         });
-        var result_layer = map.insert("g", '.legend').attr("id", id_layer).styles({ "stroke-linecap": "round", "stroke-linejoin": "round" }).attr("class", "result_layer layer");
+        var result_layer = map.insert("g", '.legend').attr("id", id_layer).styles({ "stroke-linecap": "round", "stroke-linejoin": "round" }).attr("class", "layer");
 
         result_data[new_layer_name] = [];
         var data_result = result_data[new_layer_name],
@@ -7202,7 +7205,7 @@ var render_label = function render_label(layer, rendering_params, options) {
             } }];
     };
 
-    var selection = map.insert("g", '.legend').attrs({ id: layer_id, class: "layer result_layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text");
+    var selection = map.insert("g", '.legend').attrs({ id: layer_id, class: "layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text");
     if (pt_position) {
         selection.attrs(function (d, i) {
             return {
@@ -7308,7 +7311,7 @@ var render_label_graticule = function render_label_graticule(layer, rendering_pa
             } }];
     };
 
-    map.insert("g", '.legend').attrs({ id: layer_id, class: "layer result_layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text").attrs(function (d, i) {
+    map.insert("g", '.legend').attrs({ id: layer_id, class: "layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text").attrs(function (d, i) {
         var pt = path.centroid(d.geometry);
         return {
             "id": "Feature_" + i,
@@ -8559,10 +8562,17 @@ function scale_to_bbox(bbox) {
 // Browse and upload buttons + related actions (conversion + displaying)
 ////////////////////////////////////////////////////////////////////////
 
+/**
+* Maxium allowed input size in bytes. If the input file is larger than
+* this size, the user will receive an alert.
+* In the case of sending multiple files unziped, this limit corresponds
+* to the sum of the size of each file.
+*/
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var MAX_INPUT_SIZE = 20200000; // max allowed input size in bytes
-// const ALERT_INPUT_SIZE = 870400; // If the input is larger than this size, the user will receive an alert
+var MAX_INPUT_SIZE = 25200000;
+
 /**
 * Function triggered when some images of the interface are clicked
 * in order to create an <input> element, simulate a click on it, let the user
@@ -8597,18 +8607,21 @@ function click_button_add_layer() {
 }
 
 function handle_upload_files(files, target_layer_on_add, elem) {
+    var tot_size = Array.prototype.map.call(files, function (f) {
+        return f.size;
+    }).reduce(function (a, b) {
+        return a + b;
+    }, 0);
 
-    for (var i = 0; i < files.length; i++) {
-        if (files[i].size > MAX_INPUT_SIZE) {
-            // elem.style.border = '3px dashed red';
-            elem.style.border = '';
-            return swal({ title: i18next.t("app_page.common.error") + "!",
-                text: i18next.t("app_page.common.too_large_input"),
-                type: "error",
-                customClass: 'swal2_custom',
-                allowEscapeKey: false,
-                allowOutsideClick: false });
-        }
+    if (tot_size > MAX_INPUT_SIZE) {
+        // elem.style.border = '3px dashed red';
+        elem.style.border = '';
+        return swal({ title: i18next.t("app_page.common.error") + "!",
+            text: i18next.t("app_page.common.too_large_input"),
+            type: "error",
+            customClass: 'swal2_custom',
+            allowEscapeKey: false,
+            allowOutsideClick: false });
     }
 
     if (!(files.length == 1)) {
@@ -9230,7 +9243,7 @@ function add_dataset(readed_dataset) {
     if (cols.map(function (f) {
         return readed_dataset[readed_dataset.length - 1][f];
     }).every(function (f) {
-        return f == "";
+        return f === "" || f === undefined;
     })) {
         readed_dataset = readed_dataset.slice(0, readed_dataset.length - 1);
     }
@@ -9632,9 +9645,6 @@ function scale_to_lyr(name) {
     if (!bbox_layer_path) return;
     s = 0.95 / Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h) * proj.scale();
     t = [0, 0];
-    if (current_proj_name === "ConicConformalFrance") {
-        s *= 5000;
-    }
     proj.scale(s).translate(t);
     map.selectAll(".layer").selectAll("path").attr("d", path);
     reproj_symbol_layer();
@@ -12153,6 +12163,15 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var max = Math.max;
+var min = Math.min;
+var abs = Math.abs;
+var sin = Math.sin;
+var cos = Math.cos;
+var PI = Math.PI;
+var atan2 = Math.atan2;
+var sqrt = Math.sqrt;
+
 var UserArrow = function () {
   function UserArrow(id, origin_pt, destination_pt) {
     var parent = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : undefined;
@@ -12289,7 +12308,8 @@ var UserArrow = function () {
         x1: this.pt1[0],
         y1: this.pt1[1],
         x2: this.pt2[0],
-        y2: this.pt2[1] }).styles({ 'stroke-width': this.stroke_width, stroke: 'rgb(0, 0, 0)' });
+        y2: this.pt2[1] }).styles({ 'stroke-width': this.stroke_width,
+        stroke: 'rgb(0, 0, 0)' });
 
       this.arrow.call(this.drag_behavior);
 
@@ -12397,14 +12417,14 @@ var UserArrow = function () {
     value: function calcAngle() {
       var dx = this.pt2[0] - this.pt1[0],
           dy = this.pt2[1] - this.pt1[1];
-      return Math.atan2(dy, dx) * (180 / Math.PI);
+      return atan2(dy, dx) * (180 / PI);
     }
   }, {
     key: 'calcDestFromOAD',
     value: function calcDestFromOAD(origin, angle, distance) {
-      var theta = angle / (180 / Math.PI),
-          dx = distance * Math.cos(theta),
-          dy = distance * Math.sin(theta);
+      var theta = angle / (180 / PI),
+          dx = distance * cos(theta),
+          dy = distance * sin(theta);
       return [origin[0] + dx, origin[1] + dy];
     }
   }, {
@@ -12469,7 +12489,7 @@ var UserArrow = function () {
         elem.dispatchEvent(new Event('change'));
       });
       s2.insert('input').attrs({ id: 'arrow_angle', type: 'range', value: angle, min: 0, max: 360, step: 1 }).styles({ width: '80px', 'vertical-align': 'middle', float: 'right' }).on('change', function () {
-        var distance = Math.sqrt((self.pt1[0] - self.pt2[0]) * (self.pt1[0] - self.pt2[0]) + (self.pt1[1] - self.pt2[1]) * (self.pt1[1] - self.pt2[1]));
+        var distance = sqrt((self.pt1[0] - self.pt2[0]) * (self.pt1[0] - self.pt2[0]) + (self.pt1[1] - self.pt2[1]) * (self.pt1[1] - self.pt2[1]));
         var angle = -+this.value;
 
         var _self$calcDestFromOAD = self.calcDestFromOAD(self.pt1, angle, distance),
@@ -12488,20 +12508,19 @@ var UserArrow = function () {
 }();
 
 var Textbox = function () {
-  function Textbox(parent, new_id_txt_annot) {
+  function Textbox(parent, id_text_annot) {
     var _this2 = this;
 
     var position = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [10, 30];
 
     _classCallCheck(this, Textbox);
 
+    var self = this;
     this.x = position[0];
     this.y = position[1];
-    this.fontsize = 14;
-
-    var current_timeout = void 0;
-    var context_menu = new ContextMenu(),
-        getItems = function getItems() {
+    this.fontSize = 14;
+    var context_menu = new ContextMenu();
+    var getItems = function getItems() {
       return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
           _this2.editStyle();
         } }, { name: i18next.t('app_page.common.up_element'), action: function action() {
@@ -12512,10 +12531,9 @@ var Textbox = function () {
           _this2.remove();
         } }];
     };
-
     var drag_txt_annot = d3.drag().subject(function () {
-      var t = d3.select(this.parentElement);
-      var snap_lines = get_coords_snap_lines(this.parentElement.id);
+      var t = d3.select(this).select('text');
+      var snap_lines = get_coords_snap_lines(this.id);
       return {
         x: t.attr('x'),
         y: t.attr('y'),
@@ -12529,169 +12547,182 @@ var Textbox = function () {
       if (d3.event.subject && !d3.event.subject.map_locked) {
         handle_click_hand('unlock');
       }
-      pos_lgds_elem.set(this.parentElement.id, this.getBoundingClientRect());
+      pos_lgds_elem.set(this.id, this.getBoundingClientRect());
     }).on('drag', function () {
+      var _this3 = this;
+
       d3.event.sourceEvent.preventDefault();
-      d3.select(this.parentElement).attrs({ x: +d3.event.x, y: +d3.event.y });
+      var elem = d3.select(this).select('text').attrs({ x: +d3.event.x, y: +d3.event.y });
+      var transform = elem.attr('transform');
+      if (transform) {
+        var v = +transform.match(/[-.0-9]+/g)[0];
+        elem.attr('transform', 'rotate(' + v + ', ' + (d3.event.x + self.width) + ', ' + (d3.event.y + self.height) + ')');
+      }
+      elem.selectAll('tspan').attr('x', +d3.event.x);
 
       if (_app.autoalign_features) {
-        var bbox = this.getBoundingClientRect(),
-            xmin = this.parentElement.x.baseVal.value,
-            xmax = xmin + bbox.width,
-            ymin = this.parentElement.y.baseVal.value,
-            ymax = ymin + bbox.height,
-            snap_lines_x = d3.event.subject.snap_lines.x,
-            snap_lines_y = d3.event.subject.snap_lines.y;
-        for (var i = 0; i < snap_lines_x.length; i++) {
-          if (Math.abs(snap_lines_x[i][0] - xmin) < 10) {
-            var _y1 = Math.min(Math.min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
-            var _y2 = Math.max(Math.max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
-            make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y1, _y2);
-            this.parentElement.x.baseVal.value = snap_lines_x[i][0];
+        (function () {
+          var bbox = _this3.getBoundingClientRect(),
+              xmin = _this3.x.baseVal.value,
+              xmax = xmin + bbox.width,
+              ymin = _this3.y.baseVal.value,
+              ymax = ymin + bbox.height,
+              snap_lines_x = d3.event.subject.snap_lines.x,
+              snap_lines_y = d3.event.subject.snap_lines.y;
+
+          var _loop = function _loop(i) {
+            if (abs(snap_lines_x[i][0] - xmin) < 10) {
+              var _y1 = min(min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
+              var _y2 = max(max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
+              make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y1, _y2);
+              Array.prototype.forEach.call(_this3.querySelectorAll('tspan'), function (el) {
+                el.x.baseVal.value = snap_lines_x[i][0];
+              });
+            }
+            if (abs(snap_lines_x[i][0] - xmax) < 10) {
+              var _y = min(min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
+              var _y3 = max(max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
+              make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y, _y3);
+              Array.prototype.forEach.call(_this3.querySelectorAll('tspan'), function (el) {
+                el.x.baseVal.value = snap_lines_x[i][0] - bbox.width;
+              });
+            }
+            if (abs(snap_lines_y[i][0] - ymin) < 10) {
+              var x1 = min(min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
+              var x2 = max(max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
+              make_red_line_snap(x1, x2, snap_lines_y[i][0], snap_lines_y[i][0]);
+              _this3.y.baseVal.value = snap_lines_y[i][0];
+            }
+            if (abs(snap_lines_y[i][0] - ymax) < 10) {
+              var _x5 = min(min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
+              var _x6 = max(max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
+              make_red_line_snap(_x5, _x6, snap_lines_y[i][0], snap_lines_y[i][0]);
+              _this3.y.baseVal.value = snap_lines_y[i][0] - bbox.height;
+            }
+          };
+
+          for (var i = 0; i < snap_lines_x.length; i++) {
+            _loop(i);
           }
-          if (Math.abs(snap_lines_x[i][0] - xmax) < 10) {
-            var _y = Math.min(Math.min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
-            var _y3 = Math.max(Math.max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
-            make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y, _y3);
-            this.parentElement.x.baseVal.value = snap_lines_x[i][0] - bbox.width;
-          }
-          if (Math.abs(snap_lines_y[i][0] - ymin) < 10) {
-            var x1 = Math.min(Math.min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
-            var x2 = Math.max(Math.max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
-            make_red_line_snap(x1, x2, snap_lines_y[i][0], snap_lines_y[i][0]);
-            this.parentElement.y.baseVal.value = snap_lines_y[i][0];
-          }
-          if (Math.abs(snap_lines_y[i][0] - ymax) < 10) {
-            var _x5 = Math.min(Math.min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
-            var _x6 = Math.max(Math.max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
-            make_red_line_snap(_x5, _x6, snap_lines_y[i][0], snap_lines_y[i][0]);
-            this.parentElement.y.baseVal.value = snap_lines_y[i][0] - bbox.height;
-          }
-        }
+        })();
       }
+      elem.attr('x', elem.select('tspan').attr('x'));
+      self.x = elem.attr('x');
+      self.y = elem.attr('y');
+      if (transform) {
+        var _v = +transform.match(/[-.0-9]+/g)[0];
+        elem.attr('transform', 'rotate(' + _v + ', ' + self.x + ', ' + self.y + ')');
+      }
+      self.update_bbox();
     });
-
-    var foreign_obj = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-    foreign_obj.setAttributeNS(null, 'x', this.x);
-    foreign_obj.setAttributeNS(null, 'y', this.y);
-    foreign_obj.setAttributeNS(null, 'overflow', 'visible');
-    foreign_obj.setAttributeNS(null, 'width', '100%');
-    foreign_obj.setAttributeNS(null, 'height', '100%');
-    foreign_obj.setAttributeNS(null, 'class', 'legend txt_annot');
-    foreign_obj.id = new_id_txt_annot;
-    foreign_obj.style.cursor = 'pointer';
-
-    var inner_p = document.createElement('p');
-    inner_p.setAttribute('id', 'in_' + new_id_txt_annot);
-    inner_p.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    // inner_p.style = 'display:table-cell;padding:10px;color:#000;'
-    //         + "opacity:1;font-family:'Verdana,Geneva,sans-serif';font-size:14px;white-space: pre;"
-    //         + 'word-wrap: normal; overflow: visible; overflow-y: visible; overflow-x: visible;';
-    inner_p.style.display = 'table-cell';
-    inner_p.style.padding = '10px';
-    inner_p.style.color = '#000';
-    inner_p.style.opacity = '1';
-    inner_p.style.fontFamily = 'Verdana,Geneva,sans-serif';
-    inner_p.style.fontSize = "14px";
-    inner_p.style.whiteSpace = 'pre';
-    inner_p.style.wordWrap = 'normal';
-    inner_p.style.overflow = 'visible';
-    inner_p.style.overflowY = 'visible';
-    inner_p.style.overflowX = 'visible';
-    inner_p.innerHTML = i18next.t('app_page.text_box_edit_box.constructor_default');
-    foreign_obj.appendChild(inner_p);
-    parent.appendChild(foreign_obj);
-
-    // foreignObj size was set to 100% for fully rendering its content,
-    // now we can reduce its size to the inner content
-    // (it will avoid it to overlay some other svg elements)
-    {
-      var inner_bbox = inner_p.getBoundingClientRect();
-      foreign_obj.setAttributeNS(null, 'width', [inner_bbox.width + 2, 'px'].join('')); // +2px are for the border
-      foreign_obj.setAttributeNS(null, 'height', [inner_bbox.height + 2, 'px'].join(''));
-    }
-
-    var frgn_obj = map.select('#' + new_id_txt_annot),
-        inner_ft = frgn_obj.select('p');
-    inner_ft.call(drag_txt_annot);
-
-    inner_ft.on('contextmenu', function () {
-      context_menu.showMenu(d3.event, document.querySelector('body'), getItems());
+    var group_elem = map.append('g').attrs({ id: id_text_annot, class: 'legend txt_annot' }).styles({ cursor: 'pointer' }).on('mouseover', function () {
+      under_rect.style('fill-opacity', 0.1);
+    }).on('mouseout', function () {
+      under_rect.style('fill-opacity', 0);
     });
-
-    inner_ft.on('dblclick', function () {
+    var under_rect = group_elem.append('rect').styles({ fill: 'green', 'fill-opacity': 0 });
+    var text_elem = group_elem.append('text').attrs({ x: this.x, y: this.y, id: ['in_', id_text_annot].join('') }).styles({
+      'font-size': this.fontSize + 'px',
+      'font-family': 'Arial,Helvetica,sans-serif',
+      'text-anchor': 'start'
+    });
+    text_elem.append('tspan').attr('x', this.x).text(i18next.t('app_page.text_box_edit_box.constructor_default'));
+    group_elem.call(drag_txt_annot);
+    group_elem.on('dblclick', function () {
       d3.event.preventDefault();
       d3.event.stopPropagation();
       _this2.editStyle();
+    }).on('contextmenu', function () {
+      context_menu.showMenu(d3.event, document.querySelector('body'), getItems());
     });
 
-    inner_ft.on('mouseover', function () {
-      inner_ft.style('background-color', 'rgba(0, 128, 0, 0.1)');
-      // toogle the size of the container to 100% while we are using it :
-      foreign_obj.setAttributeNS(null, 'width', '100%');
-      foreign_obj.setAttributeNS(null, 'height', '100%');
-    });
-
-    inner_ft.on('mouseout', function () {
-      inner_ft.style('background-color', null);
-      // Recompute the size of the p inside the foreignObj
-      var inner_bbox = inner_p.getBoundingClientRect();
-      foreign_obj.setAttributeNS(null, 'width', [inner_bbox.width + 2, 'px'].join('')); // +2px are for the border
-      foreign_obj.setAttributeNS(null, 'height', [inner_bbox.height + 2, 'px'].join(''));
-    });
-
-    this.text_annot = frgn_obj;
-    this.font_family = 'Verdana,Geneva,sans-serif';
+    this.lineHeight = Math.round(this.fontSize * 1.4);
+    this.textAnnot = text_elem;
+    this.group = group_elem;
+    this.fontFamily = 'Verdana,Geneva,sans-serif';
+    this.anchor = "start";
     this.buffer = undefined;
-    this.id = new_id_txt_annot;
-    pos_lgds_elem.set(this.id, foreign_obj.getBoundingClientRect());
-    return this;
+    this.id = id_text_annot;
+
+    this.update_bbox();
+    pos_lgds_elem.set(this.id, group_elem.node().getBoundingClientRect());
   }
 
   _createClass(Textbox, [{
     key: 'remove',
     value: function remove() {
-      pos_lgds_elem.delete(this.text_annot.attr('id'));
-      this.text_annot.remove();
+      pos_lgds_elem.delete(this.group.attr('id'));
+      this.group.remove();
+    }
+  }, {
+    key: 'update_text',
+    value: function update_text(new_content) {
+      var split = new_content.split('\n');
+      this.textAnnot.selectAll('tspan').remove();
+      for (var i = 0; i < split.length; i++) {
+        this.textAnnot.append('tspan').attr('x', this.x).attr('dy', i === 0 ? null : this.lineHeight).html(split[i]);
+      }
+      this.update_bbox();
+    }
+  }, {
+    key: 'get_text_content',
+    value: function get_text_content() {
+      var content = [];
+      this.textAnnot.selectAll('tspan').each(function () {
+        content.push(this.innerHTML);
+      });
+      return content.join('\n');
+    }
+  }, {
+    key: 'update_bbox',
+    value: function update_bbox() {
+      var bbox = this.textAnnot.node().getBoundingClientRect();
+
+      var _get_map_xy = get_map_xy0(),
+          x0 = _get_map_xy.x,
+          y0 = _get_map_xy.y;
+
+      this.width = bbox.width;
+      this.height = bbox.height;
+      this.group.select('rect').attrs({ x: bbox.left - x0 - 10, y: bbox.top - y0 - 10, height: this.height + 20, width: this.width + 20 });
     }
   }, {
     key: 'editStyle',
     value: function editStyle() {
-      var _this3 = this;
-
       var map_xy0 = get_map_xy0();
-      var self = this,
-          inner_p = this.text_annot.select('p');
-
+      var self = this;
+      var text_elem = self.textAnnot;
       var existing_box = document.querySelector('.styleTextAnnotation');
       if (existing_box) existing_box.remove();
 
       var current_options = {
-        size: inner_p.style('font-size').split('px')[0],
-        color: inner_p.style('color'),
-        content: unescape(inner_p.html()),
-        transform_rotate: this.text_annot.attr('transform'),
-        x: this.text_annot.attr('x'),
-        y: this.text_annot.attr('y'),
-        font_weight: inner_p.style('font-weight'),
-        font_style: inner_p.style('font-style'),
-        text_decoration: inner_p.style('text-decoration'),
-        buffer: self.buffer != undefined ? cloneObj(self.buffer) : undefined,
-        text_shadow: inner_p.style('text-shadow'),
-        font_family: self.font_family
+        size: self.fontSize,
+        color: text_elem.style('fill'),
+        content: unescape(this.get_text_content()),
+        transform_rotate: text_elem.attr('transform'),
+        x: text_elem.attr('x'),
+        y: text_elem.attr('y'),
+        font_weight: text_elem.style('font-weight'),
+        font_style: text_elem.style('font-style'),
+        text_decoration: text_elem.style('text-decoration'),
+        buffer: self.buffer !== undefined ? cloneObj(self.buffer) : undefined,
+        text_shadow: text_elem.style('text-shadow'),
+        font_family: self.fontFamily
       };
-      current_options.font_weight = current_options.font_weight == '400' || current_options.font_weight == '' ? '' : 'bold';
+      current_options.font_weight = current_options.font_weight === '400' || current_options.font_weight === '' ? '' : 'bold';
       make_confirm_dialog2('styleTextAnnotation', i18next.t('app_page.text_box_edit_box.title'), { widthFitContent: true }).then(function (confirmed) {
         if (!confirmed) {
-          self.text_annot.select('p').text(current_options.content).styles({ color: current_options.color,
+          text_elem.text(current_options.content).styles({
+            color: current_options.color,
             'font-size': current_options.size + 'px',
             'font-weight': current_options.font_weight,
             'text-decoration': current_options.text_decoration,
             'font-style': current_options.font_style,
-            'text-shadow': current_options.text_shadow });
-          self.fontsize = current_options.size;
-          self.font_family = current_options.font_family;
-          self.text_annot.attr('transform', current_options.transform_rotate);
+            'text-shadow': current_options.text_shadow
+          });
+          self.fontSize = current_options.size;
+          self.fontFamily = current_options.font_family;
+          text_elem.attr('transform', current_options.transform_rotate);
           self.buffer = current_options.buffer;
         } else if (!buffer_txt_chk.node().checked) {
           self.buffer = undefined;
@@ -12700,13 +12731,13 @@ var Textbox = function () {
       var box_content = d3.select('.styleTextAnnotation').select('.modal-body').style('width', '295px').insert('div').attr('id', 'styleTextAnnotation');
 
       var current_rotate = typeof current_options.transform_rotate === 'string' ? current_options.transform_rotate.match(/[-.0-9]+/g) : 0;
-      if (current_rotate && current_rotate.length == 3) {
+      if (current_rotate && current_rotate.length === 3) {
         current_rotate = +current_rotate[0];
       } else {
         current_rotate = 0;
       }
 
-      var bbox = inner_p.node().getBoundingClientRect(),
+      var bbox = text_elem.node().getBoundingClientRect(),
           nx = bbox.left - map_xy0.x,
           ny = bbox.top - map_xy0.y,
           x_center = nx + bbox.width / 2,
@@ -12715,7 +12746,8 @@ var Textbox = function () {
       var option_rotation = box_content.append('p').attr('class', 'line_elem2');
       option_rotation.append('span').html(i18next.t('app_page.text_box_edit_box.rotation'));
       option_rotation.append('span').style('float', 'right').html(' °');
-      option_rotation.append('input').attrs({ type: 'number',
+      option_rotation.append('input').attrs({
+        type: 'number',
         min: 0,
         max: 360,
         step: 'any',
@@ -12723,117 +12755,147 @@ var Textbox = function () {
         class: 'without_spinner',
         id: 'textbox_txt_rotate' }).styles({ width: '40px', float: 'right' }).on('change', function () {
         var rotate_value = +this.value;
-        self.text_annot.attrs({ x: nx, y: ny, transform: 'rotate(' + [rotate_value, x_center, y_center] + ')' });
+        text_elem.attrs({ x: nx, y: ny, transform: 'rotate(' + [rotate_value, x_center, y_center] + ')' });
+        text_elem.selectAll('tspan').attr('x', nx);
         document.getElementById('textbox_range_rotate').value = rotate_value;
       });
 
       option_rotation.append('input').attrs({ type: 'range', min: 0, max: 360, step: 0.1, id: 'textbox_range_rotate', value: current_rotate }).styles({ 'vertical-align': 'middle', width: '100px', float: 'right', margin: 'auto 10px' }).on('change', function () {
         var rotate_value = +this.value;
-        self.text_annot.attrs({ x: nx, y: ny, transform: 'rotate(' + [rotate_value, x_center, y_center] + ')' });
+        text_elem.attrs({ x: nx, y: ny, transform: 'rotate(' + [rotate_value, x_center, y_center] + ')' });
+        text_elem.selectAll('tspan').attr('x', nx);
         document.getElementById('textbox_txt_rotate').value = rotate_value;
       });
 
-      var options_font = box_content.append('p'),
-          font_select = options_font.insert('select').on('change', function () {
-        inner_p.style('font-family', this.value);
-        self.font_family = this.value;
+      var options_font = box_content.append('p');
+      var font_select = options_font.insert('select').on('change', function () {
+        text_elem.style('font-family', this.value);
+        self.fontFamily = this.value;
       });
 
       available_fonts.forEach(function (font) {
         font_select.append('option').text(font[0]).attr('value', font[1]);
       });
       font_select.node().selectedIndex = available_fonts.map(function (d) {
-        return d[1] == _this3.font_family ? '1' : '0';
+        return d[1] === self.fontFamily ? '1' : '0';
       }).indexOf('1');
 
-      options_font.append('input').attrs({ type: 'number', id: 'font_size', min: 0, max: 34, step: 0.1, value: this.fontsize }).style('width', '60px').on('change', function () {
-        self.fontsize = +this.value;
-        inner_p.style('font-size', self.fontsize + 'px');
+      options_font.append('input').attrs({ type: 'number', id: 'font_size', min: 0, max: 34, step: 0.1, value: self.fontSize }).styles({ width: '60px', margin: '0 15px' }).on('change', function () {
+        self.fontSize = +this.value;
+        self.lineHeight = Math.round(self.fontSize * 1.4);
+        text_elem.style('font-size', self.fontSize + 'px');
+        text_elem.selectAll('tspan').each(function (d, i) {
+          if (i !== 0) {
+            d3.select(this).attr('dy', self.lineHeight);
+          }
+        });
       });
 
       options_font.append('input').attrs({ type: 'color', id: 'font_color', value: rgb2hex(current_options.color) }).style('width', '60px').on('change', function () {
-        inner_p.style('color', this.value);
+        text_elem.style('fill', this.value);
       });
 
-      var options_format = box_content.append('p').style('text-align', 'center'),
-          btn_bold = options_format.insert('span').attr('class', current_options.font_weight == 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">'),
-          btn_italic = options_format.insert('span').attr('class', current_options.font_style == 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">'),
-          btn_underline = options_format.insert('span').attr('class', current_options.text_decoration == 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
+      var options_format = box_content.append('p').style('text-align', 'center');
+      var btn_bold = options_format.insert('span').attr('class', current_options.font_weight == 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">');
+      var btn_italic = options_format.insert('span').attr('class', current_options.font_style == 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">');
+      var btn_underline = options_format.insert('span').attr('class', current_options.text_decoration == 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
 
       var content_modif_zone = box_content.append('p');
       content_modif_zone.append('span').html(i18next.t('app_page.text_box_edit_box.content'));
-      content_modif_zone.append('span').html('<br>');
-      // let textarea = content_modif_zone.append("textarea")
-      content_modif_zone.append('textarea').attr('id', 'annotation_content').styles({ margin: '5px 0px 0px', width: '100%' }).on('keyup', function () {
-        inner_p.html(this.value);
+      var right = content_modif_zone.append('span').attr('class', 'align-option').styles({ 'font-size': '11px', 'font-weight': '', 'margin-left': '10px', 'float': 'right' }).html('right').on('click', function () {
+        content_modif_zone.selectAll('.align-option').style('font-weight', '');
+        right.style('font-weight', 'bold').style("font-size", '12px');
+        text_elem.style('text-anchor', 'end');
+        self.anchor = 'end';
+        self.update_bbox();
       });
-      // textarea = textarea.node();
+      var center = content_modif_zone.append('span').styles({ 'font-size': '11px', 'font-weight': '', 'margin-left': '10px', 'float': 'right' }).attr('class', 'align-option').html('center').on('click', function () {
+        content_modif_zone.selectAll('.align-option').style('font-weight', '');
+        center.style('font-weight', 'bold').style('font-size', '12px');
+        text_elem.style('text-anchor', 'middle');
+        self.anchor = 'middle';
+        self.update_bbox();
+      });
+      var left = content_modif_zone.append('span').styles({ 'font-size': '11px', 'font-weight': '', 'margin-left': '10px', 'float': 'right' }).attr('class', 'align-option').html('left').on('click', function () {
+        content_modif_zone.selectAll('.align-option').style('font-weight', '').style('font-size', '11px');
+        left.style('font-weight', 'bold').style('font-size', '12px');
+        text_elem.style('text-anchor', 'start');
+        self.anchor = 'start';
+        self.update_bbox();
+      });
+      var selected = self.anchor === 'start' ? left : self.anchor === 'middle' ? center : right;
+      selected.style('font-weight', 'bold').style('font-size', '12px');
+
+      content_modif_zone.append('span').html('<br>');
+      content_modif_zone.append('textarea').attr('id', 'annotation_content').styles({ margin: '5px 0px 0px', width: '100%' }).on('keyup', function () {
+        self.update_text(this.value);
+      });
       document.getElementById('annotation_content').value = current_options.content;
 
       var buffer_text_zone = box_content.append('p');
-      var buffer_txt_chk = buffer_text_zone.append('input').attrs({ type: 'checkbox', id: 'buffer_txt_chk', checked: current_options.buffer != undefined ? true : null }).on('change', function () {
+      var buffer_txt_chk = buffer_text_zone.append('input').attrs({ type: 'checkbox', id: 'buffer_txt_chk', checked: current_options.buffer !== undefined ? true : null }).on('change', function () {
         if (this.checked) {
           buffer_color.style('display', '');
-          if (self.buffer == undefined) {
-            self.buffer = { color: '#fff', size: 1 };
-          } else {
-            var color = self.buffer.color,
-                size = self.buffer.size;
-            inner_p.style('text-shadow', '-' + size + 'px 0px 0px ' + color + ', 0px ' + size + 'px 0px ' + color + ', ' + size + 'px 0px 0px ' + color + ', 0px -' + size + 'px 0px ' + color);
+          if (self.buffer === undefined) {
+            self.buffer = { color: '#FFFFFF', size: 1 };
           }
+          var color = self.buffer.color,
+              size = self.buffer.size;
+          text_elem.style('text-shadow', '-' + size + 'px 0px 0px ' + color + ', 0px ' + size + 'px 0px ' + color + ', ' + size + 'px 0px 0px ' + color + ', 0px -' + size + 'px 0px ' + color);
         } else {
           buffer_color.style('display', 'none');
-          inner_p.style('text-shadow', 'none');
+          text_elem.style('text-shadow', 'none');
         }
       });
 
       buffer_text_zone.append('label').attrs({ for: 'buffer_txt_chk' }).text(i18next.t('app_page.text_box_edit_box.buffer'));
 
-      var buffer_color = buffer_text_zone.append('input').style('float', 'right').style('display', current_options.buffer != undefined ? '' : 'none').attrs({ type: 'color', value: current_options.buffer != undefined ? current_options.buffer.color : '#fff' }).on('change', function () {
+      var buffer_color = buffer_text_zone.append('input').style('float', 'right').style('display', current_options.buffer !== undefined ? '' : 'none').attrs({ type: 'color', value: current_options.buffer !== undefined ? current_options.buffer.color : '#FFFFFF' }).on('change', function () {
         self.buffer.color = this.value;
         var color = self.buffer.color,
             size = self.buffer.size;
-        inner_p.style('text-shadow', '-' + size + 'px 0px 0px ' + color + ', 0px ' + size + 'px 0px ' + color + ', ' + size + 'px 0px 0px ' + color + ', 0px -' + size + 'px 0px ' + color);
+        text_elem.style('text-shadow', '-' + size + 'px 0px 0px ' + color + ', 0px ' + size + 'px 0px ' + color + ', ' + size + 'px 0px 0px ' + color + ', 0px -' + size + 'px 0px ' + color);
       });
 
       btn_bold.on('click', function () {
         if (this.classList.contains('active')) {
           this.classList.remove('active');
-          inner_p.style('font-weight', '');
+          text_elem.style('font-weight', '');
         } else {
           this.classList.add('active');
-          inner_p.style('font-weight', 'bold');
+          text_elem.style('font-weight', 'bold');
         }
       });
 
       btn_italic.on('click', function () {
         if (this.classList.contains('active')) {
           this.classList.remove('active');
-          inner_p.style('font-style', '');
+          text_elem.style('font-style', '');
         } else {
           this.classList.add('active');
-          inner_p.style('font-style', 'italic');
+          text_elem.style('font-style', 'italic');
         }
       });
+
       btn_underline.on('click', function () {
         if (this.classList.contains('active')) {
           this.classList.remove('active');
-          inner_p.style('text-decoration', '');
+          text_elem.style('text-decoration', '');
         } else {
           this.classList.add('active');
-          inner_p.style('text-decoration', 'underline');
+          text_elem.style('text-decoration', 'underline');
         }
       });
     }
   }, {
     key: 'up_element',
     value: function up_element() {
-      up_legend(this.text_annot.node());
+      up_legend(this.group.node());
     }
   }, {
     key: 'down_element',
     value: function down_element() {
-      down_legend(this.text_annot.node());
+      down_legend(this.group.node());
     }
   }]);
 
@@ -12908,8 +12970,9 @@ var scaleBar = {
       d3.event.stopPropagation();
       return scale_context_menu.showMenu(d3.event, document.querySelector('body'), getItems());
     });
-    if (x && y) scale_gp.attr('transform', 'translate(' + [x - this.x, y - this.y] + ')');
-
+    if (x && y) {
+      scale_gp.attr('transform', 'translate(' + [x - this.x, y - this.y] + ')');
+    }
     this.Scale = scale_gp;
     this.displayed = true;
     if (this.dist > 100) {
@@ -13125,27 +13188,27 @@ var northArrow = {
             snap_lines_x = d3.event.subject.snap_lines.x,
             snap_lines_y = d3.event.subject.snap_lines.y;
         for (var i = 0; i < snap_lines_x.length; i++) {
-          if (Math.abs(snap_lines_x[i][0] - xmin) < 10) {
-            var _y1 = Math.min(Math.min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
-            var _y2 = Math.max(Math.max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
+          if (abs(snap_lines_x[i][0] - xmin) < 10) {
+            var _y1 = min(min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
+            var _y2 = max(max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
             make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y1, _y2);
             tx = snap_lines_x[i][0] + 7.5;
           }
-          if (Math.abs(snap_lines_x[i][0] - xmax) < 10) {
-            var _y4 = Math.min(Math.min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
-            var _y5 = Math.max(Math.max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
+          if (abs(snap_lines_x[i][0] - xmax) < 10) {
+            var _y4 = min(min(snap_lines_y[i][0], snap_lines_y[i][1]), ymin);
+            var _y5 = max(max(snap_lines_y[i][0], snap_lines_y[i][1]), ymax);
             make_red_line_snap(snap_lines_x[i][0], snap_lines_x[i][0], _y4, _y5);
             tx = snap_lines_x[i][0] - _bbox.width + 7.5;
           }
-          if (Math.abs(snap_lines_y[i][0] - ymin) < 10) {
-            var _x1 = Math.min(Math.min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
-            var _x2 = Math.max(Math.max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
+          if (abs(snap_lines_y[i][0] - ymin) < 10) {
+            var _x1 = min(min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
+            var _x2 = max(max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
             make_red_line_snap(_x1, _x2, snap_lines_y[i][0], snap_lines_y[i][0]);
             ty = snap_lines_y[i][0] + 7.5;
           }
-          if (Math.abs(snap_lines_y[i][0] - ymax) < 10) {
-            var _x7 = Math.min(Math.min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
-            var _x8 = Math.max(Math.max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
+          if (abs(snap_lines_y[i][0] - ymax) < 10) {
+            var _x7 = min(min(snap_lines_x[i][0], snap_lines_x[i][1]), xmin);
+            var _x8 = max(max(snap_lines_x[i][0], snap_lines_x[i][1]), xmax);
             make_red_line_snap(_x7, _x8, snap_lines_y[i][0], snap_lines_y[i][0]);
             ty = snap_lines_y[i][0] - _bbox.height + 7.5;
           }
@@ -13187,7 +13250,7 @@ var northArrow = {
       self.under_rect.style('fill-opacity', 0.1);
     }).on('mouseout', function () {
       self.under_rect.style('fill-opacity', 0);
-    }).on('contextmenu dblclick', function (d, i) {
+    }).on('contextmenu dblclick', function () {
       d3.event.preventDefault();
       return arrow_context_menu.showMenu(d3.event, document.querySelector('body'), getItems());
     });
@@ -13374,8 +13437,8 @@ var UserRectangle = function () {
     value: function draw() {
       var _this6 = this;
 
-      var context_menu = new ContextMenu(),
-          getItems = function getItems() {
+      var context_menu = new ContextMenu();
+      var getItems = function getItems() {
         return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
             _this6.editStyle();
           } }, { name: i18next.t('app_page.common.up_element'), action: function action() {
@@ -13387,15 +13450,21 @@ var UserRectangle = function () {
           } }];
       };
 
-      this.rectangle = this.svg_elem.append('g').attrs({ class: 'user_rectangle legend scalable-legend', id: this.id, transform: svg_map.__zoom.toString() });
+      this.rectangle = this.svg_elem.append('g').attrs({ class: 'user_rectangle legend scalable-legend',
+        id: this.id,
+        transform: svg_map.__zoom.toString() });
 
-      var r = this.rectangle.insert('rect').attrs({ x: this.pt1[0],
+      var r = this.rectangle.insert('rect').attrs({
+        x: this.pt1[0],
         y: this.pt1[1],
         height: this.height,
-        width: this.width }).styles({ 'stroke-width': this.stroke_width,
+        width: this.width
+      }).styles({
+        'stroke-width': this.stroke_width,
         stroke: this.stroke_color,
         fill: this.fill_color,
-        'fill-opacity': 0 });
+        'fill-opacity': 0
+      });
 
       this.rectangle.on('contextmenu', function () {
         context_menu.showMenu(d3.event, document.body, getItems());
@@ -13573,9 +13642,8 @@ var UserEllipse = function () {
       handle_click_hand('lock');
     }).on('end', function () {
       if (d3.event.subject && !d3.event.subject.map_locked) {
-        handle_click_hand('unlock');
-      } // zoom.on("zoom", zoom_without_redraw);
-      // pos_lgds_elem.set(this.id, this.querySelector('ellipse').getBoundingClientRect());
+        handle_click_hand('unlock'); // zoom.on("zoom", zoom_without_redraw);
+      }
     }).on('drag', function () {
       d3.event.sourceEvent.preventDefault();
       var _t = this.querySelector('ellipse'),
@@ -13611,13 +13679,17 @@ var UserEllipse = function () {
 
       this.ellipse = this.svg_elem.append('g').attrs({ class: 'user_ellipse legend scalable-legend', id: this.id, transform: svg_map.__zoom.toString() });
 
-      var e = this.ellipse.insert('ellipse').attrs({ rx: 30,
+      var e = this.ellipse.insert('ellipse').attrs({
+        rx: 30,
         ry: 40,
         cx: this.pt1[0],
-        cy: this.pt1[1] }).styles({ 'stroke-width': this.stroke_width,
+        cy: this.pt1[1]
+      }).styles({
+        'stroke-width': this.stroke_width,
         stroke: this.stroke_color,
         fill: 'rgb(255, 255, 255)',
-        'fill-opacity': 0 });
+        'fill-opacity': 0
+      });
 
       this.ellipse.on('contextmenu', function () {
         context_menu.showMenu(d3.event, document.body, getItems());
@@ -13626,12 +13698,10 @@ var UserEllipse = function () {
         d3.event.stopPropagation();
         _this7.handle_ctrl_pt();
       }).call(this.drag_behavior);
-      // pos_lgds_elem.set(this.ellipse.id, e.node().getBoundingClientRect());
     }
   }, {
     key: 'remove',
     value: function remove() {
-      // pos_lgds_elem.delete(this.ellipse.attr('id'));
       this.ellipse.remove();
     }
   }, {
@@ -13650,14 +13720,14 @@ var UserEllipse = function () {
       var ellipse_elem = this.ellipse.node().querySelector('ellipse'),
           dx = ellipse_elem.rx.baseVal.value - this.pt1[0],
           dy = ellipse_elem.ry.baseVal.value - this.pt1[1];
-      return Math.atan2(dy, dx) * (180 / Math.PI);
+      return atan2(dy, dx) * (180 / PI);
     }
   }, {
     key: 'calcDestFromOAD',
     value: function calcDestFromOAD(origin, angle, distance) {
-      var theta = angle / (180 / Math.PI),
-          dx = distance * Math.cos(theta),
-          dy = distance * Math.sin(theta);
+      var theta = angle / (180 / PI),
+          dx = distance * cos(theta),
+          dy = distance * sin(theta);
       return [origin[0] + dx, origin[1] + dy];
     }
   }, {
@@ -13771,7 +13841,7 @@ var UserEllipse = function () {
         cleanup_edit_state();
       });
 
-      var tmp_start_point = edit_layer.append('rect').attr('class', 'ctrl_pt').attr('id', 'pt1').attr('x', (self.pt1[0] - ellipse_elem.rx.baseVal.value) * zoom_param.k + zoom_param.x - 4).attr('y', self.pt1[1] * zoom_param.k + zoom_param.y - 4).attr('height', 8).attr('width', 8).call(d3.drag().on('drag', function () {
+      var tmp_start_point = edit_layer.append('rect').attr('id', 'pt1').attr('class', 'ctrl_pt').attr('x', (self.pt1[0] - ellipse_elem.rx.baseVal.value) * zoom_param.k + zoom_param.x - 4).attr('y', self.pt1[1] * zoom_param.k + zoom_param.y - 4).attr('height', 8).attr('width', 8).call(d3.drag().on('drag', function () {
         var t = d3.select(this);
         t.attr('x', d3.event.x - 4);
         var dist = self.pt1[0] - (d3.event.x - zoom_param.x) / zoom_param.k;
@@ -13803,9 +13873,9 @@ var UserEllipse = function () {
 var get_coords_snap_lines = function get_coords_snap_lines(uid) {
   var snap_lines = { x: [], y: [] };
 
-  var _get_map_xy = get_map_xy0(),
-      x = _get_map_xy.x,
-      y = _get_map_xy.y;
+  var _get_map_xy2 = get_map_xy0(),
+      x = _get_map_xy2.x,
+      y = _get_map_xy2.y;
 
   pos_lgds_elem.forEach(function (v, k) {
     if (k != uid) {
@@ -15202,19 +15272,22 @@ function get_map_template() {
         });
       } else if (ft.classList.contains('txt_annot')) {
         if (!map_config.layout_features.text_annot) map_config.layout_features.text_annot = [];
-        var inner_p = ft.childNodes[0];
+        var text = ft.querySelector('text');
         map_config.layout_features.text_annot.push({
           id: ft.id,
-          content: inner_p.innerHTML,
-          style: inner_p.getAttribute('style'),
-          position_x: ft.x.baseVal.value,
-          position_y: ft.y.baseVal.value,
-          transform: ft.getAttribute('transform')
+          content: Array.prototype.map.call(text.querySelectorAll('tspan'), function (el) {
+            return el.innerHTML;
+          }).join('\n'),
+          style: text.getAttribute('style'),
+          position_x: text.getAttribute('x'),
+          position_y: text.getAttribute('y'),
+          transform: text.getAttribute('transform')
         });
       } else if (ft.classList.contains('single_symbol')) {
         if (!map_config.layout_features.single_symbol) map_config.layout_features.single_symbol = [];
         var img = ft.childNodes[0];
         map_config.layout_features.single_symbol.push({
+          id: ft.id,
           x: img.getAttribute('x'),
           y: img.getAttribute('y'),
           width: img.getAttribute('width'),
@@ -15631,19 +15704,24 @@ function apply_user_preferences(json_pref) {
         for (var _i9 = 0; _i9 < map_config.layout_features.text_annot.length; _i9++) {
           var _ft4 = map_config.layout_features.text_annot[_i9];
           var new_txt_box = new Textbox(svg_map, _ft4.id, [_ft4.position_x, _ft4.position_y]);
-          var inner_p = new_txt_box.text_annot.select("p").node();
-          inner_p.innerHTML = _ft4.content;
-          // inner_p.style = ft.style;
-          inner_p.setAttribute('style', _ft4.style);
-          new_txt_box.text_annot.attr('transform', _ft4.transform);
-          new_txt_box.fontsize = +_ft4.style.split('font-size: ')[1].split('px')[0];
-          new_txt_box.font_family = _ft4.style.split('font-family: ')[1].split(';')[0];
+          new_txt_box.textAnnot.node().setAttribute('style', _ft4.style);
+          new_txt_box.textAnnot.attrs({
+            transform: _ft4.transform,
+            x: _ft4.position_x,
+            y: _ft4.position_y
+          }).selectAll('tspan').attrs({
+            x: _ft4.position_x,
+            y: _ft4.position_y
+          });
+          new_txt_box.fontSize = +_ft4.style.split('font-size: ')[1].split('px')[0];
+          new_txt_box.fontFamily = _ft4.style.split('font-family: ')[1].split(';')[0];
+          new_txt_box.update_text(_ft4.content);
         }
       }
       if (map_config.layout_features.single_symbol) {
         for (var _i10 = 0; _i10 < map_config.layout_features.single_symbol.length; _i10++) {
           var _ft5 = map_config.layout_features.single_symbol[_i10];
-          var symb = add_single_symbol(_ft5.href, _ft5.x, _ft5.y, _ft5.width, _ft5.height);
+          var symb = add_single_symbol(_ft5.href, _ft5.x, _ft5.y, _ft5.width, _ft5.height, _ft5.id);
           if (_ft5.scalable) {
             var parent_symb = symb.node().parentElement;
             parent_symb.classList.add('scalable-legend');
@@ -16004,8 +16082,8 @@ function reorder_layers_elem_legends(desired_order) {
     if (_t) {
       parent.appendChild(_t);
     }
-    svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
   }
+  svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
 }
 
 function rehandle_legend(layer_name, properties) {
@@ -16176,7 +16254,7 @@ function box_choice_symbol(sample_symbols, parent_css_selector) {
       margin: 'auto',
       display: 'inline-block',
       'background-size': '32px 32px',
-      'background-image': ['url("', d[1], '")'].join('')
+      'background-image': 'url("' + d[1] + '")' // ['url("', d[1], '")'].join('')
     };
   }).on('click', function () {
     box_select.selectAll('p').each(function () {
@@ -16253,39 +16331,48 @@ function make_style_box_indiv_symbol(symbol_node) {
   var parent = symbol_node.parentElement;
   var type_obj = parent.classList.contains('layer') ? 'layer' : 'layout';
   var current_options = {
-    size: symbol_node.getAttribute('width'),
-    scalable: !!(type_obj == 'layout' && parent.classList.contains('scalable-legend'))
+    size: +symbol_node.getAttribute('width').replace('px', ''),
+    scalable: !!(type_obj === 'layout' && parent.classList.contains('scalable-legend'))
   };
-  var ref_coords = { x: +symbol_node.getAttribute('x') + +current_options.size / 2,
-    y: +symbol_node.getAttribute('y') + +current_options.size / 2 };
+  var ref_coords = {
+    x: +symbol_node.getAttribute('x') + current_options.size / 2,
+    y: +symbol_node.getAttribute('y') + current_options.size / 2
+  };
+  var ref_coords2 = cloneObj(ref_coords);
   var new_params = {};
   var self = this;
   make_confirm_dialog2('styleTextAnnotation', i18next.t('app_page.single_symbol_edit_box.title')).then(function (confirmed) {
     if (!confirmed) {
-      symbol_node.setAttribute('width', current_options.size);
-      symbol_node.setAttribute('height', current_options.size);
-      symbol_node.setAttribute('x', ref_coords.x - +current_options.size / 2);
-      symbol_node.setAttribute('y', ref_coords.y - +current_options.size / 2);
+      symbol_node.setAttribute('width', current_options.size + 'px');
+      symbol_node.setAttribute('height', current_options.size + 'px');
+      symbol_node.setAttribute('x', ref_coords.x - current_options.size / 2);
+      symbol_node.setAttribute('y', ref_coords.y - current_options.size / 2);
       if (current_options.scalable) {
         var zoom_scale = svg_map.__zoom;
-        parent.setAttribute('transform', ['translate(', zoom_scale.x, ',', ') scale(', zoom_scale.k, ',', zoom_scale.k, ')'].join(''));
-      } else {
-        parent.setAttribute('transform', undefined);
+        parent.setAttribute('transform', 'translate(' + zoom_scale.x + ',' + zoom_scale.y + ') scale(' + zoom_scale.k + ',' + zoom_scale.k + ')');
+        if (!parent.classList.contains('scalable-legend')) {
+          parent.classList.add('scalable-legend');
+        }
+      } else if (!parent.classList.contains('layer')) {
+        parent.removeAttribute('transform', undefined);
+        if (parent.classList.contains('scalable-legend')) {
+          parent.classList.remove('scalable-legend');
+        }
       }
     }
   });
   var box_content = d3.select('.styleTextAnnotation').select('.modal-body').insert('div');
   var a = box_content.append('p').attr('class', 'line_elem');
   a.append('span').html(i18next.t('app_page.single_symbol_edit_box.image_size'));
-  a.append('input').style('float', 'right').attrs({ type: 'number', id: 'font_size', min: 0, max: 150, step: 'any', value: +symbol_node.getAttribute('width') }).on('change', function () {
-    var new_val = this.value + 'px';
-    symbol_node.setAttribute('width', new_val);
-    symbol_node.setAttribute('height', new_val);
-    symbol_node.setAttribute('x', ref_coords.x - +this.value / 2);
-    symbol_node.setAttribute('y', ref_coords.y - +this.value / 2);
+  a.append('input').style('float', 'right').attrs({ type: 'number', id: 'font_size', min: 0, max: 150, step: 'any', value: current_options.size }).on('change', function () {
+    var val = +this.value;
+    symbol_node.setAttribute('width', val + 'px');
+    symbol_node.setAttribute('height', val + 'px');
+    symbol_node.setAttribute('x', ref_coords2.x - val / 2);
+    symbol_node.setAttribute('y', ref_coords2.y - val / 2);
   });
 
-  if (type_obj == 'layout') {
+  if (type_obj === 'layout') {
     var current_state = parent.classList.contains('scalable-legend');
     var b = box_content.append('p').attr('class', 'line_elem');
     b.append('label').attrs({ for: 'checkbox_symbol_zoom_scale', class: 'i18n', 'data-i18n': '[html]app_page.single_symbol_edit_box.scale_on_zoom' }).html(i18next.t('app_page.single_symbol_edit_box.scale_on_zoom'));
@@ -16294,7 +16381,7 @@ function make_style_box_indiv_symbol(symbol_node) {
       if (this.checked) {
         symbol_node.setAttribute('x', (symbol_node.x.baseVal.value - zoom_scale.x) / zoom_scale.k);
         symbol_node.setAttribute('y', (symbol_node.y.baseVal.value - zoom_scale.y) / zoom_scale.k);
-        parent.setAttribute('transform', ['translate(', zoom_scale.x, ', ', zoom_scale.y, ') scale(', zoom_scale.k, ',', zoom_scale.k, ')'].join(''));
+        parent.setAttribute('transform', 'translate(' + zoom_scale.x + ',' + zoom_scale.y + ') scale(' + zoom_scale.k + ',' + zoom_scale.k + ')');
         parent.classList.add('scalable-legend');
       } else {
         symbol_node.setAttribute('x', symbol_node.x.baseVal.value * zoom_scale.k + zoom_scale.x);
@@ -16302,6 +16389,8 @@ function make_style_box_indiv_symbol(symbol_node) {
         parent.removeAttribute('transform');
         parent.classList.remove('scalable-legend');
       }
+      ref_coords2.x = +symbol_node.getAttribute('x');
+      ref_coords2.y = +symbol_node.getAttribute('y');
     });
     document.getElementById('checkbox_symbol_zoom_scale').checked = current_options.scalable;
   }
@@ -16310,7 +16399,11 @@ function make_style_box_indiv_symbol(symbol_node) {
 
 var shortListContent = ['AzimuthalEqualAreaEurope', 'ConicConformalFrance', 'HEALPix', 'Mercator', 'NaturalEarth2', 'Robinson', 'TransverseMercator', 'WinkelTriple', 'more', 'proj4'];
 
-var available_projections = new Map([['Armadillo', { name: 'geoArmadillo', scale: '400', param_in: 'other', param_ex: 'aphylactic' }], ["AzimuthalEquidistant", { 'name': 'geoAzimuthalEquidistant', 'scale': '700', param_in: 'plan', param_ex: 'equidistant' }], ["AzimuthalEqualArea", { 'name': 'geoAzimuthalEqualArea', 'scale': '700', param_in: 'plan', param_ex: 'equalarea' }], ["AzimuthalEqualAreaEurope", { 'name': 'geoAzimuthalEqualArea', 'scale': '700', rotate: [-10, -52, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'plan', param_ex: 'equalarea' }], ["Baker", { 'name': 'geoBaker', 'scale': '400', param_in: 'other', param_ex: 'aphylactic' }], ["Berhmann", { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 30, param_in: 'cylindrical', param_ex: 'equalarea' }], ["Boggs", { 'name': 'geoBoggs', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedBoggs", { 'name': 'geoInterruptedBoggs', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Bonne", { 'name': 'geoBonne', 'scale': '400', param_in: 'pseudocone', param_ex: 'equalarea' }], ["Bromley", { 'name': 'geoBromley', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Collignon", { 'name': 'geoCollignon', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["ConicConformalTangent", { 'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 44], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal' }], ["ConicConformalSec", { 'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 49], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal' }], ["ConicConformalFrance", { 'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 49], rotate: [-3, -46.5, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'cone', param_ex: 'conformal' }], ["ConicEqualArea", { 'name': 'geoConicEqualArea', 'scale': '400', param_in: 'cone', param_ex: 'equalarea' }], ["ConicEquidistantDeslisle", { 'name': 'geoConicEquidistant', 'scale': '400', parallels: [40, 45], param_in: 'cone', param_ex: 'equidistant' }], ["ConicEquidistantTangent", { 'name': 'geoConicEquidistant', 'scale': '400', parallels: [40, 40], param_in: 'cone', param_ex: 'equidistant' }], ["CrasterParabolic", { 'name': 'geoCraster', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Equirectangular", { 'name': 'geoEquirectangular', 'scale': '400', param_in: 'cylindrical', param_ex: 'equidistant' }], ["CylindricalEqualArea", { 'name': 'geoCylindricalEqualArea', 'scale': '400', param_in: 'cylindrical', param_ex: 'equalarea' }], ["CylindricalStereographic", { 'name': 'geoCylindricalStereographic', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["EckertI", { 'name': 'geoEckert1', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertII", { 'name': 'geoEckert2', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["EckertIII", { 'name': 'geoEckert3', 'scale': '525', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertIV", { 'name': 'geoEckert4', 'scale': '525', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["EckertV", { 'name': 'geoEckert5', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertVI", { 'name': 'geoEckert6', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Eisenlohr", { 'name': 'geoEisenlohr', 'scale': '400', param_in: 'other', param_ex: 'conformal' }], ['GallPeters', { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'equalarea' }], ['GallStereographic', { 'name': 'geoCylindricalStereographic', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'aphylactic' }], ['Gilbert', { 'name': 'geoGilbert', scale: '400', type: '', param_in: 'other', param_ex: 'aphylactic' }], ["Gnomonic", { 'name': 'geoGnomonic', 'scale': '400', param_in: 'plan', param_ex: 'aphylactic' }], ["Gringorten", { 'name': 'geoGringorten', 'scale': '400', param_in: 'other', param_ex: 'equalarea' }], ['GringortenQuincuncial', { 'name': 'geoGringortenQuincuncial', 'scale': '400', param_in: 'other', param_ex: 'equalarea' }], ['Hatano', { 'name': 'geoHatano', 'scale': '200', param_in: 'other', param_ex: 'equalarea' }], ["HEALPix", { 'name': 'geoHealpix', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["HoboDyer", { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 37.5, param_in: 'cylindrical', param_ex: 'equalarea' }], ["Homolosine", { 'name': 'geoHomolosine', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedHomolosine", { 'name': 'geoInterruptedHomolosine', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Loximuthal", { 'name': 'geoLoximuthal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["Mercator", { 'name': 'geoMercator', 'scale': '375', param_in: 'cylindrical', param_ex: 'conformal' }], ["Miller", { 'name': 'geoMiller', 'scale': '375', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["MillerOblatedStereographic", { 'name': 'geoModifiedStereographicMiller', 'scale': '375', param_in: 'plan', param_ex: 'conformal' }], ["Mollweide", { 'name': 'geoMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["NaturalEarth", { 'name': 'geoNaturalEarth', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["NaturalEarth2", { 'name': 'geoNaturalEarth2', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["Orthographic", { 'name': 'geoOrthographic', 'scale': '475', 'clipAngle': 90, param_in: 'plan', param_ex: 'aphylactic' }], ["Patterson", { 'name': 'geoPatterson', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["Polyconic", { 'name': 'geoPolyconic', 'scale': '400', param_in: 'pseudocone', param_ex: 'aphylactic' }], ["Peircequincuncial", { 'name': 'geoPeirceQuincuncial', 'scale': '400', param_in: 'other', param_ex: 'conformal' }], ["Robinson", { 'name': 'geoRobinson', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["SinuMollweide", { 'name': 'geoSinuMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedSinuMollweide", { 'name': 'geoInterruptedSinuMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Sinusoidal", { 'name': 'geoSinusoidal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedSinusoidal", { 'name': 'geoInterruptedSinusoidal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Stereographic', { 'name': 'geoStereographic', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["TransverseMercator", { 'name': 'geoTransverseMercator', 'scale': '400', param_in: 'cylindrical', param_ex: 'conformal' }], ['Werner', { 'name': 'geoBonne', scale: '400', parallel: 90, param_in: 'pseudocone', param_ex: 'equalarea' }], ["Winkel1", { 'name': 'geoWinkel1', 'scale': '200', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["WinkelTriple", { 'name': 'geoWinkel3', 'scale': '400', param_in: 'pseudoplan', param_ex: 'aphylactic' }]]);
+var available_projections = new Map([['Armadillo', { name: 'geoArmadillo', scale: '400', param_in: 'other', param_ex: 'aphylactic' }], ["AzimuthalEquidistant", { 'name': 'geoAzimuthalEquidistant', 'scale': '700', param_in: 'plan', param_ex: 'equidistant' }], ["AzimuthalEqualArea", { 'name': 'geoAzimuthalEqualArea', 'scale': '700', param_in: 'plan', param_ex: 'equalarea' }], ["AzimuthalEqualAreaEurope", { 'name': 'geoAzimuthalEqualArea', 'scale': '700', rotate: [-10, -52, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'plan', param_ex: 'equalarea' }], ["Baker", { 'name': 'geoBaker', 'scale': '400', param_in: 'other', param_ex: 'aphylactic' }], ["Berhmann", { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 30, param_in: 'cylindrical', param_ex: 'equalarea' }], ["Boggs", { 'name': 'geoBoggs', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedBoggs", { 'name': 'geoInterruptedBoggs', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Bonne", { 'name': 'geoBonne', 'scale': '400', param_in: 'pseudocone', param_ex: 'equalarea' }], ["Bromley", { 'name': 'geoBromley', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Collignon", { 'name': 'geoCollignon', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }],
+// ["ConicConformalTangent", {'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 44], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal'}],
+["ConicConformal", { 'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 49], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal' }], ["ConicConformalFrance", { 'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 49], rotate: [-3, -46.5, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'cone', param_ex: 'conformal' }], ["ConicEqualArea", { 'name': 'geoConicEqualArea', 'scale': '400', param_in: 'cone', param_ex: 'equalarea' }], ["ConicEquidistant", { 'name': 'geoConicEquidistant', 'scale': '400', parallels: [40, 45], param_in: 'cone', param_ex: 'equidistant' }],
+// ["ConicEquidistantTangent", {'name': 'geoConicEquidistant', 'scale': '400', parallels: [40, 40], param_in: 'cone', param_ex: 'equidistant'}],
+["CrasterParabolic", { 'name': 'geoCraster', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Equirectangular", { 'name': 'geoEquirectangular', 'scale': '400', param_in: 'cylindrical', param_ex: 'equidistant' }], ["CylindricalEqualArea", { 'name': 'geoCylindricalEqualArea', 'scale': '400', param_in: 'cylindrical', param_ex: 'equalarea' }], ["CylindricalStereographic", { 'name': 'geoCylindricalStereographic', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["EckertI", { 'name': 'geoEckert1', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertII", { 'name': 'geoEckert2', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["EckertIII", { 'name': 'geoEckert3', 'scale': '525', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertIV", { 'name': 'geoEckert4', 'scale': '525', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["EckertV", { 'name': 'geoEckert5', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["EckertVI", { 'name': 'geoEckert6', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Eisenlohr", { 'name': 'geoEisenlohr', 'scale': '400', param_in: 'other', param_ex: 'conformal' }], ['GallPeters', { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'equalarea' }], ['GallStereographic', { 'name': 'geoCylindricalStereographic', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'aphylactic' }], ['Gilbert', { 'name': 'geoGilbert', scale: '400', type: '', param_in: 'other', param_ex: 'aphylactic' }], ["Gnomonic", { 'name': 'geoGnomonic', 'scale': '400', param_in: 'plan', param_ex: 'aphylactic' }], ["Gringorten", { 'name': 'geoGringorten', 'scale': '400', param_in: 'other', param_ex: 'equalarea' }], ['GringortenQuincuncial', { 'name': 'geoGringortenQuincuncial', 'scale': '400', param_in: 'other', param_ex: 'equalarea' }], ['Hatano', { 'name': 'geoHatano', 'scale': '200', param_in: 'other', param_ex: 'equalarea' }], ["HEALPix", { 'name': 'geoHealpix', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["HoboDyer", { 'name': 'geoCylindricalEqualArea', scale: '400', parallel: 37.5, param_in: 'cylindrical', param_ex: 'equalarea' }], ["Homolosine", { 'name': 'geoHomolosine', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedHomolosine", { 'name': 'geoInterruptedHomolosine', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Loximuthal", { 'name': 'geoLoximuthal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["Mercator", { 'name': 'geoMercator', 'scale': '375', param_in: 'cylindrical', param_ex: 'conformal' }], ["Miller", { 'name': 'geoMiller', 'scale': '375', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["MillerOblatedStereographic", { 'name': 'geoModifiedStereographicMiller', 'scale': '375', param_in: 'plan', param_ex: 'conformal' }], ["Mollweide", { 'name': 'geoMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["NaturalEarth", { 'name': 'geoNaturalEarth', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["NaturalEarth2", { 'name': 'geoNaturalEarth2', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["Orthographic", { 'name': 'geoOrthographic', 'scale': '475', 'clipAngle': 90, param_in: 'plan', param_ex: 'aphylactic' }], ["Patterson", { 'name': 'geoPatterson', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["Polyconic", { 'name': 'geoPolyconic', 'scale': '400', param_in: 'pseudocone', param_ex: 'aphylactic' }], ["Peircequincuncial", { 'name': 'geoPeirceQuincuncial', 'scale': '400', param_in: 'other', param_ex: 'conformal' }], ["Robinson", { 'name': 'geoRobinson', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["SinuMollweide", { 'name': 'geoSinuMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedSinuMollweide", { 'name': 'geoInterruptedSinuMollweide', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["Sinusoidal", { 'name': 'geoSinusoidal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ["InterruptedSinusoidal", { 'name': 'geoInterruptedSinusoidal', 'scale': '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Stereographic', { 'name': 'geoStereographic', 'scale': '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ["TransverseMercator", { 'name': 'geoTransverseMercator', 'scale': '400', param_in: 'cylindrical', param_ex: 'conformal' }], ['Werner', { 'name': 'geoBonne', scale: '400', parallel: 90, param_in: 'pseudocone', param_ex: 'equalarea' }], ["Winkel1", { 'name': 'geoWinkel1', 'scale': '200', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ["WinkelTriple", { 'name': 'geoWinkel3', 'scale': '400', param_in: 'pseudoplan', param_ex: 'aphylactic' }]]);
 
 var createBoxProj4 = function createBoxProj4() {
 		make_dialog_container("box_projection_input", i18next.t("app_page.section5.title"), "dialog");

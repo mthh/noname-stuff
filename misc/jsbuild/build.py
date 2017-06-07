@@ -45,25 +45,27 @@ def build_js_file(use_minified, _id):
         f.write(r[0].decode().replace('''/translation.json''', '''/translation.{}.json'''.format(_id)).encode())
 
     try:
-        prev_id = os.listdir('../locales/en/')[0][12:].replace('.json', '')
-        os.remove('../locales/en/translation.{}.json'.format(prev_id))
-        os.remove('../locales/es/translation.{}.json'.format(prev_id))
-        os.remove('../locales/fr/translation.{}.json'.format(prev_id))
+        existing_locales = os.listdir('../locales/')
+        for locale in existing_locales:
+            for file in os.listdir('../locales/' + locale):
+                if not 'translation.json' in file:
+                    os.remove(''.join(['../locales/', locale, '/', file]))
+            copy('../locales/{}/translation.json'.format(locale),
+                 '../locales/{}/translation.{}.json'.format(locale, _id))
+
     except Exception as err:
+        print(err)
         pass
 
-    copy('../locales/en/translation.json', '../locales/en/translation.{}.json'.format(_id))
-    copy('../locales/es/translation.json', '../locales/es/translation.{}.json'.format(_id))
-    copy('../locales/fr/translation.json', '../locales/fr/translation.{}.json'.format(_id))
-
-    p = Popen(['uglifyjs',
-           'app.{}.js'.format(_id),
-           '-o',
-           'app.{}.min.js'.format(_id)], stderr=PIPE, stdout=PIPE)
-    r = p.communicate()
-    if len(r[1]) > 0:
-        print(r[1])
-        sys.exit(1)
+    if use_minified:
+        p = Popen(['uglifyjs',
+               'app.{}.js'.format(_id),
+               '-o',
+               'app.{}.min.js'.format(_id)], stderr=PIPE, stdout=PIPE)
+        r = p.communicate()
+        if len(r[1]) > 0:
+            print(r[1])
+            sys.exit(1)
 
     name = 'app.{}.js'.format(_id) if not use_minified \
         else 'app.{}.min.js'.format(_id)

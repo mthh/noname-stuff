@@ -152,6 +152,9 @@ function setUpInterface(reload_project)
           return;
       }  else if (val == 'last_projection') {
           val = tmp.name;
+      } else if (val == 'ConicConformalFrance') {
+          val = 'def_proj4';
+          _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
       }
 
       if (val == 'def_proj4') {
@@ -1504,7 +1507,7 @@ function reproj_symbol_layer(){
               .selectAll(symbol)
               .attrs(function(d,i){
                 let coords = path.centroid(d.geometry),
-                    size = +this.getAttribute('width').slice(0, -2) / 2;
+                    size = +this.getAttribute('width').replace('px', '') / 2;
                 return { 'x': coords[0] - size, 'y': coords[1] - size };
               });
       } else if(symbol == "circle"){ // Reproject Prop Symbol :

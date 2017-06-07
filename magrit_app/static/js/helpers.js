@@ -148,7 +148,6 @@ function copy_layer(ref_layer, new_name, type_result, fields_to_copy){
   svg_map.lastChild.setAttribute("id", id_new_layer);
   let node_new_layer = document.getElementById(id_new_layer);
   svg_map.insertBefore(node_new_layer, svg_map.querySelector('.legend'));
-  node_new_layer.setAttribute("class", "result_layer layer");
   result_data[new_name] = [];
   current_layers[new_name] = {
     n_features: current_layers[ref_layer].n_features,

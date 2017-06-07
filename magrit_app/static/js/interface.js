@@ -2,8 +2,15 @@
 ////////////////////////////////////////////////////////////////////////
 // Browse and upload buttons + related actions (conversion + displaying)
 ////////////////////////////////////////////////////////////////////////
-const MAX_INPUT_SIZE = 20200000; // max allowed input size in bytes
-// const ALERT_INPUT_SIZE = 870400; // If the input is larger than this size, the user will receive an alert
+
+/**
+* Maxium allowed input size in bytes. If the input file is larger than
+* this size, the user will receive an alert.
+* In the case of sending multiple files unziped, this limit corresponds
+* to the sum of the size of each file.
+*/
+const MAX_INPUT_SIZE = 25200000;
+
 /**
 * Function triggered when some images of the interface are clicked
 * in order to create an <input> element, simulate a click on it, let the user
@@ -38,18 +45,17 @@ function click_button_add_layer(){
 }
 
 function handle_upload_files(files, target_layer_on_add, elem){
+    const tot_size = Array.prototype.map.call(files, f => f.size).reduce((a, b) => a + b, 0);
 
-    for(let i=0; i < files.length; i++){
-        if(files[i].size > MAX_INPUT_SIZE){
-            // elem.style.border = '3px dashed red';
-            elem.style.border = '';
-            return swal({title: i18next.t("app_page.common.error") + "!",
-                  text: i18next.t("app_page.common.too_large_input"),
-                  type: "error",
-                  customClass: 'swal2_custom',
-                  allowEscapeKey: false,
-                  allowOutsideClick: false});
-        }
+    if (tot_size > MAX_INPUT_SIZE) {
+      // elem.style.border = '3px dashed red';
+      elem.style.border = '';
+      return swal({ title: i18next.t("app_page.common.error") + "!",
+        text: i18next.t("app_page.common.too_large_input"),
+        type: "error",
+        customClass: 'swal2_custom',
+        allowEscapeKey: false,
+        allowOutsideClick: false});
     }
 
     if(!(files.length == 1)){
@@ -709,7 +715,7 @@ function add_dataset(readed_dataset){
     let cols = Object.getOwnPropertyNames(readed_dataset[0]);
 
     // Test if there is an empty last line and remove it if its the case :
-    if(cols.map(f => readed_dataset[readed_dataset.length - 1][f]).every(f => f == "")){
+    if(cols.map(f => readed_dataset[readed_dataset.length - 1][f]).every(f => f === "" || f === undefined)){
         readed_dataset = readed_dataset.slice(0, readed_dataset.length - 1);
     }
 
@@ -1134,9 +1140,6 @@ function scale_to_lyr(name){
   if (!bbox_layer_path) return;
   s = 0.95 / Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h) * proj.scale();
   t = [0, 0];
-  if (current_proj_name === "ConicConformalFrance") {
-    s *= 5000;
-  }
   proj.scale(s).translate(t);
   map.selectAll(".layer").selectAll("path").attr("d", path);
   reproj_symbol_layer();
@@ -1736,29 +1739,29 @@ function handleClickAddPicto(){
 
     document.body.style.cursor = 'not-allowed';
     map.style('cursor', 'crosshair')
-        .on('click', function(){
-              msg.dismiss();
-              click_pt = [d3.event.layerX, d3.event.layerY];
-              map_point = map.append('rect')
-                  .attrs({x: click_pt[0] - 2, y: click_pt[1] - 2, height: 4, width: 4})
-                  .style('fill', 'red');
-              setTimeout(function(){
-                  map_point.remove();
-              }, 500);
-              map.style('cursor', '').on('click', null);
-              document.body.style.cursor = '';
-              if(!available_symbols){
-                  prep_symbols.then(confirmed => {
-                      box_choice_symbol(window.default_symbols).then( result => {
-                          if(result){ add_single_symbol(result.split("url(")[1].substring(1).slice(0,-2), click_pt[0], click_pt[1], 45, 45, symbol_id); }
-                      });
-                  });
-              } else {
-                  box_choice_symbol(window.default_symbols).then( result => {
-                      if(result){ add_single_symbol(result.split("url(")[1].substring(1).slice(0,-2), click_pt[0], click_pt[1], 45, 45, symbol_id); }
-                  });
-              }
-        });
+      .on('click', function(){
+        msg.dismiss();
+        click_pt = [d3.event.layerX, d3.event.layerY];
+        map_point = map.append('rect')
+          .attrs({x: click_pt[0] - 2, y: click_pt[1] - 2, height: 4, width: 4})
+          .style('fill', 'red');
+        setTimeout(function(){
+          map_point.remove();
+        }, 500);
+        map.style('cursor', '').on('click', null);
+        document.body.style.cursor = '';
+        if(!available_symbols){
+          prep_symbols.then(confirmed => {
+            box_choice_symbol(window.default_symbols).then( result => {
+              if(result){ add_single_symbol(result.split("url(")[1].substring(1).slice(0,-2), click_pt[0], click_pt[1], 45, 45, symbol_id); }
+            });
+          });
+        } else {
+          box_choice_symbol(window.default_symbols).then( result => {
+            if(result){ add_single_symbol(result.split("url(")[1].substring(1).slice(0,-2), click_pt[0], click_pt[1], 45, 45, symbol_id); }
+          });
+        }
+      });
 }
 
 // function handleFreeDraw(){

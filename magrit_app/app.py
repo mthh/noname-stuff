@@ -40,6 +40,7 @@ from subprocess import Popen, PIPE
 from socket import socket, AF_INET, SOCK_STREAM
 from mmh3 import hash as mmh3_hash
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures._base import CancelledError
 from pyexcel import get_book
 
 # Web related stuff :
@@ -297,9 +298,6 @@ async def convert(request):
     elif datatype in ('application/x-zip-compressed', 'application/zip'):
         dataZip = BytesIO(data)
         dir_path = '/tmp/{}{}/'.format(user_id, hashed_input)
-        def clean_files():
-            [os.remove(dir_path + _file) for _file in os.listdir(dir_path)]
-            os.removedirs(dir_path)
 
         with ZipFile(dataZip) as myzip:
             list_files = myzip.namelist()
@@ -330,25 +328,31 @@ async def convert(request):
 
             os.mkdir(dir_path)
             myzip.extractall(path=dir_path)
-            res = await request.app.loop.run_in_executor(
-                request.app["ProcessPool"],
-                ogr_to_geojson, slots['shp'])
-            if not res:
-                clean_files()
-                return convert_error()
+            try:
+                res = await request.app.loop.run_in_executor(
+                    request.app["ProcessPool"],
+                    ogr_to_geojson, slots['shp'])
+                if not res:
+                    return convert_error()
+                result = await geojson_to_topojson2(res, layer_name)
+                if not result:
+                    return convert_error()
 
-            result = await geojson_to_topojson2(res, layer_name)
-            if not result:
-                clean_files()
-                return convert_error()
+                with open(slots['prj'], 'r') as f:
+                    proj_info_str = f.read()
 
-            with open(slots['prj'], 'r') as f:
-                proj_info_str = f.read()
-
-            asyncio.ensure_future(
-                request.app['redis_conn'].set(
-                    f_name, result, pexpire=86400000))
-        clean_files()
+                asyncio.ensure_future(
+                    request.app['redis_conn'].set(
+                        f_name, result, pexpire=86400000))
+            except (asyncio.CancelledError, CancelledError):
+                return
+            except Exception as err:
+                request.app['logger'].info(
+                    'Error with content of zip file : {}'.format(err))
+                return convert_error('Error with zip file content')
+            finally:
+                [os.remove(dir_path + _file) for _file in os.listdir(dir_path)]
+                os.removedirs(dir_path)
 
     elif ('octet-stream' in datatype or 'text/json' in datatype
             or 'application/geo+json' in datatype
@@ -1145,6 +1149,7 @@ async def init(loop, port=None, watch_change=False):
     app['redis_conn'] = redis_conn
     app['app_users'] = set()
     app['logger'] = logger
+    app['version'] = get_version()
     with open('static/json/sample_layers.json', 'r') as f:
         app['db_layers'] = json.loads(f.read().replace('/static', 'static'))[0]
     app['ThreadPool'] = ThreadPoolExecutor(4)
@@ -1179,6 +1184,13 @@ def get_version():
         ver = f.read()
     ix = ver.find("'")
     return ver[ix+1:ix + ver[ix+1:].find("'")+1]
+
+def get_version():
+    with open('__init__.py', 'r') as f:
+        ver = f.read()
+    ix = ver.find("'")
+    return ver[ix+1:ix + ver[ix+1:].find("'")+1]
+
 
 def create_app(app_name="Magrit"):
     # Entry point when using Gunicorn to run the application with something like :

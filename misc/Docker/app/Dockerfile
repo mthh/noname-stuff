@@ -73,7 +73,7 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && python3.6 get-pip.py
 RUN cd /home/app/magrit/ \
     && pip3.6 install -U -r requirements-dev.txt \
     && python3.6 setup.py install
-RUN cd /home/app && cp /usr/local/lib/python3.6/dist-packages/magrit_app-0.2.0-py3.6-linux-x86_64.egg/magrit_app/helpers/*.so /home/app/magrit/magrit_app/helpers/
+RUN cd /home/app && cp /usr/local/lib/python3.6/dist-packages/magrit_app-0.3.0-py3.6-linux-x86_64.egg/magrit_app/helpers/*.so /home/app/magrit/magrit_app/helpers/
 
 EXPOSE 9999
 

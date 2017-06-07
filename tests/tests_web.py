@@ -401,15 +401,11 @@ class MainFunctionnalitiesTest(unittest.TestCase):
         rotate_params = driver.execute_script('''return proj.rotate();''');
         self.assertEqual(rotate_params, [-10, -52, 0])
 
-        # Change for an other projection with "preselections":
+        # Change for an other preselected projection
+        # (this one use proj4 and not the d3-geo-projection ConicConformal)
         Select(driver.find_element_by_id("form_projection2")
             ).select_by_value("ConicConformalFrance")
         time.sleep(2)
-
-        # Value for parallels have been changed :
-        parallels = driver.execute_script(
-            '''return proj.parallels();''');
-        self.assertEqual(parallels, [44, 49])
 
     def test_reload_project_localStorage(self):
         driver = self.driver

@@ -154,7 +154,7 @@ function box_choice_symbol(sample_symbols, parent_css_selector) {
       margin: 'auto',
       display: 'inline-block',
       'background-size': '32px 32px',
-      'background-image': ['url("', d[1], '")'].join('')
+      'background-image': `url("${d[1]}")` // ['url("', d[1], '")'].join('')
     }))
     .on('click', function () {
       box_select.selectAll('p').each(function () {
@@ -242,25 +242,34 @@ function make_style_box_indiv_symbol(symbol_node) {
   const parent = symbol_node.parentElement;
   const type_obj = parent.classList.contains('layer') ? 'layer' : 'layout';
   const current_options = {
-    size: symbol_node.getAttribute('width'),
-    scalable: !!(type_obj == 'layout' && parent.classList.contains('scalable-legend')),
+    size: +symbol_node.getAttribute('width').replace('px', ''),
+    scalable: !!(type_obj === 'layout' && parent.classList.contains('scalable-legend')),
   };
-  const ref_coords = { x: +symbol_node.getAttribute('x') + (+current_options.size / 2),
-    y: +symbol_node.getAttribute('y') + (+current_options.size / 2) };
+  const ref_coords = {
+    x: +symbol_node.getAttribute('x') + (current_options.size / 2),
+    y: +symbol_node.getAttribute('y') + (current_options.size / 2)
+  };
+  const ref_coords2 = cloneObj(ref_coords);
   const new_params = {};
   const self = this;
   make_confirm_dialog2('styleTextAnnotation', i18next.t('app_page.single_symbol_edit_box.title'))
     .then((confirmed) => {
       if (!confirmed) {
-        symbol_node.setAttribute('width', current_options.size);
-        symbol_node.setAttribute('height', current_options.size);
-        symbol_node.setAttribute('x', ref_coords.x - (+current_options.size / 2));
-        symbol_node.setAttribute('y', ref_coords.y - (+current_options.size / 2));
+        symbol_node.setAttribute('width', `${current_options.size}px`);
+        symbol_node.setAttribute('height', `${current_options.size}px`);
+        symbol_node.setAttribute('x', ref_coords.x - (current_options.size / 2));
+        symbol_node.setAttribute('y', ref_coords.y - (current_options.size / 2));
         if (current_options.scalable) {
           const zoom_scale = svg_map.__zoom;
-          parent.setAttribute('transform', ['translate(', zoom_scale.x, ',', ') scale(', zoom_scale.k, ',', zoom_scale.k, ')'].join(''));
-        } else {
-          parent.setAttribute('transform', undefined);
+          parent.setAttribute('transform', `translate(${zoom_scale.x},${zoom_scale.y}) scale(${zoom_scale.k},${zoom_scale.k})`);
+          if (!parent.classList.contains('scalable-legend')) {
+            parent.classList.add('scalable-legend');
+          }
+        } else if (!parent.classList.contains('layer')){
+          parent.removeAttribute('transform', undefined);
+          if (parent.classList.contains('scalable-legend')) {
+            parent.classList.remove('scalable-legend');
+          }
         }
       }
     });
@@ -270,16 +279,16 @@ function make_style_box_indiv_symbol(symbol_node) {
     .html(i18next.t('app_page.single_symbol_edit_box.image_size'));
   a.append('input')
     .style('float', 'right')
-    .attrs({ type: 'number', id: 'font_size', min: 0, max: 150, step: 'any', value: +symbol_node.getAttribute('width') })
+    .attrs({ type: 'number', id: 'font_size', min: 0, max: 150, step: 'any', value: current_options.size })
     .on('change', function () {
-      const new_val = `${this.value}px`;
-      symbol_node.setAttribute('width', new_val);
-      symbol_node.setAttribute('height', new_val);
-      symbol_node.setAttribute('x', ref_coords.x - (+this.value / 2));
-      symbol_node.setAttribute('y', ref_coords.y - (+this.value / 2));
+      const val = +this.value;
+      symbol_node.setAttribute('width', `${val}px`);
+      symbol_node.setAttribute('height', `${val}px`);
+      symbol_node.setAttribute('x', ref_coords2.x - (val / 2));
+      symbol_node.setAttribute('y', ref_coords2.y - (val / 2));
     });
 
-  if (type_obj == 'layout') {
+  if (type_obj === 'layout') {
     const current_state = parent.classList.contains('scalable-legend');
     const b = box_content.append('p').attr('class', 'line_elem');
     b.append('label')
@@ -293,7 +302,7 @@ function make_style_box_indiv_symbol(symbol_node) {
         if (this.checked) {
           symbol_node.setAttribute('x', (symbol_node.x.baseVal.value - zoom_scale.x) / zoom_scale.k);
           symbol_node.setAttribute('y', (symbol_node.y.baseVal.value - zoom_scale.y) / zoom_scale.k);
-          parent.setAttribute('transform', ['translate(', zoom_scale.x, ', ', zoom_scale.y, ') scale(', zoom_scale.k, ',', zoom_scale.k, ')'].join(''));
+          parent.setAttribute('transform', `translate(${zoom_scale.x},${zoom_scale.y}) scale(${zoom_scale.k},${zoom_scale.k})`);
           parent.classList.add('scalable-legend');
         } else {
           symbol_node.setAttribute('x', symbol_node.x.baseVal.value * zoom_scale.k + zoom_scale.x);
@@ -301,6 +310,8 @@ function make_style_box_indiv_symbol(symbol_node) {
           parent.removeAttribute('transform');
           parent.classList.remove('scalable-legend');
         }
+        ref_coords2.x = +symbol_node.getAttribute('x');
+        ref_coords2.y = +symbol_node.getAttribute('y');
       });
     document.getElementById('checkbox_symbol_zoom_scale').checked = current_options.scalable;
   }

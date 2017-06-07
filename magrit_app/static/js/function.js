@@ -1691,7 +1691,7 @@ function make_prop_line(rendering_params, geojson_line_layer){
     _app.id_to_layer.set(layer_id, layer_to_add);
     result_data[layer_to_add] = [];
     map.insert("g", '.legend')
-      .attrs({id: layer_id, class: 'result_layer layer'})
+      .attrs({id: layer_id, class: 'layer'})
       .styles({'stroke-linecap': 'round', 'stroke-linejoin': 'round'})
       .selectAll('path')
       .data(geojson_line_layer.features)
@@ -1822,7 +1822,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
     if(symbol_type === 'circle'){
       map.insert("g", '.legend')
         .attr("id", layer_id)
-        .attr("class", "result_layer layer")
+        .attr("class", "layer")
         .selectAll('circle')
         .data(geojson_pt_layer.features)
         .enter()
@@ -1842,7 +1842,7 @@ function make_prop_symbols(rendering_params, geojson_pt_layer){
     } else if(symbol_type === "rect"){
       map.insert("g", '.legend')
         .attr("id", layer_id)
-        .attr("class", "result_layer layer")
+        .attr("class", "layer")
         .selectAll('circle')
         .data(geojson_pt_layer.features)
         .enter()
@@ -2468,7 +2468,7 @@ var render_discont = function(){
         let result_layer = map.insert("g", '.legend')
                 .attr("id", id_layer)
                 .styles({"stroke-linecap": "round", "stroke-linejoin": "round"})
-                .attr("class", "result_layer layer");
+                .attr("class", "layer");
 
         result_data[new_layer_name] = [];
         let data_result = result_data[new_layer_name],
@@ -3340,7 +3340,7 @@ var render_label = function(layer, rendering_params, options){
         ];
 
     let selection = map.insert("g", '.legend')
-            .attrs({id: layer_id, class: "layer result_layer no_clip"})
+            .attrs({id: layer_id, class: "layer no_clip"})
             .selectAll("text")
             .data(new_layer_data).enter()
             .insert("text");
@@ -3445,7 +3445,7 @@ var render_label_graticule = function(layer, rendering_params, options){
         ];
 
     map.insert("g", '.legend')
-        .attrs({id: layer_id, class: "layer result_layer no_clip"})
+        .attrs({id: layer_id, class: "layer no_clip"})
         .selectAll("text")
         .data(new_layer_data).enter()
         .insert("text")
