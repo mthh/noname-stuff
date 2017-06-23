@@ -1,0 +1,24 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::2154" } },
+"features": [
+{ "type": "Feature", "properties": { "CodHop": "208", "RaisonSoc": "HOPITAL  BRETONNEAU ( AP-HP )", "Capacite": 235.0 }, "geometry": { "type": "Point", "coordinates": [ 650950.141112991143018, 6865845.010894260369241 ] } },
+{ "type": "Feature", "properties": { "CodHop": "207", "RaisonSoc": "CENTRE HOSPITALIER STE-ANNE", "Capacite": 601.0 }, "geometry": { "type": "Point", "coordinates": [ 651651.220140689983964, 6859118.106757255271077 ] } },
+{ "type": "Feature", "properties": { "CodHop": "205", "RaisonSoc": "HOPITAL LARIBOISIERE (AP-HP)", "Capacite": 756.0 }, "geometry": { "type": "Point", "coordinates": [ 652501.498828145791776, 6864856.279447641223669 ] } },
+{ "type": "Feature", "properties": { "CodHop": "204", "RaisonSoc": "HOPITAL TENON (AP-HP)", "Capacite": 820.0 }, "geometry": { "type": "Point", "coordinates": [ 655733.152992692310363, 6863429.19586003664881 ] } },
+{ "type": "Feature", "properties": { "CodHop": "201", "RaisonSoc": "GPE HOSP. STE PERINE \/ LAGACHE (AP-HP)", "Capacite": 639.0 }, "geometry": { "type": "Point", "coordinates": [ 646049.448954980587587, 6860596.841148120351136 ] } },
+{ "type": "Feature", "properties": { "CodHop": "200", "RaisonSoc": "HOPITAL BOUCICAUT (AP-HP)", "Capacite": 330.0 }, "geometry": { "type": "Point", "coordinates": [ 647558.772538666380569, 6860470.847292586229742 ] } },
+{ "type": "Feature", "properties": { "CodHop": "199", "RaisonSoc": "HOPITAL NECKER ENFANTS MALADES (AP-HP)", "Capacite": 767.0 }, "geometry": { "type": "Point", "coordinates": [ 649752.849314097431488, 6860924.848811688832939 ] } },
+{ "type": "Feature", "properties": { "CodHop": "198", "RaisonSoc": "HOPITAL VAUGIRARD (AP-HP)", "Capacite": 315.0 }, "geometry": { "type": "Point", "coordinates": [ 648201.463132536737248, 6859575.396865431219339 ] } },
+{ "type": "Feature", "properties": { "CodHop": "197", "RaisonSoc": "HOPITAL BROUSSAIS (AP-HP)", "Capacite": 442.0 }, "geometry": { "type": "Point", "coordinates": [ 649688.096937627065927, 6858817.976055428385735 ] } },
+{ "type": "Feature", "properties": { "CodHop": "195", "RaisonSoc": "HOPITAL COCHIN (AP-HP)", "Capacite": 1048.0 }, "geometry": { "type": "Point", "coordinates": [ 651396.897906913189217, 6859739.963681190274656 ] } },
+{ "type": "Feature", "properties": { "CodHop": "194", "RaisonSoc": "HOPITAL BROCA (AP-HP)", "Capacite": 433.0 }, "geometry": { "type": "Point", "coordinates": [ 652132.260541108669713, 6859610.26652086339891 ] } },
+{ "type": "Feature", "properties": { "CodHop": "193", "RaisonSoc": "GROUPE HOSP. PITIE-SALPETRIERE (AP-HP)", "Capacite": 1881.0 }, "geometry": { "type": "Point", "coordinates": [ 653162.208339706296101, 6860178.769141028635204 ] } },
+{ "type": "Feature", "properties": { "CodHop": "192", "RaisonSoc": "CHNO DES QUINZE-VINGT PARIS", "Capacite": 160.0 }, "geometry": { "type": "Point", "coordinates": [ 653925.481266102520749, 6861456.979820159263909 ] } },
+{ "type": "Feature", "properties": { "CodHop": "191", "RaisonSoc": "HOPITAL SAINT-ANTOINE (AP-HP)", "Capacite": 846.0 }, "geometry": { "type": "Point", "coordinates": [ 654718.282271431293339, 6861312.107685649767518 ] } },
+{ "type": "Feature", "properties": { "CodHop": "190", "RaisonSoc": "HOPITAL ROTHSCHILD (AP-HP)", "Capacite": 186.0 }, "geometry": { "type": "Point", "coordinates": [ 655862.459128240589052, 6860475.703513306565583 ] } },
+{ "type": "Feature", "properties": { "CodHop": "187", "RaisonSoc": "HOPITAL SAINT-LOUIS (AP-HP)", "Capacite": 710.0 }, "geometry": { "type": "Point", "coordinates": [ 653815.346939229406416, 6864361.442839495837688 ] } },
+{ "type": "Feature", "properties": { "CodHop": "186", "RaisonSoc": "HOPITAL LAENNEC (AP-HP)", "Capacite": 304.0 }, "geometry": { "type": "Point", "coordinates": [ 650247.294372811331414, 6861228.012364604510367 ] } },
+{ "type": "Feature", "properties": { "CodHop": "185", "RaisonSoc": "HOPITAL HOTEL-DIEU (AP-HP)", "Capacite": 520.0 }, "geometry": { "type": "Point", "coordinates": [ 652187.933406834257767, 6861706.523274219594896 ] } }
+]
+}
