@@ -2646,7 +2646,7 @@ var fields_PropSymbol = {
         });
 
         nb_color.on('change', function () {
-            if (this.value === 1) {
+            if (+this.value === 1) {
                 fill_color2.style('display', 'none');
                 fill_color_opt.style('display', 'none');
                 fill_color_text.style('display', 'none');
