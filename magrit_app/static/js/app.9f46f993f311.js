@@ -1092,7 +1092,7 @@ function parseQuery(search) {
     lng: lang,
     fallbackLng: _app.existing_lang[0],
     backend: {
-      loadPath: 'static/locales/{{lng}}/translation.b74ac1b3bc11.json'
+      loadPath: 'static/locales/{{lng}}/translation.9f46f993f311.json'
     }
   }, function (err, tr) {
     if (err) {
@@ -1491,6 +1491,13 @@ function remove_layer_cleanup(name) {
     document.getElementById('btn_type_fields').setAttribute('disabled', 'true');
 
     reset_user_values();
+
+    // Reset the projection (if the projection was defined via proj4):
+    if (current_proj_name === 'def_proj4') {
+      current_proj_name = 'NaturalEarth2';
+      change_projection(current_proj_name);
+      addLastProjectionSelect(current_proj_name);
+    }
   }
 
   // There is probably better ways in JS to delete the object,
@@ -2703,950 +2710,980 @@ function ContextMenu() {
     parent.appendChild(menu);
   };
 }
-"use strict";
+'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 function getBreaks(values, type, n_class) {
-    var _values = values.filter(function (v) {
-        return v;
-    }),
-        no_data = values.length - _values.length,
-        nb_class = +n_class || getOptNbClass(_values.length);
-    var serie = new geostats(_values),
-        breaks = [];
-    if (type === "Q6") {
-        var tmp = getBreaksQ6(serie.sorted(), serie.precision);
-        breaks = tmp.breaks;
-        breaks[0] = serie.min();
-        breaks[nb_class] = serie.max();
-        serie.setClassManually(breaks);
-    } else {
-        var _func = discretiz_geostats_switch.get(type);
-        breaks = serie[_func](nb_class);
-        if (serie.precision) breaks = breaks.map(function (val) {
-            return round_value(val, serie.precision);
-        });
-    }
-    return [serie, breaks, nb_class, no_data];
+  var _values = values.filter(function (v) {
+    return v;
+  }),
+      no_data = values.length - _values.length,
+      nb_class = +n_class || getOptNbClass(_values.length);
+  var serie = new geostats(_values);
+  var breaks = void 0;
+  if (type === 'Q6') {
+    var tmp = getBreaksQ6(serie.sorted(), serie.precision);
+    breaks = tmp.breaks;
+    breaks[0] = serie.min();
+    breaks[nb_class] = serie.max();
+    serie.setClassManually(breaks);
+  } else {
+    var _func = discretiz_geostats_switch.get(type);
+    breaks = serie[_func](nb_class);
+    if (serie.precision) breaks = breaks.map(function (val) {
+      return round_value(val, serie.precision);
+    });
+  }
+  return [serie, breaks, nb_class, no_data];
 }
 
 function discretize_to_size(values, type, nb_class, min_size, max_size) {
-    var _getBreaks = getBreaks(values, type, nb_class),
-        _getBreaks2 = _slicedToArray(_getBreaks, 3),
-        serie = _getBreaks2[0],
-        breaks = _getBreaks2[1],
-        nb_class = _getBreaks2[2];
+  var _getBreaks = getBreaks(values, type, nb_class),
+      _getBreaks2 = _slicedToArray(_getBreaks, 3),
+      serie = _getBreaks2[0],
+      breaks = _getBreaks2[1],
+      n_class = _getBreaks2[2];
 
-    var step = (max_size - min_size) / (nb_class - 1),
-        class_size = Array(nb_class).fill(0).map(function (d, i) {
-        return min_size + i * step;
-    }),
-        breaks_prop = [];
+  var step = (max_size - min_size) / (n_class - 1),
+      class_size = Array(n_class).fill(0).map(function (d, i) {
+    return min_size + i * step;
+  }),
+      breaks_prop = [];
 
-    for (var i = 0; i < breaks.length - 1; ++i) {
-        breaks_prop.push([[breaks[i], breaks[i + 1]], class_size[i]]);
-    }return [nb_class, type, breaks_prop, serie];
+  for (var i = 0; i < breaks.length - 1; ++i) {
+    breaks_prop.push([[breaks[i], breaks[i + 1]], class_size[i]]);
+  }
+  return [n_class, type, breaks_prop, serie];
 }
 
 var discretize_to_colors = function discretize_to_colors(values, type, nb_class, col_ramp_name) {
-    col_ramp_name = col_ramp_name || "Reds";
+  var name_col_ramp = col_ramp_name || 'Reds';
 
-    var _getBreaks3 = getBreaks(values, type, nb_class),
-        _getBreaks4 = _slicedToArray(_getBreaks3, 4),
-        serie = _getBreaks4[0],
-        breaks = _getBreaks4[1],
-        nb_class = _getBreaks4[2],
-        nb_no_data = _getBreaks4[3],
-        color_array = getColorBrewerArray(nb_class, col_ramp_name),
-        no_data_color = nb_no_data > 0 ? '#e7e7e7' : null,
-        colors_map = [];
+  var _getBreaks3 = getBreaks(values, type, nb_class),
+      _getBreaks4 = _slicedToArray(_getBreaks3, 4),
+      serie = _getBreaks4[0],
+      breaks = _getBreaks4[1],
+      n_class = _getBreaks4[2],
+      nb_no_data = _getBreaks4[3],
+      color_array = getColorBrewerArray(n_class, name_col_ramp),
+      no_data_color = nb_no_data > 0 ? '#e7e7e7' : null,
+      colors_map = [];
 
-    for (var j = 0; j < values.length; ++j) {
-        if (values[j] != null && values[j] != "") {
-            var idx = serie.getClass(values[j]);
-            colors_map.push(color_array[idx]);
-        } else {
-            colors_map.push(no_data_color);
-        }
+  for (var j = 0; j < values.length; ++j) {
+    if (values[j] != null && values[j] != '') {
+      var idx = serie.getClass(values[j]);
+      colors_map.push(color_array[idx]);
+    } else {
+      colors_map.push(no_data_color);
     }
-    return [nb_class, type, breaks, color_array, colors_map, no_data_color];
+  }
+  return [n_class, type, breaks, color_array, colors_map, no_data_color];
 }.memoize();
 
 var display_discretization = function display_discretization(layer_name, field_name, nb_class, options) {
-    var make_no_data_section = function make_no_data_section() {
-        var section = d3.select("#color_div").append("div").attr("id", "no_data_section").append("p").html(i18next.t("disc_box.withnodata", { count: +no_data }));
+  var make_no_data_section = function make_no_data_section() {
+    var section = d3.select('#color_div').append('div').attr('id', 'no_data_section').append('p').html(i18next.t('disc_box.withnodata', { count: +no_data }));
 
-        section.append("input").attrs({ type: "color", value: "#ebebcd", id: "no_data_color" }).style("margin", "0px 10px");
-    };
+    section.append('input').attrs({ type: 'color', value: '#ebebcd', id: 'no_data_color' }).style('margin', '0px 10px');
+  };
 
-    var make_sequ_button = function make_sequ_button() {
-        var col_div = d3.select("#color_div");
-        col_div.selectAll('.color_params').remove();
-        col_div.selectAll('.color_txt').remove();
-        col_div.selectAll('.color_txt2').remove();
-        col_div.selectAll('.central_class').remove();
-        col_div.selectAll('.central_color').remove();
-        col_div.selectAll('#reverse_pal_btn').remove();
-        var sequential_color_select = col_div.insert("p").attr("class", "color_txt").style("margin-left", "10px").html(i18next.t("disc_box.color_palette")).insert("select").attr("class", "color_params").styles({ 'background-image': 'url(/static/img/palettes/Blues.png)', 'width': '116px' }).on("change", function () {
-            this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
-            redisplay.draw();
-        });
+  var make_sequ_button = function make_sequ_button() {
+    var col_div = d3.select('#color_div');
+    col_div.selectAll('.color_params').remove();
+    col_div.selectAll('.color_txt').remove();
+    col_div.selectAll('.color_txt2').remove();
+    col_div.selectAll('.central_class').remove();
+    col_div.selectAll('.central_color').remove();
+    col_div.selectAll('#reverse_pal_btn').remove();
+    var sequential_color_select = col_div.insert('p').attr('class', 'color_txt').style('margin-left', '10px').html(i18next.t('disc_box.color_palette')).insert('select').attr('class', 'color_params').styles({
+      width: '116px',
+      'background-image': 'url(/static/img/palettes/Blues.png)' }).on('change', function () {
+      this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
+      redisplay.draw();
+    });
 
-        ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (name) {
-            sequential_color_select.append("option").text(name).attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' });
-        });
-        var button_reverse = d3.select(".color_txt").insert('p').style('text-align', 'center').insert("button").styles({ "margin-top": "10px" }).attrs({ "class": "button_st3", "id": "reverse_pal_btn" }).html(i18next.t("disc_box.reverse_palette")).on("click", function () {
-            to_reverse = true;
-            redisplay.draw();
-        });
-    };
+    ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (name) {
+      sequential_color_select.append('option').text(name).attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' });
+    });
 
-    var make_diverg_button = function make_diverg_button() {
-        var col_div = d3.select("#color_div");
-        col_div.selectAll('.color_params').remove();
-        col_div.selectAll('.color_txt').remove();
-        col_div.selectAll('.color_txt2').remove();
-        col_div.selectAll('#reverse_pal_btn').remove();
-        col_div.insert('p').attr("class", "central_class").html(i18next.t("disc_box.break_on")).insert("input").attrs({
-            type: "number", class: "central_class", id: "centr_class",
-            min: 1, max: nb_class - 1, step: 1, value: Math.round(nb_class / 2)
-        }).style("width", "50px").on("change", function (_) {
-            redisplay.draw();
-        });
+    var button_reverse = d3.select('.color_txt').insert('p').style('text-align', 'center').insert('button').styles({ 'margin-top': '10px' }).attrs({ class: 'button_st3', id: 'reverse_pal_btn' }).html(i18next.t('disc_box.reverse_palette')).on('click', function () {
+      to_reverse = true;
+      redisplay.draw();
+    });
+  };
 
-        var pal_names = ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'];
-        var left_color_select = col_div.insert("p").attr("class", "color_txt").style("display", "inline").html(i18next.t("disc_box.left_colramp")).insert("select").style('width', '116px').attr("class", "color_params_left").on("change", function () {
-            this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
-            redisplay.draw();
-        });
-        var right_color_select = col_div.insert("p").styles({ display: "inline", "margin-left": "70px" }).attr("class", "color_txt2").html(i18next.t("disc_box.right_colramp")).insert("select").style('width', '116px').attr("class", "color_params_right").on("change", function () {
-            this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
-            redisplay.draw();
-        });
-        pal_names.forEach(function (name) {
-            left_color_select.append("option").text(name).attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' });
-            right_color_select.append("option").text(name).attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' });
-        });
-        document.getElementsByClassName("color_params_right")[0].selectedIndex = 14;
+  var make_diverg_button = function make_diverg_button() {
+    var col_div = d3.select('#color_div');
+    col_div.selectAll('.color_params').remove();
+    col_div.selectAll('.color_txt').remove();
+    col_div.selectAll('.color_txt2').remove();
+    col_div.selectAll('#reverse_pal_btn').remove();
+    col_div.insert('p').attr('class', 'central_class').html(i18next.t('disc_box.break_on')).insert('input').style('width', '50px').attrs({
+      type: 'number',
+      class: 'central_class',
+      id: 'centr_class',
+      min: 1,
+      max: nb_class - 1,
+      step: 1,
+      value: Math.round(nb_class / 2) }).on('change', function () {
+      redisplay.draw();
+    });
 
-        var central_color = col_div.insert('p').attr("class", "central_color");
-        central_color.insert("input").attrs({ "type": "checkbox", "id": "central_color_chkbx" }).on("change", function () {
-            redisplay.draw();
-            if (this.checked) col_div.select("#central_color_val").style("display", "");else {
-                col_div.select('#central_color_val').style('display', 'none');
-            }
-        });
-        central_color.select("input").node().checked = true;
-        central_color.insert("label").attr("for", "central_color_chkbx").html(i18next.t("disc_box.colored_central_class"));
-        central_color.insert("input").attrs({ type: "color", id: "central_color_val", value: "#e5e5e5" }).style("margin", "0px 10px").on("change", redisplay.draw);
-    };
+    var pal_names = ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'];
+    var left_color_select = col_div.insert('p').attr('class', 'color_txt').style('display', 'inline').html(i18next.t('disc_box.left_colramp')).insert('select').style('width', '116px').attr('class', 'color_params_left').on('change', function () {
+      this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
+      redisplay.draw();
+    });
+    var right_color_select = col_div.insert('p').styles({ display: 'inline', 'margin-left': '70px' }).attr('class', 'color_txt2').html(i18next.t('disc_box.right_colramp')).insert('select').style('width', '116px').attr('class', 'color_params_right').on('change', function () {
+      this.style.backgroundImage = 'url(/static/img/palettes/' + this.value + '.png)';
+      redisplay.draw();
+    });
+    pal_names.forEach(function (name) {
+      left_color_select.append('option').attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' }).text(name);
+      right_color_select.append('option').attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' }).text(name);
+    });
+    document.getElementsByClassName('color_params_right')[0].selectedIndex = 14;
 
-    var make_box_histo_option = function make_box_histo_option() {
+    var central_color = col_div.insert('p').attr('class', 'central_color');
+    central_color.insert('input').attrs({ type: 'checkbox', id: 'central_color_chkbx' }).on('change', function () {
+      redisplay.draw();
+      if (this.checked) {
+        col_div.select('#central_color_val').style('display', '');
+      } else {
+        col_div.select('#central_color_val').style('display', 'none');
+      }
+    });
+    central_color.select('input').node().checked = true;
+    central_color.insert('label').attr('for', 'central_color_chkbx').html(i18next.t('disc_box.colored_central_class'));
+    central_color.insert('input').attrs({ type: 'color', id: 'central_color_val', value: '#e5e5e5' }).style('margin', '0px 10px').on('change', redisplay.draw);
+  };
 
-        var histo_options = newBox.append('div').attrs({ id: 'histo_options', class: 'row equal' }).styles({ 'margin': '5px 5px 10px 15px', 'width': '100%' });
-        var a = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
-            b = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
-            c = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
-            d = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3');
+  var make_box_histo_option = function make_box_histo_option() {
+    var histo_options = newBox.append('div').attrs({ id: 'histo_options', class: 'row equal' }).styles({ margin: '5px 5px 10px 15px', width: '100%' });
+    var a = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
+        b = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
+        c = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3'),
+        d = histo_options.append('div').attr('class', 'col-xs-6 col-sm-3');
 
-        a.insert('button').attrs({ class: 'btn_population' }).html(i18next.t('disc_box.disp_rug_pop')).on('click', function () {
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                rug_plot.style('display', 'none');
-                rug_plot.classed('active', false);
-            } else {
-                this.classList.add('active');
-                rug_plot.style('display', '');
-                rug_plot.classed('active', true);
-            }
-        });
+    a.insert('button').attrs({ class: 'btn_population' }).html(i18next.t('disc_box.disp_rug_pop')).on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        rug_plot.style('display', 'none');
+        rug_plot.classed('active', false);
+      } else {
+        this.classList.add('active');
+        rug_plot.style('display', '');
+        rug_plot.classed('active', true);
+      }
+    });
 
-        b.insert('button').attrs({ class: 'btn_mean' }).html(i18next.t('disc_box.disp_mean')).on('click', function () {
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                line_mean.style("stroke-width", 0);
-                txt_mean.style("fill", "none");
-                line_mean.classed("active", false);
-            } else {
-                this.classList.add('active');
-                line_mean.style("stroke-width", 2);
-                txt_mean.style("fill", "blue");
-                line_mean.classed("active", true);
-            }
-        });
+    b.insert('button').attrs({ class: 'btn_mean' }).html(i18next.t('disc_box.disp_mean')).on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        line_mean.style('stroke-width', 0);
+        txt_mean.style('fill', 'none');
+        line_mean.classed('active', false);
+      } else {
+        this.classList.add('active');
+        line_mean.style('stroke-width', 2);
+        txt_mean.style('fill', 'blue');
+        line_mean.classed('active', true);
+      }
+    });
 
-        c.insert('button').attrs({ class: 'btn_median' }).html(i18next.t('disc_box.disp_median')).on('click', function () {
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                line_median.style('stroke-width', 0).classed('active', false);
-                txt_median.style('fill', 'none');
-            } else {
-                this.classList.add('active');
-                line_median.style('stroke-width', 2).classed('active', true);
-                txt_median.style('fill', 'darkgreen');
-            }
-        });
+    c.insert('button').attrs({ class: 'btn_median' }).html(i18next.t('disc_box.disp_median')).on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        line_median.style('stroke-width', 0).classed('active', false);
+        txt_median.style('fill', 'none');
+      } else {
+        this.classList.add('active');
+        line_median.style('stroke-width', 2).classed('active', true);
+        txt_median.style('fill', 'darkgreen');
+      }
+    });
 
-        d.insert('button').attrs({ class: 'btn_stddev' }).html(i18next.t('disc_box.disp_sd')).on('click', function () {
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                line_std_left.style("stroke-width", 0);
-                line_std_left.classed("active", false);
-                line_std_right.style("stroke-width", 0);
-                line_std_right.classed("active", false);
-            } else {
-                this.classList.add('active');
-                line_std_left.style("stroke-width", 2);
-                line_std_left.classed("active", true);
-                line_std_right.style("stroke-width", 2);
-                line_std_right.classed("active", true);
-            }
-        });
-    };
+    d.insert('button').attrs({ class: 'btn_stddev' }).html(i18next.t('disc_box.disp_sd')).on('click', function () {
+      if (this.classList.contains('active')) {
+        this.classList.remove('active');
+        line_std_left.style('stroke-width', 0);
+        line_std_left.classed('active', false);
+        line_std_right.style('stroke-width', 0);
+        line_std_right.classed('active', false);
+      } else {
+        this.classList.add('active');
+        line_std_left.style('stroke-width', 2);
+        line_std_left.classed('active', true);
+        line_std_right.style('stroke-width', 2);
+        line_std_right.classed('active', true);
+      }
+    });
+  };
 
-    var update_nb_class = function update_nb_class(value) {
-        txt_nb_class.node().value = value;
-        document.getElementById("nb_class_range").value = value;
-        nb_class = value;
-    };
+  var update_nb_class = function update_nb_class(value) {
+    txt_nb_class.node().value = value;
+    document.getElementById('nb_class_range').value = value;
+    nb_class = value;
+  };
 
-    var update_axis = function update_axis(group) {
-        group.call(d3.axisBottom().scale(x).tickFormat(formatCount));
-    };
+  var update_axis = function update_axis(group) {
+    group.call(d3.axisBottom().scale(x).tickFormat(formatCount));
+  };
 
-    var update_overlay_elements = function update_overlay_elements() {
-        var x_mean = x(mean_serie),
-            x_med = x(serie.median()),
-            x_std_left = x(mean_serie - stddev_serie),
-            x_std_right = x(mean_serie + stddev_serie);
-        line_mean.transition().attrs({ x1: x_mean, x2: x_mean });
-        txt_mean.transition().attr('x', x_mean);
-        line_median.transition().attrs({ x1: x_med, x2: x_med });
-        txt_median.transition().attr('x', x_med);
-        line_std_left.transition().attrs({ x1: x_std_left, x2: x_std_left });
-        line_std_right.transition().attrs({ x1: x_std_right, x2: x_std_right });
-        rug_plot.selectAll('.indiv').attrs(function (d) {
-            return { x1: x(d.value), x2: x(d.value) };
-        });
-    };
+  var update_overlay_elements = function update_overlay_elements() {
+    var x_mean = x(mean_serie),
+        x_med = x(serie.median()),
+        x_std_left = x(mean_serie - stddev_serie),
+        x_std_right = x(mean_serie + stddev_serie);
+    line_mean.transition().attrs({ x1: x_mean, x2: x_mean });
+    txt_mean.transition().attr('x', x_mean);
+    line_median.transition().attrs({ x1: x_med, x2: x_med });
+    txt_median.transition().attr('x', x_med);
+    line_std_left.transition().attrs({ x1: x_std_left, x2: x_std_left });
+    line_std_right.transition().attrs({ x1: x_std_right, x2: x_std_right });
+    rug_plot.selectAll('.indiv').attrs(function (d) {
+      return { x1: x(d.value), x2: x(d.value) };
+    });
+  };
 
-    var make_overlay_elements = function make_overlay_elements() {
+  var make_overlay_elements = function make_overlay_elements() {
+    line_mean = overlay_svg.append('line').attr('class', 'line_mean').attr('x1', x(mean_serie)).attr('y1', 10).attr('x2', x(mean_serie)).attr('y2', svg_h - margin.bottom).styles({ 'stroke-width': 0, stroke: 'blue', fill: 'none' }).classed('active', false);
 
-        line_mean = overlay_svg.append("line").attr("class", "line_mean").attr("x1", x(mean_serie)).attr("y1", 10).attr("x2", x(mean_serie)).attr("y2", svg_h - margin.bottom).styles({ "stroke-width": 0, stroke: "blue", fill: "none" }).classed("active", false);
+    txt_mean = overlay_svg.append('text').attr('y', 0).attr('dy', '0.75em').attr('x', x(mean_serie)).style('fill', 'none').attr('text-anchor', 'middle').text(i18next.t('disc_box.mean'));
 
-        txt_mean = overlay_svg.append("text").attr("y", 0).attr("dy", "0.75em").attr("x", x(mean_serie)).style("fill", "none").attr("text-anchor", "middle").text(i18next.t("disc_box.mean"));
+    line_median = overlay_svg.append('line').attr('class', 'line_med').attr('x1', x(serie.median())).attr('y1', 10).attr('x2', x(serie.median())).attr('y2', svg_h - margin.bottom).styles({ 'stroke-width': 0, stroke: 'darkgreen', fill: 'none' }).classed('active', false);
 
-        line_median = overlay_svg.append("line").attr("class", "line_med").attr("x1", x(serie.median())).attr("y1", 10).attr("x2", x(serie.median())).attr("y2", svg_h - margin.bottom).styles({ "stroke-width": 0, stroke: "darkgreen", fill: "none" }).classed("active", false);
+    txt_median = overlay_svg.append('text').attr('y', 0).attr('dy', '0.75em').attr('x', x(serie.median())).style('fill', 'none').attr('text-anchor', 'middle').text(i18next.t('disc_box.median'));
 
-        txt_median = overlay_svg.append("text").attr("y", 0).attr("dy", "0.75em").attr("x", x(serie.median())).style("fill", "none").attr("text-anchor", "middle").text(i18next.t("disc_box.median"));
+    line_std_left = overlay_svg.append('line').attr('class', 'lines_std').attr('x1', x(mean_serie - stddev_serie)).attr('y1', 10).attr('x2', x(mean_serie - stddev_serie)).attr('y2', svg_h - margin.bottom).styles({ 'stroke-width': 0, stroke: 'grey', fill: 'none' }).classed('active', false);
 
-        line_std_left = overlay_svg.append("line").attr("class", "lines_std").attr("x1", x(mean_serie - stddev_serie)).attr("y1", 10).attr("x2", x(mean_serie - stddev_serie)).attr("y2", svg_h - margin.bottom).styles({ "stroke-width": 0, stroke: "grey", fill: "none" }).classed("active", false);
+    line_std_right = overlay_svg.append('line').attr('class', 'lines_std').attr('x1', x(mean_serie + stddev_serie)).attr('y1', 10).attr('x2', x(mean_serie + stddev_serie)).attr('y2', svg_h - margin.bottom).styles({ 'stroke-width': 0, stroke: 'grey', fill: 'none' }).classed('active', false);
 
-        line_std_right = overlay_svg.append("line").attr("class", "lines_std").attr("x1", x(mean_serie + stddev_serie)).attr("y1", 10).attr("x2", x(mean_serie + stddev_serie)).attr("y2", svg_h - margin.bottom).styles({ "stroke-width": 0, stroke: "grey", fill: "none" }).classed("active", false);
+    rug_plot = overlay_svg.append('g').style('display', 'none');
+    rug_plot.selectAll('.indiv').data(values.map(function (i) {
+      return { value: +i };
+    })).enter().insert('line').attrs(function (d) {
+      return { class: 'indiv', x1: x(d.value), y1: svg_h - margin.bottom - 10, x2: x(d.value), y2: svg_h - margin.bottom };
+    }).styles({ stroke: 'red', fill: 'none', 'stroke-width': 1 });
+  };
 
-        rug_plot = overlay_svg.append('g').style('display', 'none');
-        rug_plot.selectAll('.indiv').data(values.map(function (i) {
-            return { value: +i };
-        })).enter().insert('line').attrs(function (d) {
-            return { class: 'indiv', x1: x(d.value), y1: svg_h - margin.bottom - 10, x2: x(d.value), y2: svg_h - margin.bottom };
-        }).styles({ 'stroke': 'red', 'fill': 'none', 'stroke-width': 1 });
-    };
+  var make_summary = function make_summary() {
+    var content_summary = make_content_summary(serie);
+    newBox.append('div').attr('id', 'summary').styles({ 'font-size': '11px', float: 'right', margin: '10px 10px 0px 10px' }).insert('p').html(['<b>', i18next.t('disc_box.summary'), '</b><br>', content_summary].join(''));
+  };
 
-    var make_summary = function make_summary() {
-        var content_summary = make_content_summary(serie);
-        newBox.append("div").attr("id", "summary").styles({ 'font-size': '11px', 'float': 'right', 'margin': '10px 10px 0px 10px' }).insert("p").html(["<b>", i18next.t("disc_box.summary"), "</b><br>", content_summary].join(""));
-    };
+  var redisplay = {
+    compute: function compute() {
+      var tmp = void 0;
+      serie = new geostats(values);
+      breaks = [];
+      values = serie.sorted();
 
-    var redisplay = {
-        compute: function compute() {
-            serie = new geostats(values);
-            breaks = [];
-            values = serie.sorted();
+      if (type === 'Q6') {
+        tmp = getBreaksQ6(values, serie.precision);
+        // stock_class = tmp.stock_class;
+        breaks = tmp.breaks;
+        breaks[0] = min_serie;
+        breaks[6] = max_serie;
+        serie.setClassManually(breaks);
+        serie.doCount();
+        stock_class = Array.prototype.slice.call(serie.counter);
+      } else if (type === 'stddev_f') {
+        tmp = getBreaksStdDev(serie, std_dev_params.share, std_dev_params.role_mean, serie.precision);
+        update_nb_class(nb_class = tmp.nb_class);
+        breaks = tmp.breaks;
+        serie.setClassManually(tmp.breaks);
+        serie.doCount();
+        stock_class = Array.prototype.slice.call(serie.counter);
+      } else if (type === 'user_defined') {
+        tmp = getBreaks_userDefined(serie.sorted(), user_break_list);
+        stock_class = tmp.stock_class;
+        breaks = tmp.breaks;
+        nb_class = tmp.breaks.length - 1;
+        update_nb_class(nb_class);
 
-            if (type === "Q6") {
-                var tmp = getBreaksQ6(values, serie.precision);
-                // stock_class = tmp.stock_class;
-                breaks = tmp.breaks;
-                breaks[0] = min_serie;
-                breaks[6] = max_serie;
-                serie.setClassManually(breaks);
-                serie.doCount();
-                stock_class = Array.prototype.slice.call(serie.counter);
-            } else if (type === "stddev_f") {
-                var tmp = getBreaksStdDev(serie, std_dev_params.share, std_dev_params.role_mean, serie.precision);
-                update_nb_class(nb_class = tmp.nb_class);
-                breaks = tmp.breaks;
-                serie.setClassManually(tmp.breaks);
-                serie.doCount();
-                stock_class = Array.prototype.slice.call(serie.counter);
-            } else if (type === "user_defined") {
-                var tmp = getBreaks_userDefined(serie.sorted(), user_break_list);
-                stock_class = tmp.stock_class;
-                breaks = tmp.breaks;
+        if (breaks[0] > min_serie) breaks[0] = min_serie;
+        if (breaks[nb_class] < max_serie) breaks[nb_class] = max_serie;
 
-                nb_class = tmp.breaks.length - 1;
-                update_nb_class(nb_class);
-
-                if (breaks[0] > min_serie) breaks[0] = min_serie;
-                if (breaks[nb_class] < max_serie) breaks[nb_class] = max_serie;
-
-                var breaks_serie = breaks.slice();
-                if (breaks_serie[0] < min_serie) {
-                    breaks_serie[0] = min_serie;
-                }
-                if (breaks_serie[nb_class] > max_serie) {
-                    breaks_serie[nb_class] = max_serie;
-                }
-                serie.setClassManually(breaks_serie);
-            } else {
-                var _func = discretiz_geostats_switch.get(type);
-                breaks = serie[_func](nb_class);
-                // if(serie.precision) breaks = breaks.map(val => round_value(val, serie.precision));
-                serie.doCount();
-                stock_class = Array.prototype.slice.call(serie.counter);
-                if (stock_class.length == 0) {
-                    return;
-                }
-            }
-            // In order to avoid class limit falling out the serie limits with Std class :
-            //            breaks[0] = breaks[0] < serie.min() ? serie.min() : breaks[0];
-            //            ^^^ well finally not ?
-            bins = [];
-            for (var i = 0, len = stock_class.length, offset = 0; i < len; i++) {
-                var bin = {};
-                bin.val = stock_class[i];
-                bin.offset = i == 0 ? 0 : bins[i - 1].width + bins[i - 1].offset;
-                bin.width = breaks[i + 1] - breaks[i];
-                bin.height = bin.val / (breaks[i + 1] - breaks[i]);
-                bins[i] = bin;
-            }
-            return true;
-        },
-        draw: function draw(provided_colors) {
-            // Clean-up previously made histogram :
-            newBox.select("#svg_discretization").selectAll(".bar").remove();
-            newBox.select("#svg_discretization").selectAll(".text_bar").remove();
-
-            if (!provided_colors) {
-                var col_scheme = newBox.select('.color_params_left').node() ? "diverging" : "sequential";
-                if (col_scheme === "sequential") {
-                    if (to_reverse) {
-                        color_array = color_array.reverse();
-                        to_reverse = false;
-                    } else {
-                        var selected_palette = document.querySelector('.color_params').value;
-                        color_array = getColorBrewerArray(nb_class, selected_palette);
-                        color_array = color_array.slice(0, nb_class);
-                    }
-                } else if (col_scheme === "diverging") {
-                    var left_palette = document.querySelector('.color_params_left').value,
-                        right_palette = document.querySelector('.color_params_right').value,
-                        ctl_class_value = +document.getElementById('centr_class').value,
-                        ctl_class_color = document.querySelector(".central_color > input").checked ? document.getElementById("central_color_val").value : [];
-
-                    var class_right = nb_class - ctl_class_value + 1,
-                        class_left = ctl_class_value - 1,
-                        max_col_nb = Math.max(class_right, class_left),
-                        right_pal = getColorBrewerArray(max_col_nb, right_palette),
-                        left_pal = getColorBrewerArray(max_col_nb, left_palette);
-
-                    left_pal = left_pal.slice(0, class_left).reverse();
-                    right_pal = right_pal.slice(0, class_right);
-
-                    color_array = [].concat(left_pal, ctl_class_color, right_pal);
-                }
-            } else {
-                color_array = provided_colors.slice();
-            }
-            for (var i = 0, len = bins.length; i < len; ++i) {
-                bins[i].color = color_array[i];
-            }x.domain([breaks[0], breaks[breaks.length - 1]]);
-            y.domain([0, d3.max(bins.map(function (d) {
-                return d.height + d.height / 3;
-            }))]);
-
-            svg_histo.select('.x_axis').transition().call(update_axis);
-            update_overlay_elements();
-
-            var xx = d3.scaleLinear().range([0, svg_w]).domain([0, d3.max(bins.map(function (d) {
-                return d.offset + d.width;
-            }))]);
-
-            var bar = svg_histo.selectAll(".bar").data(bins).enter().append("rect").attrs(function (d, i) {
-                return {
-                    "class": "bar", "id": "bar_" + i, "transform": "translate(0, -7.5)",
-                    "x": xx(d.offset), "y": y(d.height) - margin.bottom,
-                    "width": xx(d.width), "height": svg_h - y(d.height)
-                };
-            }).styles(function (d) {
-                return {
-                    "opacity": 0.95,
-                    "stroke-opacity": 1,
-                    "fill": d.color
-                };
-            }).on("mouseover", function () {
-                this.parentElement.querySelector("#text_bar_" + this.id.split('_')[1]).style.display = null;
-            }).on("mouseout", function () {
-                this.parentElement.querySelector("#text_bar_" + this.id.split('_')[1]).style.display = "none";
-            });
-
-            svg_histo.selectAll(".txt_bar").data(bins).enter().append("text").attrs(function (d, i) {
-                return {
-                    "id": "text_bar_" + i, "class": "text_bar", "text-anchor": "middle",
-                    "dy": ".75em", "x": xx(d.offset + d.width / 2), "y": y(d.height) - margin.top * 2 - margin.bottom - 1.5
-                };
-            }).styles({ "color": "black", "cursor": "default", "display": "none" }).text(function (d) {
-                return formatCount(d.val);
-            });
-
-            document.getElementById("user_breaks_area").value = breaks.join(' - ');
-            return true;
+        var breaks_serie = breaks.slice();
+        if (breaks_serie[0] < min_serie) {
+          breaks_serie[0] = min_serie;
         }
-    };
+        if (breaks_serie[nb_class] > max_serie) {
+          breaks_serie[nb_class] = max_serie;
+        }
+        serie.setClassManually(breaks_serie);
+      } else {
+        breaks = serie[discretiz_geostats_switch.get(type)](nb_class);
+        // if (serie.precision) breaks = breaks.map(val => round_value(val, serie.precision));
+        serie.doCount();
+        stock_class = Array.prototype.slice.call(serie.counter);
+        if (stock_class.length === 0) {
+          return;
+        }
+      }
+      // In order to avoid class limit falling out the serie limits with Std class :
+      //            breaks[0] = breaks[0] < serie.min() ? serie.min() : breaks[0];
+      //            ^^^ well finally not ?
+      bins = [];
+      for (var i = 0, len = stock_class.length, offset = 0; i < len; i++) {
+        var bin = {};
+        bin.val = stock_class[i];
+        bin.offset = i === 0 ? 0 : bins[i - 1].width + bins[i - 1].offset;
+        bin.width = breaks[i + 1] - breaks[i];
+        bin.height = bin.val / (breaks[i + 1] - breaks[i]);
+        bins[i] = bin;
+      }
+      return true;
+    },
+    draw: function draw(provided_colors) {
+      // Clean-up previously made histogram :
+      newBox.select('#svg_discretization').selectAll('.bar').remove();
+      newBox.select('#svg_discretization').selectAll('.text_bar').remove();
 
-    //////////////////////////////////////////////////////////////////////////
+      if (!provided_colors) {
+        var col_scheme = newBox.select('.color_params_left').node() ? 'diverging' : 'sequential';
+        if (col_scheme === 'sequential') {
+          if (to_reverse) {
+            color_array = color_array.reverse();
+            to_reverse = false;
+          } else {
+            var selected_palette = document.querySelector('.color_params').value;
+            color_array = getColorBrewerArray(nb_class, selected_palette);
+            color_array = color_array.slice(0, nb_class);
+          }
+        } else if (col_scheme === 'diverging') {
+          var left_palette = document.querySelector('.color_params_left').value,
+              right_palette = document.querySelector('.color_params_right').value,
+              ctl_class_value = +document.getElementById('centr_class').value,
+              ctl_class_color = document.querySelector('.central_color > input').checked ? document.getElementById('central_color_val').value : [];
 
-    var modal_box = make_dialog_container("discretiz_charts", [i18next.t("disc_box.title"), " - ", layer_name, " - ", field_name].join(''), "discretiz_charts_dialog");
+          var class_right = nb_class - ctl_class_value + 1,
+              class_left = ctl_class_value - 1,
+              max_col_nb = Math.max(class_right, class_left);
+          var right_pal = getColorBrewerArray(max_col_nb, right_palette),
+              left_pal = getColorBrewerArray(max_col_nb, left_palette);
 
-    var newBox = d3.select("#discretiz_charts").select(".modal-body");
-    var db_data = void 0;
-    if (result_data.hasOwnProperty(layer_name)) {
-        db_data = result_data[layer_name];
-    } else if (user_data.hasOwnProperty(layer_name)) {
-        db_data = user_data[layer_name];
+          left_pal = left_pal.slice(0, class_left).reverse();
+          right_pal = right_pal.slice(0, class_right);
+
+          color_array = [].concat(left_pal, ctl_class_color, right_pal);
+        }
+      } else {
+        color_array = provided_colors.slice();
+      }
+      for (var i = 0, len = bins.length; i < len; ++i) {
+        bins[i].color = color_array[i];
+      }
+      x.domain([breaks[0], breaks[breaks.length - 1]]);
+      y.domain([0, d3.max(bins.map(function (d) {
+        return d.height + d.height / 3;
+      }))]);
+
+      svg_histo.select('.x_axis').transition().call(update_axis);
+      update_overlay_elements();
+
+      var xx = d3.scaleLinear().range([0, svg_w]).domain([0, d3.max(bins.map(function (d) {
+        return d.offset + d.width;
+      }))]);
+
+      var bar = svg_histo.selectAll('.bar').data(bins).enter().append('rect').attrs(function (d, i) {
+        return {
+          class: 'bar',
+          id: 'bar_' + i,
+          transform: 'translate(0, -7.5)',
+          x: xx(d.offset),
+          y: y(d.height) - margin.bottom,
+          width: xx(d.width),
+          height: svg_h - y(d.height) };
+      }).styles(function (d) {
+        return {
+          fill: d.color,
+          opacity: 0.95,
+          'stroke-opacity': 1 };
+      }).on('mouseover', function () {
+        this.parentElement.querySelector('#text_bar_' + this.id.split('_')[1]).style.display = null;
+      }).on('mouseout', function () {
+        this.parentElement.querySelector('#text_bar_' + this.id.split('_')[1]).style.display = 'none';
+      });
+
+      svg_histo.selectAll('.txt_bar').data(bins).enter().append('text').attrs(function (d, i) {
+        return {
+          id: 'text_bar_' + i,
+          class: 'text_bar',
+          'text-anchor': 'middle',
+          dy: '.75em',
+          x: xx(d.offset + d.width / 2),
+          y: y(d.height) - margin.top * 2 - margin.bottom - 1.5 };
+      }).styles({ color: 'black', cursor: 'default', display: 'none' }).text(function (d) {
+        return formatCount(d.val);
+      });
+
+      document.getElementById('user_breaks_area').value = breaks.join(' - ');
+      return true;
+    }
+  };
+
+  var modal_box = make_dialog_container('discretiz_charts', [i18next.t('disc_box.title'), ' - ', layer_name, ' - ', field_name].join(''), 'discretiz_charts_dialog');
+
+  var newBox = d3.select('#discretiz_charts').select('.modal-body');
+  var db_data = void 0;
+  if (result_data.hasOwnProperty(layer_name)) {
+    db_data = result_data[layer_name];
+  } else if (user_data.hasOwnProperty(layer_name)) {
+    db_data = user_data[layer_name];
+  } else {
+    var layer = svg_map.querySelector('#' + _app.idLayer.get(layer_name));
+    db_data = Array.prototype.map.call(layer.children, function (d) {
+      return d.__data__.properties;
+    });
+  }
+  var indexes = [];
+  var color_array = [],
+      nb_values = db_data.length,
+      values = [],
+      no_data = void 0;
+
+  var type = options.type;
+
+  for (var i = 0; i < nb_values; i++) {
+    if (db_data[i][field_name] != null && db_data[i][field_name] != '') {
+      values.push(+db_data[i][field_name]);
+      indexes.push(i);
+    }
+  }
+
+  if (nb_values === values.length) {
+    no_data = 0;
+  } else {
+    no_data = nb_values - values.length;
+    nb_values = values.length;
+  }
+
+  var max_nb_class = nb_values > 20 ? 20 : nb_values;
+  var serie = new geostats(values),
+      breaks = [],
+      stock_class = [],
+      bins = [],
+      user_break_list = null,
+      std_dev_params = options.extra_options && options.extra_options.role_mean ? options.extra_options : { role_mean: 'center', share: 1 };
+
+  if (serie.variance() === 0 && serie.stddev() === 0) {
+    serie = new geostats(values);
+  }
+
+  var min_serie = serie.min();
+  var max_serie = serie.max();
+  var mean_serie = serie.mean();
+  var stddev_serie = serie.stddev();
+
+  values = serie.sorted();
+
+  var available_functions = [[i18next.t('app_page.common.equal_interval'), 'equal_interval'], [i18next.t('app_page.common.quantiles'), 'quantiles'], [i18next.t('app_page.common.stddev_f'), 'stddev_f'], [i18next.t('app_page.common.Q6'), 'Q6'], [i18next.t('app_page.common.arithmetic_progression'), 'arithmetic_progression'], [i18next.t('app_page.common.jenks'), 'jenks']];
+
+  if (!serie._hasZeroValue() && !serie._hasNegativeValue()) {
+    available_functions.push([i18next.t('app_page.common.geometric_progression'), 'geometric_progression']);
+  }
+  var precision_axis = get_precision_axis(min_serie, max_serie, serie.precision);
+  var formatCount = d3.format(precision_axis);
+  var discretization = newBox.append('div').attr('id', 'discretization_panel').insert('p').insert('select').attr('class', 'params').on('change', function () {
+    type = this.value;
+    if (type === 'stddev_f') {
+      input_section_stddev.style('display', '');
+      document.getElementById('nb_class_range').disabled = 'disabled';
+      txt_nb_class.style('disabled', 'disabled');
+      disc_nb_class.style('display', 'none');
     } else {
-        var layer = svg_map.querySelector('#' + _app.idLayer.get(layer_name));
-        db_data = Array.prototype.map.call(layer.children, function (d) {
-            return d.__data__.properties;
-        });
+      input_section_stddev.style('display', 'none');
+      document.getElementById('nb_class_range').disabled = false;
+      txt_nb_class.style('disabled', false);
+      disc_nb_class.style('display', 'inline');
     }
-    var color_array = [],
-        nb_values = db_data.length,
-        indexes = [],
-        values = [],
-        no_data = void 0;
-
-    var type = options.type;
-
-    for (var i = 0; i < nb_values; i++) {
-        if (db_data[i][field_name] != null && db_data[i][field_name] != "") {
-            values.push(+db_data[i][field_name]);
-            indexes.push(i);
-        }
+    if (type === 'Q6') {
+      update_nb_class(6);
     }
-
-    if (nb_values == values.length) {
-        no_data = 0;
-    } else {
-        no_data = nb_values - values.length;
-        nb_values = values.length;
-    }
-
-    var serie = new geostats(values),
-        breaks = [],
-        stock_class = [],
-        bins = [],
-        user_break_list = null,
-        max_nb_class = 20 < nb_values ? 20 : nb_values,
-        std_dev_params = options.extra_options && options.extra_options.role_mean != undefined ? options.extra_options : { role_mean: 'center', share: 1 };
-
-    if (serie.variance() == 0 && serie.stddev() == 0) {
-        serie = new geostats(values);
-    }
-
-    var min_serie = serie.min();
-    var max_serie = serie.max();
-    var mean_serie = serie.mean();
-    var stddev_serie = serie.stddev();
-
-    values = serie.sorted();
-
-    var available_functions = [[i18next.t("app_page.common.equal_interval"), "equal_interval"], [i18next.t("app_page.common.quantiles"), "quantiles"], [i18next.t("app_page.common.stddev_f"), "stddev_f"], [i18next.t("app_page.common.Q6"), "Q6"], [i18next.t("app_page.common.arithmetic_progression"), "arithmetic_progression"], [i18next.t("app_page.common.jenks"), "jenks"]];
-
-    if (!serie._hasZeroValue() && !serie._hasNegativeValue()) {
-        available_functions.push([i18next.t("app_page.common.geometric_progression"), "geometric_progression"]);
-    }
-    var precision_axis = get_precision_axis(min_serie, max_serie, serie.precision);
-    var formatCount = d3.format(precision_axis);
-    var discretization = newBox.append('div').attr("id", "discretization_panel").insert("p").insert("select").attr("class", "params").on("change", function () {
-        type = this.value;
-        if (type === "stddev_f") {
-            input_section_stddev.style('display', '');
-            document.getElementById("nb_class_range").disabled = 'disabled';
-            txt_nb_class.style('disabled', 'disabled');
-            disc_nb_class.style('display', 'none');
-        } else {
-            input_section_stddev.style('display', 'none');
-            document.getElementById("nb_class_range").disabled = false;
-            txt_nb_class.style('disabled', false);
-            disc_nb_class.style('display', 'inline');
-        }
-        if (type === "Q6") {
-            update_nb_class(6);
-        }
-        redisplay.compute();
-        redisplay.draw();
-    });
-
-    available_functions.forEach(function (func) {
-        discretization.append("option").text(func[0]).attr("value", func[1]);
-    });
-
-    var input_section_stddev = d3.select('#discretization_panel').insert('p').styles({ 'display': type === 'stddev_f' ? '' : 'none',
-        'margin': 'auto' });
-    input_section_stddev.insert('span').html(i18next.t('disc_box.stddev_share_txt1'));
-    input_section_stddev.insert('input').attrs({ type: 'number', min: 0.1, max: 10, step: 0.1, class: 'without_spinner', id: 'stddev_share', value: std_dev_params.share }).styles({ 'width': '45px', 'margin-left': '10px', 'margin-right': '10px' }).on('change', function () {
-        var val = this.value;
-        if (val == 0 || val * stddev_serie > max_serie - min_serie || val * stddev_serie * 21 < max_serie - min_serie) {
-            // If the new value is too big or too small:
-            this.value = std_dev_params.share;
-            return;
-        }
-        std_dev_params.share = val;
-        redisplay.compute();
-        redisplay.draw();
-    });
-    input_section_stddev.insert('span').html(i18next.t('disc_box.stddev_share_txt2'));
-    var std_dev_mean_choice = input_section_stddev.insert('p').style('margin', 'auto');
-    std_dev_mean_choice.insert('p').style('margin', 'auto').html(i18next.t('disc_box.stddev_role_mean'));
-    [[i18next.t("disc_box.stddev_center_mean"), "center"], [i18next.t("disc_box.stddev_break_mean"), "bound"]].forEach(function (el) {
-        std_dev_mean_choice.insert('input').attrs({ type: "radio", name: "role_mean", value: el[1], id: "button_stddev_" + el[1] }).on("change", function () {
-            std_dev_params.role_mean = this.value;
-            redisplay.compute();
-            redisplay.draw();
-        });
-        std_dev_mean_choice.insert("label").style('font-weight', '400').attrs({ 'for': "button_stddev_" + el[1] }).html(el[0]);
-    });
-    document.getElementById("button_stddev_" + std_dev_params.role_mean).checked = true;
-    var txt_nb_class = d3.select("#discretization_panel").append("input").attrs({ type: "number", class: "without_spinner", min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: "30px", "margin": "0 10px", "vertical-align": "calc(20%)" }).on("change", function () {
-        var a = disc_nb_class.node();
-        a.value = this.value;
-        a.dispatchEvent(new Event('change'));
-    });
-
-    d3.select("#discretization_panel").append('span').html(i18next.t("disc_box.class"));
-
-    var disc_nb_class = d3.select("#discretization_panel").insert("input").styles({ display: "inline", width: "60px", "vertical-align": "middle", margin: "10px" }).attrs({ id: "nb_class_range", type: "range" }).attrs({ min: 2, max: max_nb_class, value: nb_class, step: 1 }).on("change", function () {
-        type = discretization.node().value;
-        var old_nb_class = nb_class;
-        if (type === "Q6") {
-            update_nb_class(6);
-        } else if (type === "stddev_f") {
-            update_nb_class(nb_class);
-            return;
-        }
-        nb_class = +this.value;
-        txt_nb_class.node().value = nb_class;
-        var ret_val = redisplay.compute();
-        if (!ret_val) {
-            this.value = old_nb_class;
-            txt_nb_class.node().value = +old_nb_class;
-        } else {
-            redisplay.draw();
-            var ctl_class = document.getElementById("centr_class");
-            if (ctl_class) {
-                ctl_class.max = nb_class;
-                if (ctl_class > nb_class) ctl_class.value = Math.round(nb_class / 2);
-            }
-        }
-    });
-
-    var ref_histo_box = newBox.append('div').attr("id", "ref_histo_box");
-    ref_histo_box.append('div').attr('id', 'inner_ref_histo_box');
-
-    discretization.node().value = type;
-    make_summary();
-    var refDisplay = prepare_ref_histo(newBox, serie, formatCount);
-    refDisplay("histogram");
-
-    var svg_h = h / 5 > 100 ? h / 5 : 100,
-        svg_w = 760 < window.innerWidth - 40 ? 760 : window.innerWidth - 40,
-        margin = { top: 7.5, right: 30, bottom: 7.5, left: 30 },
-        height = svg_h - margin.top - margin.bottom;
-
-    d3.select("#discretiz_charts").select(".modal-dialog").styles({ width: svg_w + margin.top + margin.bottom + 90 + "px",
-        height: window.innerHeight - 60 + "px" });
-
-    if (values.length < 500) {
-        // Only allow for beeswarm plot if there isn't too many values
-        // as it seems to be costly due to the "simulation" + the voronoi
-        var current_histo = "histogram",
-            choice_histo = ref_histo_box.append('p').style('text-align', 'center');
-        choice_histo.insert('button').attrs({ id: 'button_switch_plot', class: 'i18n button_st4', 'data-i18n': '[text]disc_box.switch_ref_histo' }).styles({ padding: '3px', 'font-size': '10px' }).html(i18next.t('disc_box.switch_ref_histo')).on('click', function () {
-            var str_tr = void 0;
-            if (current_histo == 'histogram') {
-                refDisplay("box_plot");
-                current_histo = "box_plot";
-                str_tr = "_boxplot";
-            } else if (current_histo == "box_plot") {
-                refDisplay("beeswarm");
-                current_histo = "beeswarm";
-                str_tr = '_beeswarm';
-            } else if (current_histo == "beeswarm") {
-                refDisplay("histogram");
-                current_histo = "histogram";
-                str_tr = '';
-            }
-            document.getElementById('ref_histo_title').innerHTML = '<b>' + i18next.t('disc_box.hist_ref_title' + str_tr) + '</b>';
-        });
-    }
-    var div_svg = newBox.append('div').append("svg").attr("id", "svg_discretization").attr("width", svg_w + margin.left + margin.right).attr("height", svg_h + margin.top + margin.bottom);
-
-    make_box_histo_option();
-
-    var svg_histo = div_svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    var x = d3.scaleLinear().domain([min_serie, max_serie]).range([0, svg_w]);
-
-    var y = d3.scaleLinear().range([svg_h, 0]);
-
-    var overlay_svg = div_svg.append("g").attr('transform', 'translate(30, 0)'),
-        line_mean = void 0,
-        line_std_right = void 0,
-        line_std_left = void 0,
-        line_median = void 0,
-        txt_median = void 0,
-        txt_mean = void 0,
-        rug_plot = void 0;
-
-    make_overlay_elements();
-
-    svg_histo.append("g").attr("class", "x_axis").attr("transform", "translate(0," + height + ")").call(d3.axisBottom().scale(x).tickFormat(formatCount));
-
-    var b_accordion_colors = newBox.append("button").attrs({ "class": "accordion_disc active", "id": "btn_acc_disc_color" }).style("padding", "0 6px").html(i18next.t("disc_box.title_color_scheme")),
-        accordion_colors = newBox.append("div").attrs({ "class": "panel show", "id": "accordion_colors" }).style("width", "98%"),
-        color_scheme = d3.select("#accordion_colors").append("div").attr("id", "color_div").style("text-align", "center");
-
-    [[i18next.t("disc_box.sequential"), "sequential"], [i18next.t("disc_box.diverging"), "diverging"]].forEach(function (el) {
-        color_scheme.insert("label").style("margin", "20px").html(el[0]).insert('input').attrs({ type: "radio", name: "color_scheme", value: el[1], id: "button_" + el[1] }).on("change", function () {
-            this.value === "sequential" ? make_sequ_button() : make_diverg_button();
-            redisplay.draw();
-        });
-    });
-    var to_reverse = false;
-    document.getElementById("button_sequential").checked = true;
-
-    var b_accordion_breaks = newBox.append("button").attrs({ "class": "accordion_disc", "id": "btn_acc_disc_break" }).style("padding", "0 6px").html(i18next.t("disc_box.title_break_values")),
-        accordion_breaks = newBox.append("div").attrs({ "class": "panel", "id": "accordion_breaks_vals" }).style("width", "98%");
-
-    var user_defined_breaks = accordion_breaks.append("div").attr("id", "user_breaks");
-
-    user_defined_breaks.insert("textarea").attr("id", "user_breaks_area").attr("placeholder", i18next.t("app_page.common.expected_class")).style("width", "600px");
-
-    user_defined_breaks.insert("button").text(i18next.t("app_page.common.valid")).on("click", function () {
-        var old_nb_class = nb_class;
-        user_break_list = document.getElementById("user_breaks_area").value;
-        type = "user_defined";
-        // nb_class = user_break_list.split('-').length - 1;
-        // txt_nb_class.node().value = +nb_class;
-        // txt_nb_class.html(i18next.t("disc_box.class", {count: +nb_class}));
-        // document.getElementById("nb_class_range").value = nb_class;
-        redisplay.compute();
-        redisplay.draw();
-    });
-
-    accordionize(".accordion_disc", d3.select("#discretiz_charts").node());
-
-    if (no_data > 0) {
-        make_no_data_section();
-        if (options.no_data) {
-            document.getElementById("no_data_color").value = options.no_data;
-        }
-    }
-
-    if (!options.schema) {
-        make_sequ_button();
-    } else if (options.schema.length == 1) {
-        make_sequ_button();
-        document.querySelector(".color_params").value = options.schema[0];
-        document.querySelector(".color_params").style.backgroundImage = 'url(/static/img/palettes/' + options.schema[0] + '.png)';
-    } else if (options.schema.length > 1) {
-        make_diverg_button();
-        document.getElementById("button_diverging").checked = true;
-        var tmp = 0;
-        setSelected(document.querySelector(".color_params_left"), options.schema[0]);
-        // document.querySelector(".color_params_left").value = options.schema[0];
-        if (options.schema.length > 2) {
-            var e = document.getElementById('central_color_val');
-            e.style.display = '';
-            e.value = options.schema[1];
-            tmp = 1;
-            document.querySelector(".central_color").querySelector("input").checked = true;
-        } else {
-            document.querySelector(".central_color").querySelector("input").checked = false;
-        }
-        setSelected(document.querySelector(".color_params_right"), options.schema[1 + tmp]);
-        // document.querySelector(".color_params_right").value = options.schema[1 + tmp];
-    }
-
-    if (options.type && options.type == "user_defined") {
-        user_break_list = options.breaks;
-    }
-
     redisplay.compute();
-    redisplay.draw(options.colors);
+    redisplay.draw();
+  });
 
-    var deferred = Promise.pending(),
-        container = document.getElementById("discretiz_charts");
+  available_functions.forEach(function (func) {
+    discretization.append('option').text(func[0]).attr('value', func[1]);
+  });
 
-    container.querySelector(".btn_ok").onclick = function () {
-        breaks = breaks.map(function (i) {
-            return +i;
-        });
-        var colors_map = [];
-        var no_data_color = null;
-        if (no_data > 0) {
-            no_data_color = document.getElementById("no_data_color").value;
-        }
-        for (var j = 0; j < db_data.length; ++j) {
-            var value = db_data[j][field_name];
-            if (value !== null && isFinite(value) && value != "") {
-                var idx = serie.getClass(+value);
-                colors_map.push(color_array[idx]);
-            } else {
-
-                colors_map.push(no_data_color);
-            }
-        }
-        var col_schema = [];
-        if (!d3.select('.color_params_left').node()) {
-            col_schema.push(document.querySelector(".color_params").value);
-        } else {
-            col_schema.push(document.querySelector(".color_params_left").value);
-            if (document.querySelector(".central_color").querySelector("input").checked) {
-                col_schema.push(document.getElementById("central_color_val").value);
-            }
-            col_schema.push(document.querySelector(".color_params_right").value);
-        }
-        deferred.resolve([nb_class, type, breaks, color_array, colors_map, col_schema, no_data_color, type === 'stddev_f' ? std_dev_params : undefined]);
-        document.removeEventListener('keydown', helper_esc_key_twbs);
-        container.remove();
-        var p = reOpenParent();
-        if (!p) overlay_under_modal.hide();
-    };
-
-    var _onclose = function _onclose() {
-        deferred.resolve(false);
-        document.removeEventListener('keydown', helper_esc_key_twbs);
-        container.remove();
-        var p = reOpenParent();
-        if (!p) overlay_under_modal.hide();
-    };
-    container.querySelector(".btn_cancel").onclick = _onclose;
-    container.querySelector("#xclose").onclick = _onclose;
-    function helper_esc_key_twbs(evt) {
-        evt = evt || window.event;
-        var isEscape = "key" in evt ? evt.key == "Escape" || evt.key == "Esc" : evt.keyCode == 27;
-        if (isEscape) {
-            evt.stopPropagation();
-            _onclose();
-        }
+  var input_section_stddev = d3.select('#discretization_panel').insert('p').styles({ margin: 'auto', display: type === 'stddev_f' ? '' : 'none' });
+  input_section_stddev.insert('span').html(i18next.t('disc_box.stddev_share_txt1'));
+  input_section_stddev.insert('input').attrs({ type: 'number', min: 0.1, max: 10, step: 0.1, class: 'without_spinner', id: 'stddev_share', value: std_dev_params.share }).styles({ width: '45px', 'margin-left': '10px', 'margin-right': '10px' }).on('change', function () {
+    var val = this.value;
+    if (val === 0 || val * stddev_serie > max_serie - min_serie || val * stddev_serie * 21 < max_serie - min_serie) {
+      // If the new value is too big or too small:
+      this.value = std_dev_params.share;
+      return;
     }
-    document.addEventListener('keydown', helper_esc_key_twbs);
-    overlay_under_modal.display();
-    return deferred.promise;
+    std_dev_params.share = val;
+    redisplay.compute();
+    redisplay.draw();
+  });
+  input_section_stddev.insert('span').html(i18next.t('disc_box.stddev_share_txt2'));
+  var std_dev_mean_choice = input_section_stddev.insert('p').style('margin', 'auto');
+  std_dev_mean_choice.insert('p').style('margin', 'auto').html(i18next.t('disc_box.stddev_role_mean'));
+  [[i18next.t('disc_box.stddev_center_mean'), 'center'], [i18next.t('disc_box.stddev_break_mean'), 'bound']].forEach(function (el) {
+    std_dev_mean_choice.insert('input').attrs({ type: 'radio', name: 'role_mean', value: el[1], id: 'button_stddev_' + el[1] }).on('change', function () {
+      std_dev_params.role_mean = this.value;
+      redisplay.compute();
+      redisplay.draw();
+    });
+    std_dev_mean_choice.insert('label').style('font-weight', '400').attrs({ for: 'button_stddev_' + el[1] }).html(el[0]);
+  });
+  document.getElementById('button_stddev_' + std_dev_params.role_mean).checked = true;
+  var txt_nb_class = d3.select('#discretization_panel').append('input').attrs({ type: 'number', class: 'without_spinner', min: 2, max: max_nb_class, value: nb_class, step: 1 }).styles({ width: '30px', margin: '0 10px', 'vertical-align': 'calc(20%)' }).on('change', function () {
+    var a = disc_nb_class.node();
+    a.value = this.value;
+    a.dispatchEvent(new Event('change'));
+  });
+
+  d3.select('#discretization_panel').append('span').html(i18next.t('disc_box.class'));
+
+  var disc_nb_class = d3.select('#discretization_panel').insert('input').styles({ display: 'inline', width: '60px', 'vertical-align': 'middle', margin: '10px' }).attrs({
+    id: 'nb_class_range',
+    type: 'range',
+    min: 2,
+    max: max_nb_class,
+    value: nb_class,
+    step: 1 }).on('change', function () {
+    type = discretization.node().value;
+    var old_nb_class = nb_class;
+    if (type === 'Q6') {
+      update_nb_class(6);
+    } else if (type === 'stddev_f') {
+      update_nb_class(nb_class);
+      return;
+    }
+    nb_class = +this.value;
+    txt_nb_class.node().value = nb_class;
+    var ret_val = redisplay.compute();
+    if (!ret_val) {
+      this.value = old_nb_class;
+      txt_nb_class.node().value = +old_nb_class;
+    } else {
+      redisplay.draw();
+      var ctl_class = document.getElementById('centr_class');
+      if (ctl_class) {
+        ctl_class.max = nb_class;
+        if (ctl_class > nb_class) ctl_class.value = Math.round(nb_class / 2);
+      }
+    }
+  });
+
+  var ref_histo_box = newBox.append('div').attr('id', 'ref_histo_box');
+  ref_histo_box.append('div').attr('id', 'inner_ref_histo_box');
+
+  discretization.node().value = type;
+  make_summary();
+  var refDisplay = prepare_ref_histo(newBox, serie, formatCount);
+  refDisplay('histogram');
+
+  var svg_h = h / 5 > 100 ? h / 5 : 100,
+      svg_w = window.innerWidth - 40 > 760 ? 760 : window.innerWidth - 40,
+      margin = { top: 7.5, right: 30, bottom: 7.5, left: 30 },
+      height = svg_h - margin.top - margin.bottom;
+
+  d3.select('#discretiz_charts').select('.modal-dialog').styles({
+    width: svg_w + margin.top + margin.bottom + 90 + 'px',
+    height: window.innerHeight - 60 + 'px' });
+
+  if (values.length < 500) {
+    // Only allow for beeswarm plot if there isn't too many values
+    // as it seems to be costly due to the "simulation" + the voronoi
+    var current_histo = 'histogram';
+    var choice_histo = ref_histo_box.append('p').style('text-align', 'center');
+    choice_histo.insert('button').attrs({ id: 'button_switch_plot', class: 'i18n button_st4', 'data-i18n': '[text]disc_box.switch_ref_histo' }).styles({ padding: '3px', 'font-size': '10px' }).html(i18next.t('disc_box.switch_ref_histo')).on('click', function () {
+      var str_tr = void 0;
+      if (current_histo === 'histogram') {
+        refDisplay('box_plot');
+        current_histo = 'box_plot';
+        str_tr = '_boxplot';
+      } else if (current_histo === 'box_plot') {
+        refDisplay('beeswarm');
+        current_histo = 'beeswarm';
+        str_tr = '_beeswarm';
+      } else if (current_histo === 'beeswarm') {
+        refDisplay('histogram');
+        current_histo = 'histogram';
+        str_tr = '';
+      }
+      document.getElementById('ref_histo_title').innerHTML = '<b>' + i18next.t('disc_box.hist_ref_title' + str_tr) + '</b>';
+    });
+  }
+  var div_svg = newBox.append('div').append('svg').attr('id', 'svg_discretization').attr('width', svg_w + margin.left + margin.right).attr('height', svg_h + margin.top + margin.bottom);
+
+  make_box_histo_option();
+
+  var svg_histo = div_svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  var x = d3.scaleLinear().domain([min_serie, max_serie]).range([0, svg_w]);
+
+  var y = d3.scaleLinear().range([svg_h, 0]);
+
+  var overlay_svg = div_svg.append('g').attr('transform', 'translate(30, 0)'),
+      line_mean = void 0,
+      line_std_right = void 0,
+      line_std_left = void 0,
+      line_median = void 0,
+      txt_median = void 0,
+      txt_mean = void 0,
+      rug_plot = void 0;
+
+  make_overlay_elements();
+
+  svg_histo.append('g').attr('class', 'x_axis').attr('transform', 'translate(0,' + height + ')').call(d3.axisBottom().scale(x).tickFormat(formatCount));
+
+  var b_accordion_colors = newBox.append('button').attrs({ class: 'accordion_disc active', id: 'btn_acc_disc_color' }).style('padding', '0 6px').html(i18next.t('disc_box.title_color_scheme'));
+  var accordion_colors = newBox.append('div').attrs({ class: 'panel show', id: 'accordion_colors' }).style('width', '98%');
+  var color_scheme = d3.select('#accordion_colors').append('div').attr('id', 'color_div').style('text-align', 'center');
+
+  [[i18next.t('disc_box.sequential'), 'sequential'], [i18next.t('disc_box.diverging'), 'diverging']].forEach(function (el) {
+    color_scheme.insert('label').style('margin', '20px').html(el[0]).insert('input').attrs({ type: 'radio', name: 'color_scheme', value: el[1], id: 'button_' + el[1] }).on('change', function () {
+      if (this.value === 'sequential') {
+        make_sequ_button();
+      } else {
+        make_diverg_button();
+      }
+      redisplay.draw();
+    });
+  });
+  var to_reverse = false;
+  document.getElementById('button_sequential').checked = true;
+
+  var b_accordion_breaks = newBox.append('button').attrs({ class: 'accordion_disc', id: 'btn_acc_disc_break' }).style('padding', '0 6px').html(i18next.t('disc_box.title_break_values'));
+  var accordion_breaks = newBox.append('div').attrs({ class: 'panel', id: 'accordion_breaks_vals' }).style('width', '98%');
+  var user_defined_breaks = accordion_breaks.append('div').attr('id', 'user_breaks');
+
+  user_defined_breaks.insert('textarea').attr('id', 'user_breaks_area').attr('placeholder', i18next.t('app_page.common.expected_class')).style('width', '600px');
+
+  user_defined_breaks.insert('button').text(i18next.t('app_page.common.valid')).on('click', function () {
+    var old_nb_class = nb_class;
+    user_break_list = document.getElementById('user_breaks_area').value;
+    type = 'user_defined';
+    // nb_class = user_break_list.split('-').length - 1;
+    // txt_nb_class.node().value = +nb_class;
+    // txt_nb_class.html(i18next.t("disc_box.class", {count: +nb_class}));
+    // document.getElementById("nb_class_range").value = nb_class;
+    redisplay.compute();
+    redisplay.draw();
+  });
+
+  accordionize('.accordion_disc', d3.select('#discretiz_charts').node());
+
+  if (no_data > 0) {
+    make_no_data_section();
+    if (options.no_data) {
+      document.getElementById('no_data_color').value = options.no_data;
+    }
+  }
+
+  if (!options.schema) {
+    make_sequ_button();
+  } else if (options.schema.length === 1) {
+    make_sequ_button();
+    document.querySelector('.color_params').value = options.schema[0];
+    document.querySelector('.color_params').style.backgroundImage = 'url(/static/img/palettes/' + options.schema[0] + '.png)';
+  } else if (options.schema.length > 1) {
+    make_diverg_button();
+    document.getElementById('button_diverging').checked = true;
+    var tmp = 0;
+    setSelected(document.querySelector('.color_params_left'), options.schema[0]);
+    // document.querySelector(".color_params_left").value = options.schema[0];
+    if (options.schema.length > 2) {
+      var elem = document.getElementById('central_color_val');
+      elem.style.display = '';
+      elem.value = options.schema[1];
+      tmp = 1;
+      document.querySelector('.central_color').querySelector('input').checked = true;
+    } else {
+      document.querySelector('.central_color').querySelector('input').checked = false;
+    }
+    setSelected(document.querySelector('.color_params_right'), options.schema[1 + tmp]);
+    // document.querySelector(".color_params_right").value = options.schema[1 + tmp];
+  }
+
+  if (options.type && options.type === 'user_defined') {
+    user_break_list = options.breaks;
+  }
+
+  redisplay.compute();
+  redisplay.draw(options.colors);
+
+  var deferred = Promise.pending(),
+      container = document.getElementById('discretiz_charts');
+
+  container.querySelector('.btn_ok').onclick = function () {
+    breaks = breaks.map(function (i) {
+      return +i;
+    });
+    var colors_map = [];
+    var no_data_color = null;
+    if (no_data > 0) {
+      no_data_color = document.getElementById('no_data_color').value;
+    }
+    for (var j = 0; j < db_data.length; ++j) {
+      var value = db_data[j][field_name];
+      if (value !== null && isFinite(value) && value != '') {
+        var idx = serie.getClass(+value);
+        colors_map.push(color_array[idx]);
+      } else {
+        colors_map.push(no_data_color);
+      }
+    }
+    var col_schema = [];
+    if (!d3.select('.color_params_left').node()) {
+      col_schema.push(document.querySelector('.color_params').value);
+    } else {
+      col_schema.push(document.querySelector('.color_params_left').value);
+      if (document.querySelector('.central_color').querySelector('input').checked) {
+        col_schema.push(document.getElementById('central_color_val').value);
+      }
+      col_schema.push(document.querySelector('.color_params_right').value);
+    }
+    deferred.resolve([nb_class, type, breaks, color_array, colors_map, col_schema, no_data_color, type === 'stddev_f' ? std_dev_params : undefined]);
+    document.removeEventListener('keydown', helper_esc_key_twbs);
+    container.remove();
+    var p = reOpenParent();
+    if (!p) overlay_under_modal.hide();
+  };
+
+  var _onclose = function _onclose() {
+    deferred.resolve(false);
+    document.removeEventListener('keydown', helper_esc_key_twbs);
+    container.remove();
+    var p = reOpenParent();
+    if (!p) overlay_under_modal.hide();
+  };
+  container.querySelector('.btn_cancel').onclick = _onclose;
+  container.querySelector('#xclose').onclick = _onclose;
+  var helper_esc_key_twbs = function helper_esc_key_twbs(evt) {
+    var _event = evt || window.event;
+    var isEscape = 'key' in _event ? _event.key === 'Escape' || _event.key === 'Esc' : _event.keyCode === 27;
+    if (isEscape) {
+      _event.stopPropagation();
+      _onclose();
+    }
+  };
+  document.addEventListener('keydown', helper_esc_key_twbs);
+  overlay_under_modal.display();
+  return deferred.promise;
 };
 
 function fetch_categorical_colors() {
-    var categ = document.getElementsByClassName("typo_class"),
-        color_map = new Map();
-    for (var i = 0; i < categ.length; i++) {
-        var color = rgb2hex(categ[i].querySelector(".color_square").style.backgroundColor),
-            new_name = categ[i].querySelector(".typo_name").value,
-            nb_features = categ[i].querySelector('.typo_count_ft').getAttribute('data-count');
-        color_map.set(categ[i].__data__.name, [color, new_name, nb_features]);
-    }
-    return color_map;
+  var categ = document.getElementsByClassName('typo_class'),
+      color_map = new Map();
+  for (var i = 0; i < categ.length; i++) {
+    var color = rgb2hex(categ[i].querySelector('.color_square').style.backgroundColor),
+        new_name = categ[i].querySelector('.typo_name').value,
+        nb_features = categ[i].querySelector('.typo_count_ft').getAttribute('data-count');
+    color_map.set(categ[i].__data__.name, [color, new_name, nb_features]);
+  }
+  return color_map;
 }
 
 function display_categorical_box(data_layer, layer_name, field, cats) {
-    var nb_features = current_layers[layer_name].n_features,
-        nb_class = cats.length;
+  var nb_features = current_layers[layer_name].n_features;
+  var nb_class = cats.length;
+  var modal_box = make_dialog_container('categorical_box', i18next.t('app_page.categorical_box.title', { layer: layer_name, nb_features: nb_features }), 'dialog');
 
-    var modal_box = make_dialog_container("categorical_box", i18next.t("app_page.categorical_box.title", { layer: layer_name, nb_features: nb_features }), "dialog");
+  var newbox = d3.select('#categorical_box').select('.modal-body').styles({ 'overflow-y': 'scroll', 'max-height': window.innerHeight - 145 + 'px' });
 
-    var newbox = d3.select("#categorical_box").select(".modal-body").styles({ 'overflow-y': 'scroll', 'max-height': window.innerHeight - 145 + 'px' });
+  newbox.append('h3').html('');
+  newbox.append('p').html(i18next.t('app_page.symbol_typo_box.field_categ', { field: field, nb_class: +nb_class, nb_features: +nb_features }));
 
-    newbox.append("h3").html("");
-    newbox.append("p").html(i18next.t("app_page.symbol_typo_box.field_categ", { field: field, nb_class: +nb_class, nb_features: +nb_features }));
+  newbox.append('ul').style('padding', 'unset').attr('id', 'sortable_typo_name').selectAll('li').data(cats).enter().append('li').styles({ margin: 'auto', 'list-style': 'none' }).attr('class', 'typo_class').attr('id', function (d, i) {
+    return ['line', i].join('_');
+  });
 
-    newbox.append("ul").style("padding", "unset").attr("id", "sortable_typo_name").selectAll("li").data(cats).enter().append("li").styles({ margin: "auto", "list-style": "none" }).attr("class", "typo_class").attr("id", function (d, i) {
-        return ["line", i].join('_');
-    });
+  newbox.selectAll('.typo_class').append('input').styles({ width: '140px', height: 'auto', display: 'inline-block', 'vertical-align': 'middle', 'margin-right': '20px' }).attrs(function (d) {
+    return { class: 'typo_name', value: d.display_name, id: d.name };
+  });
 
-    newbox.selectAll(".typo_class").append("input").styles({ width: "140px", height: "auto", display: "inline-block", "vertical-align": "middle", "margin-right": "20px" }).attrs(function (d) {
-        return { class: 'typo_name', value: d.display_name, id: d.name };
-    });
-
-    newbox.selectAll(".typo_class").insert("p").attr("class", "color_square").style("background-color", function (d) {
-        return d.color;
-    }).styles({ width: "22px", height: "22px", margin: 'auto', 'vertical-align': 'middle',
-        "border-radius": "10%", display: "inline-block" }).on("click", function () {
-        var self = this;
-        var this_color = self.style.backgroundColor;
-        var input_col = document.createElement("input");
-        input_col.setAttribute("type", "color");
-        input_col.setAttribute("value", rgb2hex(this_color));
-        input_col.className = "color_input";
-        input_col.onchange = function (change) {
-            self.style.backgroundColor = hexToRgb(change.target.value, "string");
-        };
-        var t = input_col.dispatchEvent(new MouseEvent("click"));
-    });
-
-    newbox.selectAll(".typo_class").insert("span").attrs(function (d) {
-        return { class: 'typo_count_ft', 'data-count': d.nb_elem };
-    }).html(function (d) {
-        return i18next.t("app_page.symbol_typo_box.count_feature", { nb_features: +d.nb_elem });
-    });
-
-    newbox.insert("p").insert("button").attr("class", "button_st3").html(i18next.t("app_page.categorical_box.new_random_colors")).on("click", function () {
-        var lines = document.getElementsByClassName("typo_class");
-        for (var i = 0; i < lines.length; ++i) {
-            lines[i].querySelector(".color_square").style.backgroundColor = randomColor();
-        }
-    });
-
-    new Sortable(document.getElementById("sortable_typo_name"));
-
-    var deferred = Promise.pending(),
-        container = document.getElementById("categorical_box"),
-        _onclose = function _onclose() {
-        deferred.resolve(false);
-        document.removeEventListener('keydown', helper_esc_key_twbs);
-        container.remove();
-        var p = reOpenParent();
-        if (!p) overlay_under_modal.hide();
+  newbox.selectAll('.typo_class').insert('p').attr('class', 'color_square').style('background-color', function (d) {
+    return d.color;
+  }).styles({ width: '22px',
+    height: '22px',
+    margin: 'auto',
+    display: 'inline-block',
+    'vertical-align': 'middle',
+    'border-radius': '10%' }).on('click', function () {
+    var self = this;
+    var this_color = self.style.backgroundColor;
+    var input_col = document.createElement('input');
+    input_col.setAttribute('type', 'color');
+    input_col.setAttribute('value', rgb2hex(this_color));
+    input_col.className = 'color_input';
+    input_col.onchange = function (change) {
+      self.style.backgroundColor = hexToRgb(change.target.value, 'string');
     };
+    input_col.dispatchEvent(new MouseEvent('click'));
+  });
 
-    container.querySelector(".btn_ok").onclick = function () {
-        var color_map = fetch_categorical_colors();
-        var colorByFeature = data_layer.map(function (ft) {
-            return color_map.get(ft[field])[0];
-        });
-        deferred.resolve([nb_class, color_map, colorByFeature]);
-        document.removeEventListener('keydown', helper_esc_key_twbs);
-        container.remove();
-        var p = reOpenParent();
-        if (!p) overlay_under_modal.hide();
-    };
+  newbox.selectAll('.typo_class').insert('span').attrs(function (d) {
+    return { class: 'typo_count_ft', 'data-count': d.nb_elem };
+  }).html(function (d) {
+    return i18next.t('app_page.symbol_typo_box.count_feature', { nb_features: +d.nb_elem });
+  });
 
-    container.querySelector(".btn_cancel").onclick = _onclose;
-    container.querySelector("#xclose").onclick = _onclose;
-    function helper_esc_key_twbs(evt) {
-        evt = evt || window.event;
-        var isEscape = "key" in evt ? evt.key == "Escape" || evt.key == "Esc" : evt.keyCode == 27;
-        if (isEscape) {
-            evt.stopPropagation();
-            _onclose();
-        }
+  newbox.insert('p').insert('button').attr('class', 'button_st3').html(i18next.t('app_page.categorical_box.new_random_colors')).on('click', function () {
+    var lines = document.getElementsByClassName('typo_class');
+    for (var i = 0; i < lines.length; ++i) {
+      lines[i].querySelector('.color_square').style.backgroundColor = randomColor();
     }
-    document.addEventListener('keydown', helper_esc_key_twbs);
-    overlay_under_modal.display();
-    return deferred.promise;
-};
+  });
+
+  new Sortable(document.getElementById('sortable_typo_name'));
+
+  var deferred = Promise.pending();
+  var container = document.getElementById('categorical_box');
+  var _onclose = function _onclose() {
+    deferred.resolve(false);
+    document.removeEventListener('keydown', helper_esc_key_twbs);
+    container.remove();
+    var p = reOpenParent();
+    if (!p) overlay_under_modal.hide();
+  };
+
+  container.querySelector('.btn_ok').onclick = function () {
+    var color_map = fetch_categorical_colors();
+    var colorByFeature = data_layer.map(function (ft) {
+      return color_map.get(ft[field])[0];
+    });
+    deferred.resolve([nb_class, color_map, colorByFeature]);
+    document.removeEventListener('keydown', helper_esc_key_twbs);
+    container.remove();
+    var p = reOpenParent();
+    if (!p) overlay_under_modal.hide();
+  };
+
+  container.querySelector('.btn_cancel').onclick = _onclose;
+  container.querySelector('#xclose').onclick = _onclose;
+  function helper_esc_key_twbs(evt) {
+    var _event = evt || window.event;
+    var isEscape = 'key' in _event ? _event.key === 'Escape' || _event.key === 'Esc' : _event.keyCode === 27;
+    if (isEscape) {
+      _event.stopPropagation();
+      _onclose();
+    }
+  }
+  document.addEventListener('keydown', helper_esc_key_twbs);
+  overlay_under_modal.display();
+  return deferred.promise;
+}
 
 function reOpenParent(css_selector) {
-    var parent_style_box = css_selector !== undefined ? document.querySelector(css_selector) : document.querySelector('.styleBox');
-    if (parent_style_box && parent_style_box.modal && parent_style_box.modal.show) {
-        parent_style_box.modal.show();
-        return true;
-    } else {
-        return false;
-    }
+  var parent_style_box = css_selector !== undefined ? document.querySelector(css_selector) : document.querySelector('.styleBox');
+  if (parent_style_box && parent_style_box.modal && parent_style_box.modal.show) {
+    parent_style_box.modal.show();
+    return true;
+  }
+  return false;
 }
 
 var prepare_ref_histo = function prepare_ref_histo(parent_node, serie, formatCount) {
-    var svg_h = h / 7.25 > 80 ? h / 7.25 : 80,
-        svg_w = w / 4 > 320 ? 320 : w / 4,
-        values = serie.sorted(),
-        nb_bins = 51 < values.length / 3 ? 50 : Math.ceil(Math.sqrt(values.length)) + 1;
-    var q5 = serie.getQuantile(4).map(function (v) {
-        return +v;
-    });
+  var svg_h = h / 7.25 > 80 ? h / 7.25 : 80,
+      svg_w = w / 4 > 320 ? 320 : w / 4,
+      values = serie.sorted(),
+      nb_bins = values.length / 3 > 51 ? 50 : Math.ceil(Math.sqrt(values.length)) + 1;
 
-    var m_margin = { top: 10, right: 20, bottom: 10, left: 20 },
-        m_width = svg_w - m_margin.right - m_margin.left,
-        m_height = svg_h - m_margin.top - m_margin.bottom;
+  var q5 = serie.getQuantile(4).map(function (v) {
+    return +v;
+  });
 
-    var ref_histo = parent_node.select("#ref_histo_box").select('#inner_ref_histo_box');
+  var m_margin = { top: 10, right: 20, bottom: 10, left: 20 },
+      m_width = svg_w - m_margin.right - m_margin.left,
+      m_height = svg_h - m_margin.top - m_margin.bottom;
 
-    ref_histo.append('p').attrs({ id: 'ref_histo_title' }).styles({ "margin": "auto", "text-align": "center" }).html('<b>' + i18next.t('disc_box.hist_ref_title') + '</b>');
+  var ref_histo = parent_node.select('#ref_histo_box').select('#inner_ref_histo_box');
 
-    var c = ref_histo.append("svg").attr("id", "svg_ref_histo").attr("width", svg_w + m_margin.left + m_margin.right).attr("height", svg_h + m_margin.top + m_margin.bottom);
-    var svg_ref_histo = c.append("g").attr("transform", "translate(" + (m_margin.left + m_margin.right) + "," + m_margin.top + ")");
+  ref_histo.append('p').attrs({ id: 'ref_histo_title' }).styles({ margin: 'auto', 'text-align': 'center' }).html('<b>' + i18next.t('disc_box.hist_ref_title') + '</b>');
 
-    var x = d3.scaleLinear().domain([serie.min(), serie.max()]).rangeRound([0, m_width]);
+  var c = ref_histo.append('svg').attr('id', 'svg_ref_histo').attr('width', svg_w + m_margin.left + m_margin.right).attr('height', svg_h + m_margin.top + m_margin.bottom);
 
-    return function (type) {
-        svg_ref_histo.remove();
-        svg_ref_histo = c.append("g").attr("transform", "translate(" + (m_margin.left + m_margin.right) + "," + m_margin.top + ")");
-        if (type == 'histogram') {
-            var data = d3.histogram().domain(x.domain()).thresholds(x.ticks(nb_bins))(values);
+  var x = d3.scaleLinear().domain([serie.min(), serie.max()]).rangeRound([0, m_width]);
 
-            var y = d3.scaleLinear().domain([0, d3.max(data, function (d) {
-                return d.length;
-            })]).range([m_height, 0]);
+  var svg_ref_histo = c.append('g').attr('transform', 'translate(' + (m_margin.left + m_margin.right) + ',' + m_margin.top + ')');
 
-            var bar = svg_ref_histo.selectAll(".bar").data(data).enter().append("rect").attrs(function (d) {
-                return {
-                    "class": "bar", "width": Math.abs(x(d.x1)) - Math.abs(x(d.x0)), "height": m_height - y(d.length), "x": 0,
-                    "transform": "translate(" + x(d.x0) + "," + y(d.length) + ")"
-                };
-            }).styles({ fill: "beige", stroke: "black", "stroke-width": "0.4px" });
+  return function (type) {
+    svg_ref_histo.remove();
+    svg_ref_histo = c.append('g').attr('transform', 'translate(' + (m_margin.left + m_margin.right) + ',' + m_margin.top + ')');
+    if (type === 'histogram') {
+      var data = d3.histogram().domain(x.domain()).thresholds(x.ticks(nb_bins))(values);
 
-            svg_ref_histo.append("g").style("font-size", "10px").attrs({ 'class': 'x_axis', 'transform': 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll("text").attr("y", 4).attr("x", -4).attr("dy", ".45em").attr("transform", "rotate(-40)").style("text-anchor", "end");
+      var y = d3.scaleLinear().domain([0, d3.max(data, function (d) {
+        return d.length;
+      })]).range([m_height, 0]);
 
-            svg_ref_histo.append("g").attr("class", "y_axis").style("font-size", "10px").call(d3.axisLeft().scale(y).ticks(5).tickFormat(d3.format(".0f")));
-        } else if (type == "box_plot") {
-            svg_ref_histo.append("g").style("font-size", "10px").attrs({ 'class': 'x_axis', 'transform': 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll("text").attr("y", 4).attr("x", -4).attr("dy", ".45em").attr("transform", "rotate(-40)").style("text-anchor", "end");
+      var bar = svg_ref_histo.selectAll('.bar').data(data).enter().append('rect').attrs(function (d) {
+        return {
+          class: 'bar',
+          width: Math.abs(x(d.x1)) - Math.abs(x(d.x0)),
+          height: m_height - y(d.length),
+          x: 0,
+          transform: 'translate(' + x(d.x0) + ',' + y(d.length) + ')' };
+      }).styles({ fill: 'beige', stroke: 'black', 'stroke-width': '0.4px' });
 
-            var y_mid = (m_margin.top + m_height - m_margin.bottom) / 2;
+      svg_ref_histo.append('g').style('font-size', '10px').attrs({ class: 'x_axis', transform: 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll('text').attr('y', 4).attr('x', -4).attr('dy', '.45em').attr('transform', 'rotate(-40)').style('text-anchor', 'end');
 
-            var min = svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[0]), y1: m_margin.top * 2, x2: x(q5[0]), y2: m_height - m_margin.bottom * 2 }).styles({ "stroke-width": 1, stroke: "black", fill: "none" });
+      svg_ref_histo.append('g').attr('class', 'y_axis').style('font-size', '10px').call(d3.axisLeft().scale(y).ticks(5).tickFormat(d3.format('.0f')));
+    } else if (type === 'box_plot') {
+      svg_ref_histo.append('g').style('font-size', '10px').attrs({ class: 'x_axis', transform: 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll('text').attr('y', 4).attr('x', -4).attr('dy', '.45em').attr('transform', 'rotate(-40)').style('text-anchor', 'end');
 
-            var rect = svg_ref_histo.append('g').insert('rect').attrs({ x: x(q5[1]), y: m_margin.top, width: x(q5[2]) - x(q5[1]), height: m_height - m_margin.bottom - m_margin.top }).styles({ "stroke-width": 1, stroke: "black", fill: "lightblue" });
+      var y_mid = (m_margin.top + m_height - m_margin.bottom) / 2;
 
-            var med = svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[2]), y1: m_margin.top, x2: x(q5[2]), y2: m_height - m_margin.bottom }).styles({ "stroke-width": 3, stroke: "black", fill: "none" });
+      svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[0]), y1: m_margin.top * 2, x2: x(q5[0]), y2: m_height - m_margin.bottom * 2 }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'none' });
 
-            var rect = svg_ref_histo.append('g').insert('rect').attrs({ x: x(q5[2]), y: m_margin.top, width: x(q5[3]) - x(q5[2]), height: m_height - m_margin.bottom - m_margin.top }).styles({ "stroke-width": 1, stroke: "black", fill: "lightblue" });
+      svg_ref_histo.append('g').insert('rect').attrs({ x: x(q5[1]), y: m_margin.top, width: x(q5[2]) - x(q5[1]), height: m_height - m_margin.bottom - m_margin.top }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'lightblue' });
 
-            var max = svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[4]), y1: m_margin.top * 2, x2: x(q5[4]), y2: m_height - m_margin.bottom * 2 }).styles({ "stroke-width": 1, stroke: "black", fill: "none" });
+      svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[2]), y1: m_margin.top, x2: x(q5[2]), y2: m_height - m_margin.bottom }).styles({ 'stroke-width': 3, stroke: 'black', fill: 'none' });
 
-            var interline_min = svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[0]), y1: y_mid, x2: x(q5[1]), y2: y_mid }).styles({ "stroke-width": 1, stroke: "black", fill: "none", 'stroke-dasharray': '3,3' });
+      svg_ref_histo.append('g').insert('rect').attrs({ x: x(q5[2]), y: m_margin.top, width: x(q5[3]) - x(q5[2]), height: m_height - m_margin.bottom - m_margin.top }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'lightblue' });
 
-            var interline_max = svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[3]), y1: y_mid, x2: x(q5[4]), y2: y_mid }).styles({ "stroke-width": 1, stroke: "black", fill: "none", 'stroke-dasharray': '3,3' });
-        } else if (type == "beeswarm") {
-            var data = values.map(function (v) {
-                return { value: +v };
-            });
+      svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[4]), y1: m_margin.top * 2, x2: x(q5[4]), y2: m_height - m_margin.bottom * 2 }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'none' });
 
-            var simulation = d3.forceSimulation(data).force("x", d3.forceX(function (d) {
-                return x(d.value);
-            }).strength(1)).force("y", d3.forceY(m_height / 2).strength(2)).force("collide", d3.forceCollide(4)).stop();
+      svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[0]), y1: y_mid, x2: x(q5[1]), y2: y_mid }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'none', 'stroke-dasharray': '3,3' });
 
-            for (var i = 0; i < 75; ++i) {
-                simulation.tick();
-            }
-            svg_ref_histo.append("g").style("font-size", "10px").attrs({ 'class': 'x_axis', 'transform': 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll("text").attr("y", 4).attr("x", -4).attr("dy", ".45em").attr("transform", "rotate(-40)").style("text-anchor", "end");
+      svg_ref_histo.append('g').insert('line').attrs({ x1: x(q5[3]), y1: y_mid, x2: x(q5[4]), y2: y_mid }).styles({ 'stroke-width': 1, stroke: 'black', fill: 'none', 'stroke-dasharray': '3,3' });
+    } else if (type === 'beeswarm') {
+      var _data = values.map(function (v) {
+        return { value: +v };
+      });
 
-            var cell = svg_ref_histo.append("g").attr("class", "cells").selectAll("g").data(d3.voronoi().extent([[0, 0], [m_width, m_height]]).x(function (d) {
-                return d.x;
-            }).y(function (d) {
-                return d.y;
-            }).polygons(data)).enter().append("g");
+      var simulation = d3.forceSimulation(_data).force('x', d3.forceX(function (d) {
+        return x(d.value);
+      }).strength(1)).force('y', d3.forceY(m_height / 2).strength(2)).force('collide', d3.forceCollide(4)).stop();
 
-            cell.append("circle").attrs(function (d) {
-                if (d) return {
-                    r: data.lenght < 250 ? 2.5 : data.lenght < 500 ? 1.5 : 1, transform: 'translate(' + d.data.x + ',' + d.data.y + ')' };
-            });
+      for (var i = 0; i < 75; ++i) {
+        simulation.tick();
+      }
+      svg_ref_histo.append('g').style('font-size', '10px').attrs({ class: 'x_axis', transform: 'translate(0,' + m_height + ')' }).call(d3.axisBottom().scale(x).ticks(4).tickFormat(formatCount)).selectAll('text').attr('y', 4).attr('x', -4).attr('dy', '.45em').attr('transform', 'rotate(-40)').style('text-anchor', 'end');
 
-            cell.append("path").attr('d', function (d) {
-                if (d) return 'M' + d.join('L') + 'Z';
-            });
+      var cell = svg_ref_histo.append('g').attr('class', 'cells').selectAll('g').data(d3.voronoi().extent([[0, 0], [m_width, m_height]]).x(function (d) {
+        return d.x;
+      }).y(function (d) {
+        return d.y;
+      }).polygons(_data)).enter().append('g');
+
+      cell.append('circle').attrs(function (d) {
+        if (d) {
+          return {
+            r: _data.lenght < 250 ? 2.5 : _data.lenght < 500 ? 1.5 : 1,
+            transform: 'translate(' + d.data.x + ',' + d.data.y + ')' };
         }
-    };
+        return undefined;
+      });
+
+      cell.append('path').attr('d', function (d) {
+        if (d) return 'M' + d.join('L') + 'Z';
+        return undefined;
+      });
+    }
+  };
 };
 'use strict';
 
@@ -3778,7 +3815,7 @@ var display_discretization_links_discont = function display_discretization_links
       bins = [];
       for (var i = 0, len = breaks_info.length; i < len; i++) {
         var bin = {};
-        bin.offset = i == 0 ? 0 : bins[i - 1].width + bins[i - 1].offset;
+        bin.offset = i === 0 ? 0 : bins[i - 1].width + bins[i - 1].offset;
         bin.width = breaks[i + 1] - breaks[i];
         bin.height = breaks_info[i][1];
         bins[i] = bin;
@@ -3826,20 +3863,21 @@ var display_discretization_links_discont = function display_discretization_links
     }
   };
 
-  //////////////////////////////////////////////////////////////////////////
-
   var title_box = [i18next.t('disc_box.title'), ' - ', layer_name, ' - ', field_name].join('');
   var modal_box = make_dialog_container('discretiz_charts', title_box, 'discretiz_charts_dialog');
-
   var newBox = d3.select('#discretiz_charts').select('.modal-body');
+  var db_data = void 0;
+  if (result_data.hasOwnProperty(layer_name)) {
+    db_data = result_data[layer_name];
+  } else if (user_data.hasOwnProperty(layer_name)) {
+    db_data = user_data[layer_name];
+  }
 
-  if (result_data.hasOwnProperty(layer_name)) var db_data = result_data[layer_name];else if (user_data.hasOwnProperty(layer_name)) var db_data = user_data[layer_name];
-
-  var color_array = [],
-      nb_values = db_data.length,
-      indexes = [],
-      values = [],
-      no_data;
+  var color_array = [];
+  var indexes = [];
+  var nb_values = db_data.length;
+  var values = [];
+  var no_data = void 0;
 
   for (var i = 0; i < nb_values; i++) {
     if (db_data[i][field_name] != null) {
@@ -3848,22 +3886,21 @@ var display_discretization_links_discont = function display_discretization_links
     }
   }
 
-  if (nb_values == values.length) {
+  if (nb_values === values.length) {
     no_data = 0;
   } else {
     no_data = nb_values - values.length;
     nb_values = values.length;
   }
-
+  var max_nb_class = nb_values > 20 ? 20 : nb_values;
+  var sizes = current_layers[layer_name].breaks.map(function (el) {
+    return el[1];
+  });
+  var stock_class = [];
   var serie = new geostats(values),
       breaks_info = [].concat(current_layers[layer_name].breaks),
       breaks = [+breaks_info[0][0][0]],
-      stock_class = [],
       bins = [],
-      max_nb_class = nb_values > 20 ? 20 : nb_values,
-      sizes = current_layers[layer_name].breaks.map(function (el) {
-    return el[1];
-  }),
       last_min = min_fast(sizes),
       last_max = max_fast(sizes),
       array_color = d3.schemeCategory20.slice();
@@ -3872,7 +3909,7 @@ var display_discretization_links_discont = function display_discretization_links
     breaks.push(elem[0][1]);
   });
 
-  if (serie.variance() == 0 && serie.stddev() == 0) {
+  if (serie.variance() === 0 && serie.stddev() === 0) {
     serie = new geostats(values);
   }
 
@@ -3890,7 +3927,7 @@ var display_discretization_links_discont = function display_discretization_links
 
   var discretization = newBox.append('div').attr('id', 'discretization_panel').insert('p').html('Type ').insert('select').attr('class', 'params').on('change', function () {
     var old_type = type;
-    if (this.value == 'user_defined') {
+    if (this.value === 'user_defined') {
       this.value = old_type;
       return;
     }
@@ -4023,10 +4060,10 @@ var display_discretization_links_discont = function display_discretization_links
     if (!p) overlay_under_modal.hide();
   };
   var helper_esc_key_twbs = function helper_esc_key_twbs(evt) {
-    evt = evt || window.event;
-    var isEscape = 'key' in evt ? evt.key === 'Escape' || evt.key === 'Esc' : evt.keyCode === 27;
+    var _event = evt || window.event;
+    var isEscape = 'key' in _event ? _event.key === 'Escape' || _event.key === 'Esc' : _event.keyCode === 27;
     if (isEscape) {
-      evt.preventDefault();
+      _event.preventDefault();
       _onclose();
     }
   };
@@ -4044,83 +4081,72 @@ var display_discretization_links_discont = function display_discretization_links
   document.addEventListener('keydown', helper_esc_key_twbs);
   return deferred.promise;
 };
-"use strict";
+'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-function get_menu_option(func) {
-    var menu_option = {
-        "smooth": {
-            "name": "smooth",
-            "title": i18next.t("app_page.func_title.smooth"),
-            "menu_factory": "fillMenu_Stewart",
-            "fields_handler": "fields_Stewart"
-        },
-        "prop": {
-            "name": "prop",
-            "title": i18next.t("app_page.func_title.prop"),
-            "menu_factory": "fillMenu_PropSymbol",
-            "fields_handler": "fields_PropSymbol"
-        },
-        "choroprop": {
-            "name": "choroprop",
-            "title": i18next.t("app_page.func_title.choroprop"),
-            "menu_factory": "fillMenu_PropSymbolChoro",
-            "fields_handler": "fields_PropSymbolChoro"
-        },
-        "proptypo": {
-            "name": "proptypo",
-            "title": i18next.t("app_page.func_title.proptypo"),
-            "menu_factory": "fillMenu_PropSymbolTypo",
-            "fields_handler": "fields_PropSymbolTypo"
-        },
-        "choro": {
-            "name": "choro",
-            "title": i18next.t("app_page.func_title.choro"),
-            "menu_factory": "fillMenu_Choropleth",
-            "fields_handler": "fields_Choropleth"
-        },
-        "cartogram": {
-            "name": "cartogram",
-            "title": i18next.t("app_page.func_title.cartogram"),
-            "menu_factory": "fillMenu_Anamorphose",
-            "fields_handler": "fields_Anamorphose",
-            "add_options": "keep_file"
-        },
-        "grid": {
-            "name": "grid",
-            "title": i18next.t("app_page.func_title.grid"),
-            "menu_factory": "fillMenu_griddedMap",
-            "fields_handler": "fields_griddedMap"
-        },
-        "flow": {
-            "name": "flow",
-            "title": i18next.t("app_page.func_title.flow"),
-            "menu_factory": "fillMenu_FlowMap",
-            "fields_handler": "fields_FlowMap"
-        },
-        "discont": {
-            "name": "discont",
-            "title": i18next.t("app_page.func_title.discont"),
-            "menu_factory": "fillMenu_Discont",
-            "fields_handler": "fields_Discont",
-            "add_options": "keep_file"
-        },
-        "typo": {
-            "name": "typo",
-            "title": i18next.t("app_page.func_title.typo"),
-            "menu_factory": "fillMenu_Typo",
-            "fields_handler": "fields_Typo"
-        },
-        "typosymbol": {
-            "name": "typosymbol",
-            "title": i18next.t("app_page.func_title.typosymbol"),
-            "menu_factory": "fillMenu_TypoSymbol",
-            "fields_handler": "fields_TypoSymbol"
-        }
-    };
+var get_menu_option = function () {
+  var menu_option = {
+    'smooth': {
+      'name': 'smooth',
+      'menu_factory': 'fillMenu_Stewart',
+      'fields_handler': 'fields_Stewart'
+    },
+    'prop': {
+      'name': 'prop',
+      'menu_factory': 'fillMenu_PropSymbol',
+      'fields_handler': 'fields_PropSymbol'
+    },
+    'choroprop': {
+      'name': 'choroprop',
+      'menu_factory': 'fillMenu_PropSymbolChoro',
+      'fields_handler': 'fields_PropSymbolChoro'
+    },
+    'proptypo': {
+      'name': 'proptypo',
+      'menu_factory': 'fillMenu_PropSymbolTypo',
+      'fields_handler': 'fields_PropSymbolTypo'
+    },
+    'choro': {
+      'name': 'choro',
+      'menu_factory': 'fillMenu_Choropleth',
+      'fields_handler': 'fields_Choropleth'
+    },
+    'cartogram': {
+      'name': 'cartogram',
+      'menu_factory': 'fillMenu_Anamorphose',
+      'fields_handler': 'fields_Anamorphose'
+    },
+    'grid': {
+      'name': 'grid',
+      'menu_factory': 'fillMenu_griddedMap',
+      'fields_handler': 'fields_griddedMap'
+    },
+    'flow': {
+      'name': 'flow',
+      'menu_factory': 'fillMenu_FlowMap',
+      'fields_handler': 'fields_FlowMap'
+    },
+    'discont': {
+      'name': 'discont',
+      'menu_factory': 'fillMenu_Discont',
+      'fields_handler': 'fields_Discont'
+    },
+    'typo': {
+      'name': 'typo',
+      'menu_factory': 'fillMenu_Typo',
+      'fields_handler': 'fields_Typo'
+    },
+    'typosymbol': {
+      'name': 'typosymbol',
+      'menu_factory': 'fillMenu_TypoSymbol',
+      'fields_handler': 'fields_TypoSymbol'
+    }
+  };
+  return function (func) {
     return menu_option[func.toLowerCase()] || {};
-}
+  };
+}();
 
 /**
 * Remove the div on which we are displaying the options related to each
@@ -4128,22 +4154,22 @@ function get_menu_option(func) {
 *
 */
 function clean_menu_function() {
-    if (fields_handler && fields_handler.unfill) {
-        fields_handler.unfill();
-        fields_handler = undefined;
-    }
-    if (_app.current_functionnality && _app.current_functionnality.name) {
-        var previous_button = document.getElementById("button_" + _app.current_functionnality.name);
-        if (previous_button.style.filter !== "grayscale(100%)") previous_button.style.filter = "invert(0%) saturate(100%)";
-        previous_button.classList.remove('active');
-        _app.current_functionnality = undefined;
-    }
-    section2.select(".form-rendering").remove();
-    document.getElementById('accordion2b').style.display = 'none';
-    var btn_s2b = document.getElementById('btn_s2b');
-    btn_s2b.innerHTML = i18next.t('app_page.section2_.title_no_choice');
-    btn_s2b.setAttribute('data-i18n', 'app_page.section2_.title_no_choice');
-    btn_s2b.style.display = 'none';
+  if (fields_handler && fields_handler.unfill) {
+    fields_handler.unfill();
+    fields_handler = undefined;
+  }
+  if (_app.current_functionnality && _app.current_functionnality.name) {
+    var previous_button = document.getElementById('button_' + _app.current_functionnality.name);
+    if (previous_button.style.filter !== 'grayscale(100%)') previous_button.style.filter = 'invert(0%) saturate(100%)';
+    previous_button.classList.remove('active');
+    _app.current_functionnality = undefined;
+  }
+  section2.select('.form-rendering').remove();
+  document.getElementById('accordion2b').style.display = 'none';
+  var btn_s2b = document.getElementById('btn_s2b');
+  btn_s2b.innerHTML = i18next.t('app_page.section2_.title_no_choice');
+  btn_s2b.setAttribute('data-i18n', 'app_page.section2_.title_no_choice');
+  btn_s2b.style.display = 'none';
 }
 
 /**
@@ -4153,23 +4179,22 @@ function clean_menu_function() {
 *
 */
 function reset_user_values() {
-    //
-    fields_TypoSymbol.box_typo = undefined;
-    fields_TypoSymbol.rendering_params = {};
-    fields_TypoSymbol.cats = {};
-    fields_PropSymbolChoro.rendering_params = {};
-    fields_Typo.rendering_params = {};
-    fields_Choropleth.rendering_params = {};
-    fields_PropSymbolTypo.rendering_params = {};
+  fields_TypoSymbol.box_typo = undefined;
+  fields_TypoSymbol.rendering_params = {};
+  fields_TypoSymbol.cats = {};
+  fields_PropSymbolChoro.rendering_params = {};
+  fields_Typo.rendering_params = {};
+  fields_Choropleth.rendering_params = {};
+  fields_PropSymbolTypo.rendering_params = {};
 }
 /**
 * Function to remove each node (each <option>) of a <select> HTML element :
 *
 */
 function unfillSelectInput(select_node) {
-    for (var i = select_node.childElementCount - 1; i > -1; i--) {
-        select_node.removeChild(select_node.children[i]);
-    }
+  for (var i = select_node.childElementCount - 1; i > -1; i--) {
+    select_node.removeChild(select_node.children[i]);
+  }
 }
 
 /** Function trying to avoid layer name collision by adding a suffix
@@ -4182,23 +4207,23 @@ function unfillSelectInput(select_node) {
 *        one to avoid collision or unwanted characters)
 */
 function check_layer_name(name) {
-    var clean_name = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
-    if (clean_name.match(/^\d+/)) {
-        clean_name = "_" + clean_name;
-    }
-    if (!current_layers.hasOwnProperty(clean_name) && ["Graticule", "World"].indexOf(clean_name) < 0) {
-        return clean_name;
+  var clean_name = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  if (clean_name.match(/^\d+/)) {
+    clean_name = '_' + clean_name;
+  }
+  if (!current_layers.hasOwnProperty(clean_name) && ['Graticule', 'World'].indexOf(clean_name) < 0) {
+    return clean_name;
+  } else {
+    var i = 1;
+    var match = clean_name.match(/_\d+$/);
+    if (match) {
+      i = match[0];
+      clean_name = clean_name.substring(clean_name, clean_name.indexOf(i));
+      return check_layer_name([clean_name, parseInt(i.slice(1, i.length)) + 1].join('_'));
     } else {
-        var i = 1;
-        var match = clean_name.match(/_\d+$/);
-        if (match) {
-            i = match[0];
-            clean_name = clean_name.substring(clean_name, clean_name.indexOf(i));
-            return check_layer_name([clean_name, parseInt(i.slice(1, i.length)) + 1].join('_'));
-        } else {
-            return check_layer_name([clean_name, i].join('_'));
-        }
+      return check_layer_name([clean_name, i].join('_'));
     }
+  }
 }
 
 /**
@@ -4206,11 +4231,11 @@ function check_layer_name(name) {
 * doesn't have any interesting field to use.
 */
 function display_error_num_field() {
-    swal({
-        title: "",
-        text: i18next.t("app_page.common.error_type_fields"),
-        type: "error"
-    });
+  swal({
+    title: '',
+    text: i18next.t('app_page.common.error_type_fields'),
+    type: 'error'
+  });
 };
 
 /**
@@ -4218,36 +4243,41 @@ function display_error_num_field() {
 * to fill the "span" field in stewart functionnality
 * as well as the "resolution" field in grid functionnality.
 *
+* @param {String} func_name - the name of the representation for which this function
+*                             is called (between 'grid' and 'stewart').
+* @return Number - A first guess for the span value (with no decimal if possible)
 */
 var get_first_guess_span = function get_first_guess_span(func_name) {
-    var bbox = _target_layer_file.bbox,
-        layer_name = Object.getOwnPropertyNames(_target_layer_file.objects),
-        abs = Math.abs,
-        const_mult = func_name === 'grid' ? 0.09 : 0.05;
-    var width_km = haversine_dist([bbox[0], abs(bbox[3]) - abs(bbox[1])], [bbox[2], abs(bbox[3]) - abs(bbox[1])]);
-    var height_km = haversine_dist([abs(bbox[2]) - abs(bbox[0]), bbox[1]], [abs(bbox[2]) - abs(bbox[0]), bbox[3]]);
-    var val = Math.max(width_km, height_km) * const_mult;
-    return val > 10 ? Math.round(val / 10) * 10 : Math.round(val);
+  var bbox = _target_layer_file.bbox,
+      layer_name = Object.getOwnPropertyNames(_target_layer_file.objects),
+      abs = Math.abs,
+      const_mult = func_name === 'grid' ? 0.09 : 0.05;
+  var width_km = haversine_dist([bbox[0], abs(bbox[3]) - abs(bbox[1])], [bbox[2], abs(bbox[3]) - abs(bbox[1])]);
+  var height_km = haversine_dist([abs(bbox[2]) - abs(bbox[0]), bbox[1]], [abs(bbox[2]) - abs(bbox[0]), bbox[3]]);
+  var val = Math.max(width_km, height_km) * const_mult;
+  return val > 10 ? Math.round(val / 10) * 10 : Math.round(val);
 };
 
 /**
 * Check if the wanted resolution isn't too big before sending the request
 * to the server.
 *
+* @param {Number} cell_value - The cell value to test
+* @return
 */
 function test_maxmin_resolution(cell_value) {
-    var bbox = _target_layer_file.bbox;
-    var abs = Math.abs;
-    var width_km = haversine_dist([bbox[0], abs(bbox[3]) - abs(bbox[1])], [bbox[2], abs(bbox[3]) - abs(bbox[1])]);
-    var height_km = haversine_dist([abs(bbox[2]) - abs(bbox[0]), bbox[1]], [abs(bbox[2]) - abs(bbox[0]), bbox[3]]);
-    // const area = width_km * height_km;
-    var bigger_side = Math.max(height_km, width_km);
-    if (width_km * height_km / (cell_value * cell_value) > 15000) {
-        return 'higher';
-    } else if (cell_value > bigger_side / 1.66) {
-        return 'lower';
-    }
-    return;
+  var bbox = _target_layer_file.bbox;
+  var abs = Math.abs;
+  var width_km = haversine_dist([bbox[0], abs(bbox[3]) - abs(bbox[1])], [bbox[2], abs(bbox[3]) - abs(bbox[1])]);
+  var height_km = haversine_dist([abs(bbox[2]) - abs(bbox[0]), bbox[1]], [abs(bbox[2]) - abs(bbox[0]), bbox[3]]);
+  // const area = width_km * height_km;
+  var bigger_side = Math.max(height_km, width_km);
+  if (width_km * height_km / (cell_value * cell_value) > 15000) {
+    return 'higher';
+  } else if (cell_value > bigger_side / 1.66) {
+    return 'lower';
+  }
+  return;
 }
 
 /*
@@ -4255,3127 +4285,3150 @@ function test_maxmin_resolution(cell_value) {
 *
 */
 var color_disc_icons = function () {
-    var types = new Set(['q6', 'equal_interval', 'jenks', 'quantiles']);
-    return function (type_disc) {
-        if (!type_disc) return;
-        type_disc = type_disc.toLowerCase();
-        if (!types.has(type_disc)) {
-            return;
-        } else {
-            document.getElementById('ico_' + type_disc).style.border = "solid 1px green";
-        }
-    };
+  var types = new Set(['q6', 'equal_interval', 'jenks', 'quantiles']);
+  return function (type_disc) {
+    if (!type_disc) return;
+    type_disc = type_disc.toLowerCase();
+    if (!types.has(type_disc)) {
+      return;
+    } else {
+      document.getElementById('ico_' + type_disc).style.border = 'solid 1px green';
+    }
+  };
 }();
 
 function make_template_functionnality(parent_node) {
-    return parent_node.append('div').attr('class', 'form-rendering');
+  return parent_node.append('div').attr('class', 'form-rendering');
 }
 
+/**
+* Make the input element allowing to choose the resulting layer name
+* (used for each representation type)
+* @param {Object} parent - The parent of the element to be created.
+* @param {String} id - the id of the element to be created.
+* @param {String} margin_top - The margin on the top of the input element (in px).
+* @return void
+*/
 function make_layer_name_button(parent, id, margin_top) {
-    var a = parent.append('p').style('clear', 'both');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.output' }).html(i18next.t('app_page.func_options.common.output'));
-    a.insert('input').styles({ width: '240px', 'font-size': '11.5px', "margin-top": margin_top }).attrs({ class: 'params', id: id });
+  var a = parent.append('p').style('clear', 'both');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.output' }).html(i18next.t('app_page.func_options.common.output'));
+  a.insert('input').styles({ width: '240px', 'font-size': '11.5px', 'margin-top': margin_top }).attrs({ class: 'params', id: id });
 }
 
 function make_discretization_icons(discr_section) {
-    var subsection1 = discr_section.append('p');
-    subsection1.insert('span').attrs({ 'data-i18n': '[html]app_page.func_options.common.discretization_choice', class: 'i18n' }).html(i18next.t("app_page.func_options.common.discretization_choice"));
-    var subsection2 = discr_section.append('p');
-    subsection2.append('img').styles({ 'margin': '0 7.5px', 'cursor': 'pointer' }).attrs({ 'src': '/static/img/discr_icons/q6.png', 'id': 'ico_q6' });
-    subsection2.append('img').styles({ 'margin': '0 7.5px', 'cursor': 'pointer' }).attrs({ 'src': '/static/img/discr_icons/jenks.png', 'id': 'ico_jenks' });
-    subsection2.append('img').styles({ 'margin': '0 7.5px', 'cursor': 'pointer' }).attrs({ 'src': '/static/img/discr_icons/equal_intervals.png', 'id': 'ico_equal_interval' });
-    subsection2.append('img').styles({ 'margin': '0 7.5px', 'cursor': 'pointer' }).attrs({ 'src': '/static/img/discr_icons/quantiles.png', 'id': 'ico_quantiles' });
-    subsection2.append('img').styles({ 'margin': '0 7.5px', 'cursor': 'pointer' }).attrs({ 'src': '/static/img/discr_icons/others.png', 'id': 'ico_others' });
-    subsection2.append('span').attrs({ id: 'choro_mini_choice_disc' }).styles({ float: 'right', 'margin-top': '5px', 'margin-left': '15px' });
-    subsection2.append('img').styles({ width: '15px', position: 'absolute', right: '5px' }).attrs({ 'id': 'img_choice_disc', 'src': '/static/img/Red_x.png' });
+  var subsection1 = discr_section.append('p');
+  subsection1.insert('span').attrs({ 'data-i18n': '[html]app_page.func_options.common.discretization_choice', class: 'i18n' }).html(i18next.t('app_page.func_options.common.discretization_choice'));
+  var subsection2 = discr_section.append('p');
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/q6.png', id: 'ico_q6' });
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/jenks.png', id: 'ico_jenks' });
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/equal_intervals.png', id: 'ico_equal_interval' });
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/quantiles.png', 'id': 'ico_quantiles' });
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/others.png', id: 'ico_others' });
+  subsection2.append('span').attrs({ id: 'choro_mini_choice_disc' }).styles({ float: 'right', 'margin-top': '5px', 'margin-left': '15px' });
+  subsection2.append('img').styles({ width: '15px', position: 'absolute', right: '5px' }).attrs({ id: 'img_choice_disc', src: '/static/img/Red_x.png' });
 }
 
 function make_ok_button(parent, id) {
-    var disabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+  var disabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-    var a = parent.append('p').styles({ "text-align": "right", margin: "auto" });
-    a.append('button').attrs({ 'id': id, 'class': 'params button_st3 i18n',
-        'data-i18n': '[html]app_page.func_options.common.render',
-        'disabled': disabled ? true : null }).html(i18next.t('app_page.func_options.common.render'));
-}
-
-function insert_legend_button(layer_name) {
-    var selec = d3.select("#sortable").select(['.', layer_name, ' .layer_buttons'].join('')),
-        inner_html = selec.node().innerHTML,
-        const_delim = ' <img src="/static/img/Inkscape_icons_zoom_fit_page.png"',
-        split_content = inner_html.split();
-    selec.node().innerHTML = [split_content[0], button_legend, const_delim, split_content[1]].join('');
+  var a = parent.append('p').styles({ 'text-align': 'right', margin: 'auto' });
+  a.append('button').attrs({ 'id': id, 'class': 'params button_st3 i18n',
+    'data-i18n': '[html]app_page.func_options.common.render',
+    'disabled': disabled ? true : null }).html(i18next.t('app_page.func_options.common.render'));
 }
 
 function make_min_max_tableau(values, nb_class, discontinuity_type, min_size, max_size, id_parent, breaks, callback) {
-    document.getElementById(id_parent).innerHTML = "";
-    if (values && breaks == undefined) {
-        var disc_result = discretize_to_size(values, discontinuity_type, nb_class, min_size, max_size);
-        breaks = disc_result[2];
-        if (!breaks) return false;
+  document.getElementById(id_parent).innerHTML = '';
+  if (values && breaks == undefined) {
+    var disc_result = discretize_to_size(values, discontinuity_type, nb_class, min_size, max_size);
+    breaks = disc_result[2];
+    if (!breaks) return false;
+  }
+
+  var parent_nd = document.getElementById(id_parent);
+  parent_nd.style.marginTop = '3px';
+  parent_nd.style.marginBottom = '3px';
+  // parent_nd.style = "margin-top: 3px; margin-bottom: 3px;"
+
+  var title = document.createElement('p');
+  // title.style = "margin: 1px; word-spacing: 1.8em;";
+  title.style.margin = '1px';
+  title.style.wordSpacing = '1.8em';
+  title.innerHTML = 'Min - Max - Size';
+  parent_nd.appendChild(title);
+
+  var div_table = document.createElement('div');
+  parent_nd.appendChild(div_table);
+  for (var i = 0; i < breaks.length; i++) {
+    var inner_line = document.createElement('p');
+    inner_line.setAttribute('class', 'breaks_vals');
+    inner_line.id = ['line', i].join('_');
+    inner_line.style.margin = '0px';
+
+    var input1 = document.createElement('input');
+    input1.setAttribute('type', 'number');
+    input1.setAttribute('class', 'min_class');
+    input1.setAttribute('step', 'any');
+    input1.value = (+breaks[i][0][0]).toFixed(2);
+    input1.style.width = '60px';
+    input1.style.position = 'unset';
+    inner_line.appendChild(input1);
+
+    var input2 = document.createElement('input');
+    input2.setAttribute('type', 'number');
+    input2.setAttribute('class', 'max_class');
+    input2.setAttribute('step', 'any');
+    input2.value = (+breaks[i][0][1]).toFixed(2);
+    input2.style.width = '60px';
+    input2.style.position = 'unset';
+    inner_line.appendChild(input2);
+
+    var input3 = document.createElement('input');
+    input3.setAttribute('type', 'number');
+    input3.setAttribute('class', 'size_class');
+    input3.setAttribute('step', 'any');
+    input3.value = (+breaks[i][1]).toFixed(2);
+    input3.style.marginLeft = '20px';
+    input3.style.width = '55px';
+    input3.style.position = 'unset';
+    inner_line.appendChild(input3);
+
+    var px = document.createElement('span');
+    px.innerHTML = ' px';
+    inner_line.appendChild(px);
+    div_table.appendChild(inner_line);
+  }
+
+  var mins = document.getElementById(id_parent).querySelectorAll('.min_class'),
+      maxs = document.getElementById(id_parent).querySelectorAll('.max_class');
+
+  for (var _i = 0; _i < mins.length; _i++) {
+    if (_i > 0) {
+      (function () {
+        var prev_ix = _i - 1;
+        mins[_i].onchange = function () {
+          maxs[prev_ix].value = this.value;
+          if (callback) callback();
+        };
+      })();
     }
-
-    var parent_nd = document.getElementById(id_parent);
-    parent_nd.style.marginTop = '3px';
-    parent_nd.style.marginBottom = '3px';
-    // parent_nd.style = "margin-top: 3px; margin-bottom: 3px;"
-
-    var title = document.createElement('p');
-    // title.style = "margin: 1px; word-spacing: 1.8em;";
-    title.style.margin = '1px';
-    title.style.wordSpacing = '1.8em';
-    title.innerHTML = "Min - Max - Size";
-    parent_nd.appendChild(title);
-
-    var div_table = document.createElement('div');
-    parent_nd.appendChild(div_table);
-    for (var i = 0; i < breaks.length; i++) {
-        var inner_line = document.createElement('p');
-        inner_line.setAttribute('class', 'breaks_vals');
-        inner_line.id = ["line", i].join('_');
-        inner_line.style.margin = '0px';
-
-        var input1 = document.createElement('input');
-        input1.setAttribute('type', 'number');
-        input1.setAttribute('class', 'min_class');
-        input1.setAttribute('step', 'any');
-        input1.value = (+breaks[i][0][0]).toFixed(2);
-        input1.style.width = '60px';
-        input1.style.position = 'unset';
-        inner_line.appendChild(input1);
-
-        var input2 = document.createElement('input');
-        input2.setAttribute('type', 'number');
-        input2.setAttribute('class', 'max_class');
-        input2.setAttribute('step', 'any');
-        input2.value = (+breaks[i][0][1]).toFixed(2);
-        input2.style.width = '60px';
-        input2.style.position = 'unset';
-        inner_line.appendChild(input2);
-
-        var input3 = document.createElement('input');
-        input3.setAttribute('type', 'number');
-        input3.setAttribute('class', 'size_class');
-        input3.setAttribute('step', 'any');
-        input3.value = (+breaks[i][1]).toFixed(2);
-        input3.style.marginLeft = '20px';
-        input3.style.width = '55px';
-        input3.style.position = 'unset';
-        inner_line.appendChild(input3);
-
-        var px = document.createElement('span');
-        px.innerHTML = " px";
-        inner_line.appendChild(px);
-        div_table.appendChild(inner_line);
+    if (_i < mins.length - 1) {
+      (function () {
+        var next_ix = _i + 1;
+        maxs[_i].onchange = function () {
+          mins[next_ix].value = this.value;
+          if (callback) callback();
+        };
+      })();
     }
-
-    var mins = document.getElementById(id_parent).querySelectorAll(".min_class"),
-        maxs = document.getElementById(id_parent).querySelectorAll(".max_class");
-
-    for (var _i = 0; _i < mins.length; _i++) {
-        if (_i > 0) {
-            (function () {
-                var prev_ix = _i - 1;
-                mins[_i].onchange = function () {
-                    maxs[prev_ix].value = this.value;
-                    if (callback) callback();
-                };
-            })();
-        }
-        if (_i < mins.length - 1) {
-            (function () {
-                var next_ix = _i + 1;
-                maxs[_i].onchange = function () {
-                    mins[next_ix].value = this.value;
-                    if (callback) callback();
-                };
-            })();
-        }
+  }
+  if (callback) {
+    var sizes = document.getElementById(id_parent).querySelectorAll('.size_class');
+    for (var _i2 = 0; _i2 < sizes.length; _i2++) {
+      sizes[_i2].onchange = callback;
     }
-    if (callback) {
-        var sizes = document.getElementById(id_parent).querySelectorAll(".size_class");
-        for (var _i2 = 0; _i2 < sizes.length; _i2++) {
-            sizes[_i2].onchange = callback;
-        }
-    }
+  }
 }
 
 function fetch_min_max_table_value(parent_id) {
-    var parent_node = parent_id ? document.getElementById(parent_id) : _app.current_functionnality.name == "flow" ? document.getElementById("FlowMap_discTable") : _app.current_functionnality.name == "discont" ? document.getElementById("Discont_discTable") : null;
+  var parent_node = parent_id ? document.getElementById(parent_id) : _app.current_functionnality.name === 'flow' ? document.getElementById('FlowMap_discTable') : _app.current_functionnality.name === 'discont' ? document.getElementById('Discont_discTable') : null;
 
-    if (!parent_node) return;
+  if (!parent_node) return;
 
-    var mins = Array.prototype.map.call(parent_node.querySelectorAll(".min_class"), function (el) {
-        return +el.value;
-    }),
-        maxs = Array.prototype.map.call(parent_node.querySelectorAll(".max_class"), function (el) {
-        return +el.value;
-    }),
-        sizes = Array.prototype.map.call(parent_node.querySelectorAll(".size_class"), function (el) {
-        return +el.value;
-    }),
-        nb_class = mins.length,
-        comp_fun = function comp_fun(a, b) {
-        return a - b;
-    };
+  var mins = Array.prototype.map.call(parent_node.querySelectorAll('.min_class'), function (el) {
+    return +el.value;
+  }),
+      maxs = Array.prototype.map.call(parent_node.querySelectorAll('.max_class'), function (el) {
+    return +el.value;
+  }),
+      sizes = Array.prototype.map.call(parent_node.querySelectorAll('.size_class'), function (el) {
+    return +el.value;
+  }),
+      nb_class = mins.length,
+      comp_fun = function comp_fun(a, b) {
+    return a - b;
+  };
 
-    // Some verification regarding the input values provided by the user :
-    // - Values are ordered :
-    if (mins != mins.sort(comp_fun) || maxs != maxs.sort(comp_fun) || sizes != sizes.sort(comp_fun)) {
-        swal("", i18next.t("app_page.common.error_values_order"), "error");
-        return false;
-    }
+  // Some verification regarding the input values provided by the user :
+  // - Values are ordered :
+  if (mins !== mins.sort(comp_fun) || maxs !== maxs.sort(comp_fun) || sizes !== sizes.sort(comp_fun)) {
+    swal('', i18next.t('app_page.common.error_values_order'), 'error');
+    return false;
+  }
 
-    return { mins: mins.sort(comp_fun), maxs: maxs.sort(comp_fun), sizes: sizes.sort(comp_fun) };
+  return { mins: mins.sort(comp_fun), maxs: maxs.sort(comp_fun), sizes: sizes.sort(comp_fun) };
 }
 
 function fillMenu_PropSymbolChoro(layer) {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var a = dv2.append('p').attr('class', 'params_section2');
-    a.append("span").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.field1' }).html(i18next.t("app_page.func_options.choroprop.field1"));
-    var field1_selec = a.insert('select').attrs({ class: 'params', id: 'PropSymbolChoro_field_1' });
+  var a = dv2.append('p').attr('class', 'params_section2');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.field1' }).html(i18next.t('app_page.func_options.choroprop.field1'));
+  var field1_selec = a.insert('select').attrs({ class: 'params', id: 'PropSymbolChoro_field_1' });
 
-    var b = dv2.append('p').attr('class', 'params_section2');
-    b.append("span").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.fixed_size' }).html(i18next.t("app_page.func_options.choroprop.fixed_size"));
-    var ref_size = b.insert('input').attrs({ type: 'number', class: 'params', id: 'PropSymbolChoro_ref_size',
-        min: 0.1, max: 100.0, value: 60.0, step: "any" }).style("width", "50px");
-    b.append('span').html(' (px)');
+  var b = dv2.append('p').attr('class', 'params_section2');
+  b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.fixed_size' }).html(i18next.t('app_page.func_options.choroprop.fixed_size'));
+  var ref_size = b.insert('input').attrs({
+    id: 'PropSymbolChoro_ref_size',
+    type: 'number',
+    class: 'params',
+    min: 0.1,
+    max: 100.0,
+    value: 60.0,
+    step: 'any' }).style('width', '50px');
+  b.append('span').html(' (px)');
 
-    var c = dv2.append('p').attr('class', 'params_section2');
-    c.append("span").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.on_value' }).html(i18next.t("app_page.func_options.choroprop.on_value"));
-    var ref_value = c.insert('input').styles({ 'width': '100px', "margin-left": "10px" }).attrs({ type: 'number', class: 'params', id: 'PropSymbolChoro_ref_value' }).attrs({ min: 0.1, step: 0.1 });
+  var c = dv2.append('p').attr('class', 'params_section2');
+  c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.on_value' }).html(i18next.t('app_page.func_options.choroprop.on_value'));
+  var ref_value = c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ type: 'number', class: 'params', id: 'PropSymbolChoro_ref_value' }).attrs({ min: 0.1, step: 0.1 });
 
-    // Other symbols could probably easily be proposed :
-    var d = dv2.append('p').attr('class', 'params_section2');
-    d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.symbol_type' }).html(i18next.t("app_page.func_options.choroprop.symbol_type"));
-    var symb_selec = d.insert('select').attrs({ class: 'params i18n', id: 'PropSymbolChoro_symbol_type' });
+  // Other symbols could probably easily be proposed :
+  var d = dv2.append('p').attr('class', 'params_section2');
+  d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.symbol_type' }).html(i18next.t('app_page.func_options.choroprop.symbol_type'));
+  var symb_selec = d.insert('select').attrs({ class: 'params i18n', id: 'PropSymbolChoro_symbol_type' });
 
-    var e = dv2.append('p').attr('class', 'params_section2');
-    e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.field2' }).html(i18next.t("app_page.func_options.choroprop.field2"));
+  var e = dv2.append('p').attr('class', 'params_section2');
+  e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.choroprop.field2' }).html(i18next.t('app_page.func_options.choroprop.field2'));
 
-    var field2_selec = e.insert('select').attrs({ class: 'params', id: 'PropSymbolChoro_field_2' });
+  var field2_selec = e.insert('select').attrs({ class: 'params', id: 'PropSymbolChoro_field_2' });
 
-    var discr_section = dv2.insert('p').style("margin", "auto");
-    discr_section.insert("span").attr("id", "container_sparkline_propsymbolchoro").styles({ "margin": "16px 50px 0px 4px", "float": "right" });
-    make_discretization_icons(discr_section);
-    // let f = dv2.insert('p').attr('class', 'params_section2');
-    // f.append("button")
-    //     .attrs({id: 'PropSymbolChoro_btn_disc', class: 'params button_disc i18n', 'data-i18n': '[html]app_page.func_options.common.discretization_choice'})
-    //     .styles({"font-size": "0.8em", "text-align": "center"})
-    //     .html(i18next.t("app_page.func_options.common.discretization_choice"));
+  var discr_section = dv2.insert('p').style('margin', 'auto');
+  discr_section.insert('span').attr('id', 'container_sparkline_propsymbolchoro').styles({ margin: '16px 50px 0px 4px', float: 'right' });
+  make_discretization_icons(discr_section);
+  // let f = dv2.insert('p').attr('class', 'params_section2');
+  // f.append("button")
+  //     .attrs({id: 'PropSymbolChoro_btn_disc', class: 'params button_disc i18n', 'data-i18n': '[html]app_page.func_options.common.discretization_choice'})
+  //     .styles({"font-size": "0.8em", "text-align": "center"})
+  //     .html(i18next.t("app_page.func_options.common.discretization_choice"));
 
-    make_layer_name_button(dv2, "PropSymbolChoro_output_name", "15px");
-    make_ok_button(dv2, 'propChoro_yes');
-    dv2.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dv2, 'PropSymbolChoro_output_name', '15px');
+  make_ok_button(dv2, 'propChoro_yes');
+  dv2.selectAll('.params').attr('disabled', true);
 }
 
 var fields_PropSymbolChoro = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        section2.selectAll(".params").attr("disabled", null);
-        var self = this,
-            fields_stock = getFieldsType('stock', layer),
-            fields_ratio = getFieldsType('ratio', layer),
-            nb_features = user_data[layer].length,
-            field_size = section2.select("#PropSymbolChoro_field_1"),
-            field_color = section2.select("#PropSymbolChoro_field_2"),
-            ico_disc = section2.select('#ico_others'),
-            ico_jenks = section2.select('#ico_jenks'),
-            ico_quantiles = section2.select('#ico_quantiles'),
-            ico_equal_interval = section2.select('#ico_equal_interval'),
-            ico_q6 = section2.select('#ico_q6'),
-            uo_layer_name = section2.select('#PropSymbolChoro_output_name'),
-            ref_value_field = section2.select('#PropSymbolChoro_ref_value'),
-            symb_selec = section2.select('#PropSymbolChoro_symbol_type'),
-            ref_size = section2.select('#PropSymbolChoro_ref_size'),
-            choro_mini_choice_disc = section2.select('#choro_mini_choice_disc'),
-            img_valid_disc = section2.select('#img_choice_disc'),
-            ok_button = section2.select('#propChoro_yes');
+  fill: function fill(layer) {
+    if (!layer) return;
+    section2.selectAll('.params').attr('disabled', null);
+    var self = this,
+        fields_stock = getFieldsType('stock', layer),
+        fields_ratio = getFieldsType('ratio', layer),
+        nb_features = user_data[layer].length,
+        field_size = section2.select('#PropSymbolChoro_field_1'),
+        field_color = section2.select('#PropSymbolChoro_field_2'),
+        ico_disc = section2.select('#ico_others'),
+        ico_jenks = section2.select('#ico_jenks'),
+        ico_quantiles = section2.select('#ico_quantiles'),
+        ico_equal_interval = section2.select('#ico_equal_interval'),
+        ico_q6 = section2.select('#ico_q6'),
+        uo_layer_name = section2.select('#PropSymbolChoro_output_name'),
+        ref_value_field = section2.select('#PropSymbolChoro_ref_value'),
+        symb_selec = section2.select('#PropSymbolChoro_symbol_type'),
+        ref_size = section2.select('#PropSymbolChoro_ref_size'),
+        choro_mini_choice_disc = section2.select('#choro_mini_choice_disc'),
+        img_valid_disc = section2.select('#img_choice_disc'),
+        ok_button = section2.select('#propChoro_yes');
 
-        var uncolor_icons = function uncolor_icons() {
-            ico_jenks.style('border', null);
-            ico_q6.style('border', null);
-            ico_quantiles.style('border', null);
-            ico_equal_interval.style('border', null);
-        };
+    var uncolor_icons = function uncolor_icons() {
+      ico_jenks.style('border', null);
+      ico_q6.style('border', null);
+      ico_quantiles.style('border', null);
+      ico_equal_interval.style('border', null);
+    };
 
-        if (current_layers[layer].type == "Line") {
-            ref_size.attr('value', 10.0);
-            [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
+    if (current_layers[layer].type === 'Line') {
+      ref_size.attr('value', 10.0);
+      [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
+    } else {
+      ref_size.attr('value', 60.0);
+      [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
+    }
+
+    var prepare_disc_quantiles = function prepare_disc_quantiles(field) {
+      var _values = user_data[layer].map(function (v) {
+        return v[field];
+      });
+      var n_class = getOptNbClass(_values.length);
+      render_mini_chart_serie(_values.map(function (v) {
+        return +v;
+      }), document.getElementById('container_sparkline_propsymbolchoro'));
+
+      var _discretize_to_colors = discretize_to_colors(_values, 'quantiles', n_class),
+          _discretize_to_colors2 = _slicedToArray(_discretize_to_colors, 6),
+          nb_class = _discretize_to_colors2[0],
+          type = _discretize_to_colors2[1],
+          breaks = _discretize_to_colors2[2],
+          color_array = _discretize_to_colors2[3],
+          colors_map = _discretize_to_colors2[4],
+          no_data_color = _discretize_to_colors2[5];
+
+      self.rendering_params[field] = {
+        nb_class: nb_class, type: 'quantiles', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+      uncolor_icons();
+      ico_quantiles.style('border', 'solid 1px green');
+    };
+
+    if (fields_stock.length === 0 || fields_ratio.length === 0) {
+      display_error_num_field();
+      return;
+    }
+
+    // Set some default colors in order to not force to open the box for selecting them :
+    {
+      var first_field = fields_ratio[0];
+      prepare_disc_quantiles(first_field);
+      ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
+    }
+
+    fields_stock.forEach(function (field) {
+      field_size.append('option').text(field).attr('value', field);
+    });
+    fields_ratio.forEach(function (field) {
+      field_color.append('option').text(field).attr('value', field);
+    });
+    field_size.on('change', function () {
+      var field_name = this.value,
+          max_val_field = max_fast(user_data[layer].map(function (obj) {
+        return +obj[field_name];
+      }));
+
+      ref_value_field.attrs({ max: max_val_field, value: max_val_field });
+      uo_layer_name.attr('value', ['PropSymbols', field_name, field_color.node().value, layer].join('_'));
+    });
+
+    field_color.on('change', function () {
+      var field_name = this.value,
+          vals = user_data[layer].map(function (a) {
+        return +a[field_name];
+      });
+      render_mini_chart_serie(vals, document.getElementById('container_sparkline_propsymbolchoro'));
+      uo_layer_name.attr('value', ['PropSymbols', field_size.node().value, field_name, layer].join('_'));
+      if (self.rendering_params[field_name] !== undefined) {
+        // ok_button.attr('disabled', null);
+        img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+        choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ', ' + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
+        uncolor_icons();
+        color_disc_icons(self.rendering_params[field_name].type);
+        // console.log(section2); console.log(self.rendering_params[field_name].type);
+      } else {
+        prepare_disc_quantiles(field_name);
+        // ok_button.attr('disabled', true);
+        // img_valid_disc.attr('src', '/static/img/Red_x.png');
+        // choro_mini_choice_disc.html('');
+      }
+    });
+
+    ico_jenks.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_color.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors3 = discretize_to_colors(_values, 'jenks', n_class, 'BuGn'),
+          _discretize_to_colors4 = _slicedToArray(_discretize_to_colors3, 6),
+          nb_class = _discretize_to_colors4[0],
+          type = _discretize_to_colors4[1],
+          breaks = _discretize_to_colors4[2],
+          color_array = _discretize_to_colors4[3],
+          colors_map = _discretize_to_colors4[4],
+          no_data_color = _discretize_to_colors4[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'jenks', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field, schema: ['BuGn']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_quantiles.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_color.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors5 = discretize_to_colors(_values, 'quantiles', n_class, 'BuGn'),
+          _discretize_to_colors6 = _slicedToArray(_discretize_to_colors5, 6),
+          nb_class = _discretize_to_colors6[0],
+          type = _discretize_to_colors6[1],
+          breaks = _discretize_to_colors6[2],
+          color_array = _discretize_to_colors6[3],
+          colors_map = _discretize_to_colors6[4],
+          no_data_color = _discretize_to_colors6[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'quantiles', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field, schema: ['BuGn']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_equal_interval.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_color.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors7 = discretize_to_colors(_values, 'equal_interval', n_class, 'BuGn'),
+          _discretize_to_colors8 = _slicedToArray(_discretize_to_colors7, 6),
+          nb_class = _discretize_to_colors8[0],
+          type = _discretize_to_colors8[1],
+          breaks = _discretize_to_colors8[2],
+          color_array = _discretize_to_colors8[3],
+          colors_map = _discretize_to_colors8[4],
+          no_data_color = _discretize_to_colors8[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'equal_interval', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field, schema: ['BuGn']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_q6.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_color.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      });
+
+      var _discretize_to_colors9 = discretize_to_colors(_values, 'Q6', 6, 'BuGn'),
+          _discretize_to_colors10 = _slicedToArray(_discretize_to_colors9, 6),
+          nb_class = _discretize_to_colors10[0],
+          type = _discretize_to_colors10[1],
+          breaks = _discretize_to_colors10[2],
+          color_array = _discretize_to_colors10[3],
+          colors_map = _discretize_to_colors10[4],
+          no_data_color = _discretize_to_colors10[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'Q6', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field, schema: ['BuGn']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_disc.on('click', function () {
+      var selected_field = field_color.node().value,
+          opt_nb_class = Math.floor(1 + 3.3 * Math.log10(user_data[layer].length)),
+          conf_disc_box = void 0;
+
+      if (self.rendering_params[selected_field]) conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
+        colors: self.rendering_params[selected_field].colors,
+        no_data: self.rendering_params[selected_field].no_data,
+        type: self.rendering_params[selected_field].type,
+        breaks: self.rendering_params[selected_field].breaks,
+        extra_options: self.rendering_params[selected_field].extra_options });else conf_disc_box = display_discretization(layer, selected_field, opt_nb_class, { type: 'quantiles' });
+
+      conf_disc_box.then(function (confirmed) {
+        if (confirmed) {
+          img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+          choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ', ' + i18next.t('app_page.common.class', { count: confirmed[0] }));
+          uncolor_icons();
+          color_disc_icons(confirmed[1]);
+          self.rendering_params[selected_field] = {
+            nb_class: confirmed[0],
+            type: confirmed[1],
+            schema: confirmed[5],
+            no_data: confirmed[6],
+            breaks: confirmed[2],
+            colors: confirmed[3],
+            colorsByFeature: confirmed[4],
+            renderer: 'PropSymbolsChoro',
+            extra_options: confirmed[7]
+          };
+        } else return;
+      });
+    });
+    ok_button.on('click', function () {
+      if (!ref_value_field.node().value) return;
+      var rendering_params = self.rendering_params;
+      if (rendering_params[field_color.node().value]) {
+        var _layer = Object.getOwnPropertyNames(user_data)[0],
+            symbol_to_use = symb_selec.node().value,
+            _nb_features = user_data[_layer].length,
+            rd_params = {},
+            color_field = field_color.node().value,
+            new_layer_name = uo_layer_name.node().value;
+
+        new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : _layer + '_PropSymbolsChoro');
+
+        rd_params.field = field_size.node().value;
+        rd_params.new_name = new_layer_name;
+        rd_params.nb_features = _nb_features;
+        rd_params.ref_layer_name = _layer;
+        rd_params.symbol = symbol_to_use;
+        rd_params.ref_value = +ref_value_field.node().value;
+        rd_params.ref_size = +ref_size.node().value;
+        rd_params.fill_color = rendering_params[color_field]['colorsByFeature'];
+        rd_params.color_field = color_field;
+
+        if (symbol_to_use === 'line') {
+          make_prop_line(rd_params);
         } else {
-            ref_size.attr('value', 60.0);
-            [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
+          make_prop_symbols(rd_params);
+        }
+        var colors_breaks = [];
+        for (var i = rendering_params[color_field]['breaks'].length - 1; i > 0; --i) {
+          colors_breaks.push([[rendering_params[color_field]['breaks'][i - 1], ' - ', rendering_params[color_field]['breaks'][i]].join(''), rendering_params[color_field]['colors'][i - 1]]);
         }
 
-        var prepare_disc_quantiles = function prepare_disc_quantiles(field) {
-            var _values = user_data[layer].map(function (v) {
-                return v[field];
-            }),
-                n_class = getOptNbClass(_values.length);
-            render_mini_chart_serie(_values.map(function (v) {
-                return +v;
-            }), document.getElementById("container_sparkline_propsymbolchoro"));
-
-            var _discretize_to_colors = discretize_to_colors(_values, "quantiles", n_class),
-                _discretize_to_colors2 = _slicedToArray(_discretize_to_colors, 6),
-                nb_class = _discretize_to_colors2[0],
-                type = _discretize_to_colors2[1],
-                breaks = _discretize_to_colors2[2],
-                color_array = _discretize_to_colors2[3],
-                colors_map = _discretize_to_colors2[4],
-                no_data_color = _discretize_to_colors2[5];
-
-            self.rendering_params[field] = {
-                nb_class: nb_class, type: 'quantiles', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-            uncolor_icons();
-            ico_quantiles.style('border', 'solid 1px green');
+        var options_disc = {
+          schema: rendering_params[color_field].schema,
+          colors: rendering_params[color_field].colors,
+          no_data: rendering_params[color_field].no_data,
+          type: rendering_params[color_field].type,
+          breaks: rendering_params[color_field].breaks,
+          extra_options: rendering_params[color_field].extra_options
         };
 
-        if (fields_stock.length == 0 || fields_ratio.length == 0) {
-            display_error_num_field();
-            return;
-        }
-
-        // Set some default colors in order to not force to open the box for selecting them :
-        {
-            var first_field = fields_ratio[0];
-            prepare_disc_quantiles(first_field);
-            ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
-        }
-
-        fields_stock.forEach(function (field) {
-            field_size.append("option").text(field).attr("value", field);
+        Object.assign(current_layers[new_layer_name], {
+          renderer: 'PropSymbolsChoro',
+          options_disc: options_disc,
+          rendered_field: field_size.node().value,
+          rendered_field2: field_color.node().value,
+          colors_breaks: colors_breaks
         });
-        fields_ratio.forEach(function (field) {
-            field_color.append('option').text(field).attr('value', field);
-        });
-        field_size.on("change", function () {
-            var field_name = this.value,
-                max_val_field = max_fast(user_data[layer].map(function (obj) {
-                return +obj[field_name];
-            }));
+        zoom_without_redraw();
+        switch_accordion_section();
+        handle_legend(new_layer_name);
+      }
+    });
+    setSelected(field_size.node(), fields_stock[0]);
+    setSelected(field_color.node(), fields_ratio[0]);
+  },
 
-            ref_value_field.attrs({ "max": max_val_field, 'value': max_val_field });
-            uo_layer_name.attr('value', ["PropSymbols", field_name, field_color.node().value, layer].join('_'));
-        });
 
-        field_color.on("change", function () {
-            var field_name = this.value,
-                vals = user_data[layer].map(function (a) {
-                return +a[field_name];
-            });
-            render_mini_chart_serie(vals, document.getElementById("container_sparkline_propsymbolchoro"));
-            uo_layer_name.attr('value', ["PropSymbols", field_size.node().value, field_name, layer].join('_'));
-            if (self.rendering_params[field_name] !== undefined) {
-                // ok_button.attr('disabled', null);
-                img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-                choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ", " + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
-                uncolor_icons();
-                color_disc_icons(self.rendering_params[field_name].type);
-                // console.log(section2); console.log(self.rendering_params[field_name].type);
-            } else {
-                prepare_disc_quantiles(field_name);
-                // ok_button.attr('disabled', true);
-                // img_valid_disc.attr('src', '/static/img/Red_x.png');
-                // choro_mini_choice_disc.html('');
-            }
-        });
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('PropSymbolChoro_field_1'));
+    unfillSelectInput(document.getElementById('PropSymbolChoro_field_2'));
+    unfillSelectInput(document.getElementById('PropSymbolChoro_symbol_type'));
+    section2.selectAll('.params').attr('disabled', true);
+  },
 
-        ico_jenks.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_color.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors3 = discretize_to_colors(_values, "jenks", n_class, 'BuGn'),
-                _discretize_to_colors4 = _slicedToArray(_discretize_to_colors3, 6),
-                nb_class = _discretize_to_colors4[0],
-                type = _discretize_to_colors4[1],
-                breaks = _discretize_to_colors4[2],
-                color_array = _discretize_to_colors4[3],
-                colors_map = _discretize_to_colors4[4],
-                no_data_color = _discretize_to_colors4[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'jenks', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-                rendered_field: selected_field, schema: ["BuGn"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_quantiles.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_color.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors5 = discretize_to_colors(_values, "quantiles", n_class, 'BuGn'),
-                _discretize_to_colors6 = _slicedToArray(_discretize_to_colors5, 6),
-                nb_class = _discretize_to_colors6[0],
-                type = _discretize_to_colors6[1],
-                breaks = _discretize_to_colors6[2],
-                color_array = _discretize_to_colors6[3],
-                colors_map = _discretize_to_colors6[4],
-                no_data_color = _discretize_to_colors6[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'quantiles', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-                rendered_field: selected_field, schema: ["BuGn"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_equal_interval.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_color.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors7 = discretize_to_colors(_values, "equal_interval", n_class, 'BuGn'),
-                _discretize_to_colors8 = _slicedToArray(_discretize_to_colors7, 6),
-                nb_class = _discretize_to_colors8[0],
-                type = _discretize_to_colors8[1],
-                breaks = _discretize_to_colors8[2],
-                color_array = _discretize_to_colors8[3],
-                colors_map = _discretize_to_colors8[4],
-                no_data_color = _discretize_to_colors8[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'equal_interval', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-                rendered_field: selected_field, schema: ["BuGn"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_q6.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_color.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            });
-
-            var _discretize_to_colors9 = discretize_to_colors(_values, "Q6", 6, 'BuGn'),
-                _discretize_to_colors10 = _slicedToArray(_discretize_to_colors9, 6),
-                nb_class = _discretize_to_colors10[0],
-                type = _discretize_to_colors10[1],
-                breaks = _discretize_to_colors10[2],
-                color_array = _discretize_to_colors10[3],
-                colors_map = _discretize_to_colors10[4],
-                no_data_color = _discretize_to_colors10[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'Q6', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-                rendered_field: selected_field, schema: ["BuGn"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_disc.on("click", function () {
-            var selected_field = field_color.node().value,
-                opt_nb_class = Math.floor(1 + 3.3 * Math.log10(user_data[layer].length)),
-                conf_disc_box = void 0;
-
-            if (self.rendering_params[selected_field]) conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
-                colors: self.rendering_params[selected_field].colors,
-                no_data: self.rendering_params[selected_field].no_data,
-                type: self.rendering_params[selected_field].type,
-                breaks: self.rendering_params[selected_field].breaks,
-                extra_options: self.rendering_params[selected_field].extra_options });else conf_disc_box = display_discretization(layer, selected_field, opt_nb_class, { type: "quantiles" });
-
-            conf_disc_box.then(function (confirmed) {
-                if (confirmed) {
-                    img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-                    choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ", " + i18next.t('app_page.common.class', { count: confirmed[0] }));
-                    uncolor_icons();
-                    color_disc_icons(confirmed[1]);
-                    self.rendering_params[selected_field] = {
-                        nb_class: confirmed[0], type: confirmed[1],
-                        schema: confirmed[5], no_data: confirmed[6],
-                        breaks: confirmed[2], colors: confirmed[3],
-                        colorsByFeature: confirmed[4],
-                        renderer: "PropSymbolsChoro",
-                        extra_options: confirmed[7]
-                    };
-                } else return;
-            });
-        });
-        ok_button.on("click", function () {
-            if (!ref_value_field.node().value) return;
-            var rendering_params = self.rendering_params;
-            if (rendering_params[field_color.node().value]) {
-                var _layer = Object.getOwnPropertyNames(user_data)[0],
-                    symbol_to_use = symb_selec.node().value,
-                    _nb_features = user_data[_layer].length,
-                    rd_params = {},
-                    color_field = field_color.node().value,
-                    new_layer_name = uo_layer_name.node().value;
-
-                new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : _layer + "_PropSymbolsChoro");
-
-                rd_params.field = field_size.node().value;
-                rd_params.new_name = new_layer_name;
-                rd_params.nb_features = _nb_features;
-                rd_params.ref_layer_name = _layer;
-                rd_params.symbol = symbol_to_use;
-                rd_params.ref_value = +ref_value_field.node().value;
-                rd_params.ref_size = +ref_size.node().value;
-                rd_params.fill_color = rendering_params[color_field]['colorsByFeature'];
-                rd_params.color_field = color_field;
-
-                if (symbol_to_use == "line") make_prop_line(rd_params);else make_prop_symbols(rd_params);
-
-                var colors_breaks = [];
-                for (var i = rendering_params[color_field]['breaks'].length - 1; i > 0; --i) {
-                    colors_breaks.push([[rendering_params[color_field]['breaks'][i - 1], " - ", rendering_params[color_field]['breaks'][i]].join(''), rendering_params[color_field]['colors'][i - 1]]);
-                }
-
-                var options_disc = { schema: rendering_params[color_field].schema,
-                    colors: rendering_params[color_field].colors,
-                    no_data: rendering_params[color_field].no_data,
-                    type: rendering_params[color_field].type,
-                    breaks: rendering_params[color_field].breaks,
-                    extra_options: rendering_params[color_field].extra_options };
-
-                Object.assign(current_layers[new_layer_name], {
-                    renderer: "PropSymbolsChoro",
-                    options_disc: options_disc,
-                    rendered_field: field_size.node().value,
-                    rendered_field2: field_color.node().value,
-                    colors_breaks: colors_breaks
-                });
-                zoom_without_redraw();
-                switch_accordion_section();
-                handle_legend(new_layer_name);
-            }
-        });
-        setSelected(field_size.node(), fields_stock[0]);
-        setSelected(field_color.node(), fields_ratio[0]);
-    },
-
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("PropSymbolChoro_field_1"));
-        unfillSelectInput(document.getElementById("PropSymbolChoro_field_2"));
-        unfillSelectInput(document.getElementById('PropSymbolChoro_symbol_type'));
-        section2.selectAll(".params").attr("disabled", true);
-    },
-    rendering_params: {}
+  rendering_params: {}
 };
 
 var fillMenu_Typo = function fillMenu_Typo() {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var a = dv2.append('p').attr('class', 'params_section2');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.typo.field' }).html(i18next.t("app_page.func_options.typo.field"));
-    a.insert('select').attrs({ id: 'Typo_field_1', class: 'params' });
+  var a = dv2.append('p').attr('class', 'params_section2');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.typo.field' }).html(i18next.t('app_page.func_options.typo.field'));
+  a.insert('select').attrs({ id: 'Typo_field_1', class: 'params' });
 
-    var b = dv2.insert('p').styles({ "margin": "auto", "text-align": "center" });
-    b.append("button").attrs({ id: "Typo_class", class: "button_disc params i18n",
-        'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ "font-size": "0.8em", "text-align": "center" }).html(i18next.t("app_page.func_options.typo.color_choice"));
+  var b = dv2.insert('p').styles({ margin: 'auto', 'text-align': 'center' });
+  b.append('button').attrs({ id: 'Typo_class', class: 'button_disc params i18n',
+    'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typo.color_choice'));
 
-    make_layer_name_button(dv2, "Typo_output_name");
-    make_ok_button(dv2, 'Typo_yes');
-    dv2.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dv2, 'Typo_output_name');
+  make_ok_button(dv2, 'Typo_yes');
+  dv2.selectAll('.params').attr('disabled', true);
 };
 
 var fields_Typo = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        var self = this,
-            g_lyr_name = "#" + layer,
-            fields_name = getFieldsType('category', layer),
-            field_selec = section2.select("#Typo_field_1"),
-            ok_button = section2.select('#Typo_yes'),
-            btn_typo_class = section2.select('#Typo_class'),
-            uo_layer_name = section2.select('#Typo_output_name');
+  fill: function fill(layer) {
+    if (!layer) return;
+    var self = this,
+        g_lyr_name = '#' + layer,
+        fields_name = getFieldsType('category', layer),
+        field_selec = section2.select('#Typo_field_1'),
+        ok_button = section2.select('#Typo_yes'),
+        btn_typo_class = section2.select('#Typo_class'),
+        uo_layer_name = section2.select('#Typo_output_name');
 
-        var prepare_colors = function prepare_colors(field) {
-            var _prepare_categories_a = prepare_categories_array(layer, field, null),
-                _prepare_categories_a2 = _slicedToArray(_prepare_categories_a, 2),
-                cats = _prepare_categories_a2[0],
-                col_map = _prepare_categories_a2[1];
+    var prepare_colors = function prepare_colors(field) {
+      var _prepare_categories_a = prepare_categories_array(layer, field, null),
+          _prepare_categories_a2 = _slicedToArray(_prepare_categories_a, 2),
+          cats = _prepare_categories_a2[0],
+          col_map = _prepare_categories_a2[1];
 
-            var nb_class = col_map.size;
-            var colorByFeature = user_data[layer].map(function (ft) {
-                return col_map.get(ft[field])[0];
-            });
-            self.rendering_params[field] = {
-                nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
-                renderer: 'Categorical', rendered_field: field, skip_alert: false
+      var nb_class = col_map.size;
+      var colorByFeature = user_data[layer].map(function (ft) {
+        return col_map.get(ft[field])[0];
+      });
+      self.rendering_params[field] = {
+        nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
+        renderer: 'Categorical', rendered_field: field, skip_alert: false
+      };
+    };
+
+    fields_name.forEach(function (f_name) {
+      field_selec.append('option').text(f_name).attr('value', f_name);
+    });
+
+    field_selec.on('change', function () {
+      var selected_field = this.value;
+      uo_layer_name.attr('value', ['Typo', selected_field, layer].join('_'));
+      prepare_colors(selected_field);
+    });
+
+    // Set some default colors in order to not force to open the box for selecting them :
+    {
+      var first_field = fields_name[0];
+      prepare_colors(first_field);
+      ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
+    }
+
+    btn_typo_class.on('click', function () {
+      var selected_field = field_selec.node().value,
+          nb_features = current_layers[layer].n_features,
+          col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
+          cats = void 0;
+
+      var _prepare_categories_a3 = prepare_categories_array(layer, selected_field, col_map);
+
+      var _prepare_categories_a4 = _slicedToArray(_prepare_categories_a3, 2);
+
+      cats = _prepare_categories_a4[0];
+      col_map = _prepare_categories_a4[1];
+
+      if (cats.length > 15) {
+        swal({ title: '',
+          text: i18next.t('app_page.common.error_too_many_features_color'),
+          type: 'warning',
+          showCancelButton: true,
+          allowOutsideClick: false,
+          confirmButtonColor: '#DD6B55',
+          confirmButtonText: i18next.t('app_page.common.valid') + '!',
+          cancelButtonText: i18next.t('app_page.common.cancel')
+        }).then(function () {
+          display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
+            if (confirmed) {
+              self.rendering_params[selected_field] = {
+                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
+                renderer: 'Categorical', rendered_field: selected_field, skip_alert: true
+              };
+            }
+          });
+        }, function (dismiss) {
+          return;
+        });
+      } else {
+        display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
+          if (confirmed) {
+            self.rendering_params[selected_field] = {
+              nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
+              renderer: 'Categorical', rendered_field: selected_field, skip_alert: true
             };
-        };
-
-        fields_name.forEach(function (f_name) {
-            field_selec.append("option").text(f_name).attr("value", f_name);
+          }
         });
+      }
+    });
 
-        field_selec.on("change", function () {
-            var selected_field = this.value;
-            uo_layer_name.attr('value', ["Typo", selected_field, layer].join('_'));
-            prepare_colors(selected_field);
-        });
-
-        // Set some default colors in order to not force to open the box for selecting them :
-        {
-            var first_field = fields_name[0];
-            prepare_colors(first_field);
-            ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
+    ok_button.on('click', function () {
+      var selected_field = field_selec.node().value;
+      var render = function render() {
+        if (self.rendering_params[selected_field]) {
+          var _layer2 = Object.getOwnPropertyNames(user_data)[0],
+              output_name = uo_layer_name.node().value;
+          self.rendering_params[selected_field].new_name = check_layer_name(output_name.length > 0 ? output_name : ['Typo', selected_field, _layer2].join('_'));
+          render_categorical(_layer2, self.rendering_params[selected_field]);
+          switch_accordion_section();
+          handle_legend(self.rendering_params[selected_field].new_name);
         }
-
-        btn_typo_class.on("click", function () {
-            var selected_field = field_selec.node().value,
-                nb_features = current_layers[layer].n_features,
-                col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
-                cats = void 0;
-
-            var _prepare_categories_a3 = prepare_categories_array(layer, selected_field, col_map);
-
-            var _prepare_categories_a4 = _slicedToArray(_prepare_categories_a3, 2);
-
-            cats = _prepare_categories_a4[0];
-            col_map = _prepare_categories_a4[1];
-
-            if (cats.length > 15) {
-                swal({ title: "",
-                    text: i18next.t("app_page.common.error_too_many_features_color"),
-                    type: "warning",
-                    showCancelButton: true,
-                    allowOutsideClick: false,
-                    confirmButtonColor: "#DD6B55",
-                    confirmButtonText: i18next.t("app_page.common.valid") + "!",
-                    cancelButtonText: i18next.t("app_page.common.cancel")
-                }).then(function () {
-                    display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
-                        if (confirmed) {
-                            self.rendering_params[selected_field] = {
-                                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                                renderer: "Categorical", rendered_field: selected_field, skip_alert: true
-                            };
-                        }
-                    });
-                }, function (dismiss) {
-                    return;
-                });
-            } else {
-                display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
-                    if (confirmed) {
-                        self.rendering_params[selected_field] = {
-                            nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                            renderer: "Categorical", rendered_field: selected_field, skip_alert: true
-                        };
-                    }
-                });
-            }
+      };
+      if (self.rendering_params[selected_field].color_map.size > 15 && !self.rendering_params[selected_field].skip_alert) {
+        swal({ title: '',
+          text: i18next.t('app_page.common.error_too_many_features_color'),
+          type: 'warning',
+          showCancelButton: true,
+          allowOutsideClick: false,
+          confirmButtonColor: '#DD6B55',
+          confirmButtonText: i18next.t('app_page.common.valid') + '!',
+          cancelButtonText: i18next.t('app_page.common.cancel')
+        }).then(function () {
+          render();
+        }, function (dismiss) {
+          return;
         });
+      } else {
+        render();
+      }
+    });
+    uo_layer_name.attr('value', 'Typo_' + layer);
+    section2.selectAll('.params').attr('disabled', null);
+    setSelected(field_selec.node(), fields_name[0]);
+  },
+  unfill: function unfill() {
+    var field_selec = document.getElementById('Typo_field_1'),
+        nb_fields = field_selec.childElementCount;
 
-        ok_button.on('click', function () {
-            var selected_field = field_selec.node().value;
-            var render = function render() {
-                if (self.rendering_params[selected_field]) {
-                    var _layer2 = Object.getOwnPropertyNames(user_data)[0],
-                        output_name = uo_layer_name.node().value;
-                    self.rendering_params[selected_field].new_name = check_layer_name(output_name.length > 0 ? output_name : ["Typo", selected_field, _layer2].join('_'));
-                    render_categorical(_layer2, self.rendering_params[selected_field]);
-                    switch_accordion_section();
-                    handle_legend(self.rendering_params[selected_field].new_name);
-                }
-            };
-            if (self.rendering_params[selected_field].color_map.size > 15 && !self.rendering_params[selected_field].skip_alert) {
-                swal({ title: "",
-                    text: i18next.t("app_page.common.error_too_many_features_color"),
-                    type: "warning",
-                    showCancelButton: true,
-                    allowOutsideClick: false,
-                    confirmButtonColor: "#DD6B55",
-                    confirmButtonText: i18next.t("app_page.common.valid") + "!",
-                    cancelButtonText: i18next.t("app_page.common.cancel")
-                }).then(function () {
-                    render();
-                }, function (dismiss) {
-                    return;
-                });
-            } else {
-                render();
-            }
-        });
-        uo_layer_name.attr('value', "Typo_" + layer);
-        section2.selectAll(".params").attr("disabled", null);
-        setSelected(field_selec.node(), fields_name[0]);
-    },
-    unfill: function unfill() {
-        var field_selec = document.getElementById("Typo_field_1"),
-            nb_fields = field_selec.childElementCount;
-
-        for (var i = nb_fields - 1; i > -1; --i) {
-            field_selec.removeChild(field_selec.children[i]);
-        }section2.selectAll(".params").attr("disabled", true);
-    },
-    rendering_params: {}
+    for (var i = nb_fields - 1; i > -1; --i) {
+      field_selec.removeChild(field_selec.children[i]);
+    }section2.selectAll('.params').attr('disabled', true);
+  },
+  rendering_params: {}
 };
 
 function fillMenu_Choropleth() {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var field_selec_section = dv2.append('p').attr('class', 'params_section2');
-    field_selec_section.insert("span").attrs({ class: "i18n", "data-i18n": "[html]app_page.func_options.common.field" }).html(i18next.t("app_page.func_options.common.field"));
+  var field_selec_section = dv2.append('p').attr('class', 'params_section2');
+  field_selec_section.insert('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t('app_page.func_options.common.field'));
 
-    field_selec_section.insert('select').attrs({ id: 'choro_field1', class: 'params' });
+  field_selec_section.insert('select').attrs({ id: 'choro_field1', class: 'params' });
 
-    var discr_section = dv2.insert('p').style("margin", "auto");
-    discr_section.insert("span").attr("id", "container_sparkline_choro").styles({ "margin": "16px 50px 0px 4px", "float": "right" });
-    make_discretization_icons(discr_section);
+  var discr_section = dv2.insert('p').style('margin', 'auto');
+  discr_section.insert('span').attr('id', 'container_sparkline_choro').styles({ margin: '16px 50px 0px 4px', float: 'right' });
+  make_discretization_icons(discr_section);
 
-    make_layer_name_button(dv2, 'Choro_output_name', "15px");
-    make_ok_button(dv2, 'choro_yes');
-    dv2.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dv2, 'Choro_output_name', '15px');
+  make_ok_button(dv2, 'choro_yes');
+  dv2.selectAll('.params').attr('disabled', true);
 }
 
 var fields_Choropleth = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        var self = this,
-            g_lyr_name = "#" + layer,
-            fields = getFieldsType("ratio", layer),
+  fill: function fill(layer) {
+    if (!layer) return;
+    var self = this,
+        g_lyr_name = '#' + layer,
+        fields = getFieldsType('ratio', layer),
 
-        // fields = type_col(layer, "number"),
-        field_selec = section2.select("#choro_field1"),
-            uo_layer_name = section2.select('#Choro_output_name'),
-            ok_button = section2.select('#choro_yes'),
-            img_valid_disc = section2.select("#img_choice_disc"),
-            ico_jenks = section2.select('#ico_jenks'),
-            ico_quantiles = section2.select('#ico_quantiles'),
-            ico_q6 = section2.select('#ico_q6'),
-            ico_equal_interval = section2.select('#ico_equal_interval'),
-            btn_class = section2.select('#ico_others'),
-            choro_mini_choice_disc = section2.select('#choro_mini_choice_disc');
+    // fields = type_col(layer, "number"),
+    field_selec = section2.select('#choro_field1'),
+        uo_layer_name = section2.select('#Choro_output_name'),
+        ok_button = section2.select('#choro_yes'),
+        img_valid_disc = section2.select('#img_choice_disc'),
+        ico_jenks = section2.select('#ico_jenks'),
+        ico_quantiles = section2.select('#ico_quantiles'),
+        ico_q6 = section2.select('#ico_q6'),
+        ico_equal_interval = section2.select('#ico_equal_interval'),
+        btn_class = section2.select('#ico_others'),
+        choro_mini_choice_disc = section2.select('#choro_mini_choice_disc');
 
-        var uncolor_icons = function uncolor_icons() {
-            ico_jenks.style('border', null);
-            ico_q6.style('border', null);
-            ico_quantiles.style('border', null);
-            ico_equal_interval.style('border', null);
-        };
+    var uncolor_icons = function uncolor_icons() {
+      ico_jenks.style('border', null);
+      ico_q6.style('border', null);
+      ico_quantiles.style('border', null);
+      ico_equal_interval.style('border', null);
+    };
 
-        var prepare_disc_quantiles = function prepare_disc_quantiles(field) {
-            var _values = user_data[layer].map(function (v) {
-                return v[field];
-            }),
-                n_class = getOptNbClass(_values.length);
-            render_mini_chart_serie(_values.map(function (v) {
-                return +v;
-            }), document.getElementById("container_sparkline_choro"));
+    var prepare_disc_quantiles = function prepare_disc_quantiles(field) {
+      var _values = user_data[layer].map(function (v) {
+        return v[field];
+      }),
+          n_class = getOptNbClass(_values.length);
+      render_mini_chart_serie(_values.map(function (v) {
+        return +v;
+      }), document.getElementById('container_sparkline_choro'));
 
-            var _discretize_to_colors11 = discretize_to_colors(_values, "quantiles", n_class),
-                _discretize_to_colors12 = _slicedToArray(_discretize_to_colors11, 6),
-                nb_class = _discretize_to_colors12[0],
-                type = _discretize_to_colors12[1],
-                breaks = _discretize_to_colors12[2],
-                color_array = _discretize_to_colors12[3],
-                colors_map = _discretize_to_colors12[4],
-                no_data_color = _discretize_to_colors12[5];
+      var _discretize_to_colors11 = discretize_to_colors(_values, 'quantiles', n_class),
+          _discretize_to_colors12 = _slicedToArray(_discretize_to_colors11, 6),
+          nb_class = _discretize_to_colors12[0],
+          type = _discretize_to_colors12[1],
+          breaks = _discretize_to_colors12[2],
+          color_array = _discretize_to_colors12[3],
+          colors_map = _discretize_to_colors12[4],
+          no_data_color = _discretize_to_colors12[5];
 
-            self.rendering_params[field] = {
-                nb_class: nb_class, type: 'quantiles', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-            uncolor_icons();
-            ico_quantiles.style('border', 'solid 1px green');
-        };
+      self.rendering_params[field] = {
+        nb_class: nb_class, type: 'quantiles', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+      uncolor_icons();
+      ico_quantiles.style('border', 'solid 1px green');
+    };
 
-        if (fields.length === 0) {
-            display_error_num_field();
-            return;
+    if (fields.length === 0) {
+      display_error_num_field();
+      return;
+    }
+    section2.selectAll('.params').attr('disabled', null);
+    fields.forEach(function (field) {
+      field_selec.append('option').text(field).attr('value', field);
+    });
+
+    // Set some default colors in order to not force to open the box for selecting them :
+    {
+      var first_field = fields[0];
+      prepare_disc_quantiles(first_field);
+      ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
+    }
+
+    field_selec.on('change', function () {
+      var field_name = this.value,
+          vals = user_data[layer].map(function (a) {
+        return +a[field_name];
+      });
+      render_mini_chart_serie(vals, document.getElementById('container_sparkline_choro'));
+      uo_layer_name.attr('value', ['Choro', field_name, layer].join('_'));
+      if (self.rendering_params[field_name] !== undefined) {
+        // ok_button.attr('disabled', null);
+        img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+        choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ', ' + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
+        uncolor_icons();
+        color_disc_icons(self.rendering_params[field_name].type);
+      } else {
+        prepare_disc_quantiles(field_name);
+      }
+    });
+
+    ico_jenks.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_selec.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors13 = discretize_to_colors(_values, 'jenks', n_class),
+          _discretize_to_colors14 = _slicedToArray(_discretize_to_colors13, 6),
+          nb_class = _discretize_to_colors14[0],
+          type = _discretize_to_colors14[1],
+          breaks = _discretize_to_colors14[2],
+          color_array = _discretize_to_colors14[3],
+          colors_map = _discretize_to_colors14[4],
+          no_data_color = _discretize_to_colors14[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'jenks', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: selected_field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_quantiles.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_selec.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors15 = discretize_to_colors(_values, 'quantiles', n_class),
+          _discretize_to_colors16 = _slicedToArray(_discretize_to_colors15, 6),
+          nb_class = _discretize_to_colors16[0],
+          type = _discretize_to_colors16[1],
+          breaks = _discretize_to_colors16[2],
+          color_array = _discretize_to_colors16[3],
+          colors_map = _discretize_to_colors16[4],
+          no_data_color = _discretize_to_colors16[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'quantiles', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: selected_field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      // ok_button.attr("disabled", null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_equal_interval.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_selec.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      }),
+          n_class = getOptNbClass(_values.length);
+
+      var _discretize_to_colors17 = discretize_to_colors(_values, 'equal_interval', n_class),
+          _discretize_to_colors18 = _slicedToArray(_discretize_to_colors17, 6),
+          nb_class = _discretize_to_colors18[0],
+          type = _discretize_to_colors18[1],
+          breaks = _discretize_to_colors18[2],
+          color_array = _discretize_to_colors18[3],
+          colors_map = _discretize_to_colors18[4],
+          no_data_color = _discretize_to_colors18[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'equal_interval', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: selected_field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      // ok_button.attr("disabled", null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    ico_q6.on('click', function () {
+      uncolor_icons();
+      this.style.border = 'solid 1px green';
+      var selected_field = field_selec.node().value,
+          _values = user_data[layer].map(function (v) {
+        return v[selected_field];
+      });
+
+      var _discretize_to_colors19 = discretize_to_colors(_values, 'Q6', 6),
+          _discretize_to_colors20 = _slicedToArray(_discretize_to_colors19, 6),
+          nb_class = _discretize_to_colors20[0],
+          type = _discretize_to_colors20[1],
+          breaks = _discretize_to_colors20[2],
+          color_array = _discretize_to_colors20[3],
+          colors_map = _discretize_to_colors20[4],
+          no_data_color = _discretize_to_colors20[5];
+
+      self.rendering_params[selected_field] = {
+        nb_class: nb_class, type: 'Q6', colors: color_array,
+        breaks: breaks, no_data: no_data_color,
+        colorsByFeature: colors_map, renderer: 'Choropleth',
+        rendered_field: selected_field, schema: ['Reds']
+      };
+      choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
+      // ok_button.attr("disabled", null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+    });
+
+    btn_class.on('click', function () {
+      var selected_field = field_selec.node().value,
+          opt_nb_class = getOptNbClass(user_data[layer].length),
+          conf_disc_box = void 0;
+
+      if (self.rendering_params[selected_field]) {
+        conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
+          colors: self.rendering_params[selected_field].colors,
+          type: self.rendering_params[selected_field].type,
+          no_data: self.rendering_params[selected_field].no_data,
+          breaks: self.rendering_params[selected_field].breaks,
+          extra_options: self.rendering_params[selected_field].extra_options });
+      } else {
+        conf_disc_box = display_discretization(layer, selected_field, opt_nb_class, { type: 'quantiles' });
+      }
+      conf_disc_box.then(function (confirmed) {
+        if (confirmed) {
+          // ok_button.attr("disabled", null);
+          img_valid_disc.attr('src', '/static/img/Light_green_check.png');
+          choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ', ' + i18next.t('app_page.common.class', { count: confirmed[0] }));
+          uncolor_icons();
+          color_disc_icons(confirmed[1]);
+          self.rendering_params[selected_field] = {
+            nb_class: confirmed[0], type: confirmed[1],
+            breaks: confirmed[2], colors: confirmed[3],
+            schema: confirmed[5], no_data: confirmed[6],
+            colorsByFeature: confirmed[4], renderer: 'Choropleth',
+            rendered_field: selected_field, new_name: '',
+            extra_options: confirmed[7]
+          };
         }
-        section2.selectAll(".params").attr("disabled", null);
-        fields.forEach(function (field) {
-            field_selec.append("option").text(field).attr("value", field);
-        });
+      });
+    });
 
-        // Set some default colors in order to not force to open the box for selecting them :
-        {
-            var first_field = fields[0];
-            prepare_disc_quantiles(first_field);
-            ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
-        }
+    ok_button.on('click', function () {
+      var field_to_render = field_selec.node().value;
+      if (self.rendering_params[field_to_render]) {
+        var user_new_layer_name = uo_layer_name.node().value;
+        self.rendering_params[field_to_render].new_name = check_layer_name(user_new_layer_name.length > 0 ? user_new_layer_name : ['Choro', field_to_render, layer].join('_'));
+        render_choro(layer, self.rendering_params[field_to_render]);
+        handle_legend(self.rendering_params[field_to_render].new_name);
+        switch_accordion_section();
+      }
+    });
+    setSelected(field_selec.node(), fields[0]);
+  },
 
-        field_selec.on("change", function () {
-            var field_name = this.value,
-                vals = user_data[layer].map(function (a) {
-                return +a[field_name];
-            });
-            render_mini_chart_serie(vals, document.getElementById("container_sparkline_choro"));
-            uo_layer_name.attr('value', ["Choro", field_name, layer].join('_'));
-            if (self.rendering_params[field_name] !== undefined) {
-                // ok_button.attr('disabled', null);
-                img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-                choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ", " + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
-                uncolor_icons();
-                color_disc_icons(self.rendering_params[field_name].type);
-            } else {
-                prepare_disc_quantiles(field_name);
-            }
-        });
+  unfill: function unfill() {
+    var field_selec = document.getElementById('choro_field1'),
+        nb_fields = field_selec.childElementCount;
 
-        ico_jenks.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_selec.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors13 = discretize_to_colors(_values, "jenks", n_class),
-                _discretize_to_colors14 = _slicedToArray(_discretize_to_colors13, 6),
-                nb_class = _discretize_to_colors14[0],
-                type = _discretize_to_colors14[1],
-                breaks = _discretize_to_colors14[2],
-                color_array = _discretize_to_colors14[3],
-                colors_map = _discretize_to_colors14[4],
-                no_data_color = _discretize_to_colors14[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'jenks', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: selected_field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_quantiles.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_selec.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors15 = discretize_to_colors(_values, "quantiles", n_class),
-                _discretize_to_colors16 = _slicedToArray(_discretize_to_colors15, 6),
-                nb_class = _discretize_to_colors16[0],
-                type = _discretize_to_colors16[1],
-                breaks = _discretize_to_colors16[2],
-                color_array = _discretize_to_colors16[3],
-                colors_map = _discretize_to_colors16[4],
-                no_data_color = _discretize_to_colors16[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'quantiles', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: selected_field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            // ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_equal_interval.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_selec.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            }),
-                n_class = getOptNbClass(_values.length);
-
-            var _discretize_to_colors17 = discretize_to_colors(_values, "equal_interval", n_class),
-                _discretize_to_colors18 = _slicedToArray(_discretize_to_colors17, 6),
-                nb_class = _discretize_to_colors18[0],
-                type = _discretize_to_colors18[1],
-                breaks = _discretize_to_colors18[2],
-                color_array = _discretize_to_colors18[3],
-                colors_map = _discretize_to_colors18[4],
-                no_data_color = _discretize_to_colors18[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'equal_interval', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: selected_field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            // ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        ico_q6.on('click', function () {
-            uncolor_icons();
-            this.style.border = 'solid 1px green';
-            var selected_field = field_selec.node().value,
-                _values = user_data[layer].map(function (v) {
-                return v[selected_field];
-            });
-
-            var _discretize_to_colors19 = discretize_to_colors(_values, "Q6", 6),
-                _discretize_to_colors20 = _slicedToArray(_discretize_to_colors19, 6),
-                nb_class = _discretize_to_colors20[0],
-                type = _discretize_to_colors20[1],
-                breaks = _discretize_to_colors20[2],
-                color_array = _discretize_to_colors20[3],
-                colors_map = _discretize_to_colors20[4],
-                no_data_color = _discretize_to_colors20[5];
-
-            self.rendering_params[selected_field] = {
-                nb_class: nb_class, type: 'Q6', colors: color_array,
-                breaks: breaks, no_data: no_data_color,
-                colorsByFeature: colors_map, renderer: 'Choropleth',
-                rendered_field: selected_field, schema: ["Reds"]
-            };
-            choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ", " + i18next.t('app_page.common.class', { count: nb_class }));
-            // ok_button.attr("disabled", null);
-            img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        });
-
-        btn_class.on("click", function () {
-            var selected_field = field_selec.node().value,
-                opt_nb_class = getOptNbClass(user_data[layer].length),
-                conf_disc_box = void 0;
-
-            if (self.rendering_params[selected_field]) {
-                conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
-                    colors: self.rendering_params[selected_field].colors,
-                    type: self.rendering_params[selected_field].type,
-                    no_data: self.rendering_params[selected_field].no_data,
-                    breaks: self.rendering_params[selected_field].breaks,
-                    extra_options: self.rendering_params[selected_field].extra_options });
-            } else {
-                conf_disc_box = display_discretization(layer, selected_field, opt_nb_class, { type: "quantiles" });
-            }
-            conf_disc_box.then(function (confirmed) {
-                if (confirmed) {
-                    // ok_button.attr("disabled", null);
-                    img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-                    choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ", " + i18next.t('app_page.common.class', { count: confirmed[0] }));
-                    uncolor_icons();
-                    color_disc_icons(confirmed[1]);
-                    self.rendering_params[selected_field] = {
-                        nb_class: confirmed[0], type: confirmed[1],
-                        breaks: confirmed[2], colors: confirmed[3],
-                        schema: confirmed[5], no_data: confirmed[6],
-                        colorsByFeature: confirmed[4], renderer: "Choropleth",
-                        rendered_field: selected_field, new_name: "",
-                        extra_options: confirmed[7]
-                    };
-                }
-            });
-        });
-
-        ok_button.on("click", function () {
-            var field_to_render = field_selec.node().value;
-            if (self.rendering_params[field_to_render]) {
-                var user_new_layer_name = uo_layer_name.node().value;
-                self.rendering_params[field_to_render].new_name = check_layer_name(user_new_layer_name.length > 0 ? user_new_layer_name : ["Choro", field_to_render, layer].join('_'));
-                render_choro(layer, self.rendering_params[field_to_render]);
-                handle_legend(self.rendering_params[field_to_render].new_name);
-                switch_accordion_section();
-            }
-        });
-        setSelected(field_selec.node(), fields[0]);
-    },
-
-    unfill: function unfill() {
-        var field_selec = document.getElementById("choro_field1"),
-            nb_fields = field_selec.childElementCount;
-
-        for (var i = nb_fields - 1; i > -1; --i) {
-            //            delete this.rendering_params[field_selec.children[i]];
-            field_selec.removeChild(field_selec.children[i]);
-        }
-        d3.selectAll(".params").attr("disabled", true);
-    },
-    rendering_params: {}
+    for (var i = nb_fields - 1; i > -1; --i) {
+      //            delete this.rendering_params[field_selec.children[i]];
+      field_selec.removeChild(field_selec.children[i]);
+    }
+    d3.selectAll('.params').attr('disabled', true);
+  },
+  rendering_params: {}
 };
 
 var fields_Stewart = {
-    fill: function fill(layer) {
-        var other_layers = get_other_layer_names(),
-            mask_selec = d3.select("#stewart_mask"),
-            default_selected_mask = void 0;
+  fill: function fill(layer) {
+    var other_layers = get_other_layer_names(),
+        mask_selec = d3.select('#stewart_mask'),
+        default_selected_mask = void 0;
 
-        unfillSelectInput(mask_selec.node());
-        mask_selec.append("option").text("None").attr("value", "None");
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
+    unfillSelectInput(mask_selec.node());
+    mask_selec.append('option').text('None').attr('value', 'None');
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
 
-        try {
-            for (var _iterator = other_layers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var lyr_name = _step.value;
+    try {
+      for (var _iterator = other_layers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var lyr_name = _step.value;
 
-                if (current_layers[lyr_name].type === "Polygon") {
-                    mask_selec.append("option").text(lyr_name).attr("value", lyr_name);
-                    if (current_layers[lyr_name].targeted) {
-                        default_selected_mask = lyr_name;
-                    }
-                }
-            }
-        } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-        } finally {
-            try {
-                if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
-                }
-            } finally {
-                if (_didIteratorError) {
-                    throw _iteratorError;
-                }
-            }
+        if (current_layers[lyr_name].type === 'Polygon') {
+          mask_selec.append('option').text(lyr_name).attr('value', lyr_name);
+          if (current_layers[lyr_name].targeted) {
+            default_selected_mask = lyr_name;
+          }
         }
-
-        if (default_selected_mask) setSelected(mask_selec.node(), default_selected_mask);
-
-        if (layer) {
-            // let fields = type_col(layer, "number"),
-            var fields = getFieldsType("stock", layer),
-                field_selec = section2.select("#stewart_field"),
-                field_selec2 = section2.select("#stewart_field2");
-
-            if (fields.length == 0) {
-                display_error_num_field();
-                return;
-            }
-
-            field_selec2.append("option").text(" ").attr("value", "None");
-            fields.forEach(function (field) {
-                field_selec.append("option").text(field).attr("value", field);
-                field_selec2.append("option").text(field).attr("value", field);
-            });
-            document.getElementById("stewart_span").value = get_first_guess_span('stewart');
-
-            field_selec.on("change", function () {
-                document.getElementById("stewart_output_name").value = ["Smoothed", this.value, layer].join('_');
-            });
-            section2.select('#stewart_yes').on('click', render_stewart);
+      }
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator.return) {
+          _iterator.return();
         }
-        section2.selectAll(".params").attr("disabled", null);
-    },
-
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("stewart_field"));
-        unfillSelectInput(document.getElementById("stewart_field2"));
-        unfillSelectInput(document.getElementById("stewart_mask"));
-        d3.selectAll(".params").attr("disabled", true);
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
     }
+
+    if (default_selected_mask) setSelected(mask_selec.node(), default_selected_mask);
+
+    if (layer) {
+      // let fields = type_col(layer, "number"),
+      var fields = getFieldsType('stock', layer),
+          field_selec = section2.select('#stewart_field'),
+          field_selec2 = section2.select('#stewart_field2');
+
+      if (fields.length === 0) {
+        display_error_num_field();
+        return;
+      }
+
+      field_selec2.append('option').text(' ').attr('value', 'None');
+      fields.forEach(function (field) {
+        field_selec.append('option').text(field).attr('value', field);
+        field_selec2.append('option').text(field).attr('value', field);
+      });
+      document.getElementById('stewart_span').value = get_first_guess_span('stewart');
+
+      field_selec.on('change', function () {
+        document.getElementById('stewart_output_name').value = ['Smoothed', this.value, layer].join('_');
+      });
+      section2.select('#stewart_yes').on('click', render_stewart);
+    }
+    section2.selectAll('.params').attr('disabled', null);
+  },
+
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('stewart_field'));
+    unfillSelectInput(document.getElementById('stewart_field2'));
+    unfillSelectInput(document.getElementById('stewart_mask'));
+    d3.selectAll('.params').attr('disabled', true);
+  }
 };
 
 function render_stewart() {
-    var formToSend = new FormData(),
-        doc = document,
-        field1_n = doc.getElementById('stewart_field').value,
-        field2_n = doc.getElementById('stewart_field2').value,
-        var1_to_send = {},
-        var2_to_send = {},
-        layer = Object.getOwnPropertyNames(user_data)[0],
-        bval = doc.getElementById('stewart_breaks').value.trim(),
-        reso = +doc.getElementById('stewart_resolution').value,
-        span = +doc.getElementById('stewart_span').value,
-        beta = +doc.getElementById('stewart_beta').value,
-        nb_class = doc.getElementById('stewart_nb_class').value,
-        func_selec = doc.getElementById('stewart_func').value,
-        mask_name = doc.getElementById('stewart_mask').value,
-        new_user_layer_name = document.getElementById("stewart_output_name").value;
+  var formToSend = new FormData(),
+      doc = document,
+      field1_n = doc.getElementById('stewart_field').value,
+      field2_n = doc.getElementById('stewart_field2').value,
+      var1_to_send = {},
+      var2_to_send = {},
+      layer = Object.getOwnPropertyNames(user_data)[0],
+      bval = doc.getElementById('stewart_breaks').value.trim(),
+      reso = +doc.getElementById('stewart_resolution').value,
+      span = +doc.getElementById('stewart_span').value,
+      beta = +doc.getElementById('stewart_beta').value,
+      nb_class = doc.getElementById('stewart_nb_class').value,
+      func_selec = doc.getElementById('stewart_func').value,
+      mask_name = doc.getElementById('stewart_mask').value,
+      new_user_layer_name = document.getElementById('stewart_output_name').value;
 
-    if (nb_class != (nb_class | 0)) {
-        nb_class = nb_class | 0;
-        doc.getElementById('stewart_nb_class').value = nb_class;
+  if (nb_class !== (nb_class | 0)) {
+    nb_class = nb_class | 0;
+    doc.getElementById('stewart_nb_class').value = nb_class;
+  }
+
+  if (reso && reso > 0) {
+    var res_test = test_maxmin_resolution(reso);
+    if (res_test) {
+      var message = res_test === 'low' ? i18next.t('app_page.common.error_too_low_resolution') : i18next.t('app_page.common.error_too_high_resolution');
+      display_error_during_computation(message);
+      return;
     }
+    reso = reso * 1000;
+  } else {
+    reso = null;
+  }
+  bval = bval.length > 0 ? bval.split('-').map(function (val) {
+    return +val.trim();
+  }) : null;
 
-    if (reso && reso > 0) {
-        var res_test = test_maxmin_resolution(reso);
-        if (res_test) {
-            var message = res_test === "low" ? i18next.t("app_page.common.error_too_low_resolution") : i18next.t("app_page.common.error_too_high_resolution");
-            display_error_during_computation(message);
-            return;
-        }
-        reso = reso * 1000;
-    } else {
-        reso = null;
-    }
-    bval = bval.length > 0 ? bval.split('-').map(function (val) {
-        return +val.trim();
-    }) : null;
-
-    var1_to_send[field1_n] = current_layers[layer].original_fields.has(field1_n) ? [] : user_data[layer].map(function (i) {
-        return +i[field1_n];
+  var1_to_send[field1_n] = current_layers[layer].original_fields.has(field1_n) ? [] : user_data[layer].map(function (i) {
+    return +i[field1_n];
+  });
+  if (field2_n !== 'None') {
+    var2_to_send[field2_n] = current_layers[layer].original_fields.has(field2_n) ? [] : user_data[layer].map(function (i) {
+      return +i[field2_n];
     });
-    if (field2_n != "None") {
-        var2_to_send[field2_n] = current_layers[layer].original_fields.has(field2_n) ? [] : user_data[layer].map(function (i) {
-            return +i[field2_n];
-        });
+  }
+
+  formToSend.append('json', JSON.stringify({
+    topojson: current_layers[layer].key_name,
+    variable1: var1_to_send,
+    variable2: var2_to_send,
+    span: span * 1000,
+    beta: beta,
+    typefct: func_selec,
+    resolution: reso,
+    nb_class: nb_class,
+    user_breaks: bval,
+    mask_layer: mask_name !== 'None' ? current_layers[mask_name].key_name : ''
+  }));
+
+  xhrequest('POST', 'compute/stewart', formToSend, true).then(function (res) {
+    var data_split = res.split('|||'),
+        raw_topojson = data_split[0],
+        options = { result_layer_on_add: true, func_name: 'smooth' };
+    if (new_user_layer_name.length > 0) {
+      options['choosed_name'] = new_user_layer_name;
+    }
+    var n_layer_name = add_layer_topojson(raw_topojson, options);
+    if (!n_layer_name) return;
+    var class_lim = JSON.parse(data_split[1]),
+        col_pal = getColorBrewerArray(class_lim.min.length, 'Oranges'),
+        nb_class = class_lim['min'].length,
+        colors_breaks = [];
+    for (var i = 0; i < nb_class; i++) {
+      colors_breaks.push([class_lim['min'][i] + ' - ' + class_lim['max'][i], col_pal[nb_class - 1 - i]]);
     }
 
-    formToSend.append("json", JSON.stringify({
-        "topojson": current_layers[layer].key_name,
-        "variable1": var1_to_send,
-        "variable2": var2_to_send,
-        "span": span * 1000,
-        "beta": beta,
-        "typefct": func_selec,
-        "resolution": reso,
-        "nb_class": nb_class,
-        "user_breaks": bval,
-        "mask_layer": mask_name !== "None" ? current_layers[mask_name].key_name : "" }));
-
-    xhrequest("POST", '/compute/stewart', formToSend, true).then(function (res) {
-        var data_split = res.split('|||'),
-            raw_topojson = data_split[0],
-            options = { result_layer_on_add: true, func_name: 'smooth' };
-        if (new_user_layer_name.length > 0) {
-            options["choosed_name"] = new_user_layer_name;
-        }
-        var n_layer_name = add_layer_topojson(raw_topojson, options);
-        if (!n_layer_name) return;
-        var class_lim = JSON.parse(data_split[1]),
-            col_pal = getColorBrewerArray(class_lim.min.length, "Oranges"),
-            nb_class = class_lim['min'].length,
-            colors_breaks = [];
-        for (var i = 0; i < nb_class; i++) {
-            colors_breaks.push([class_lim['min'][i] + " - " + class_lim['max'][i], col_pal[nb_class - 1 - i]]);
-        }
-
-        current_layers[n_layer_name].fill_color = { "class": [] };
-        current_layers[n_layer_name].renderer = "Stewart";
-        current_layers[n_layer_name].colors_breaks = colors_breaks;
-        current_layers[n_layer_name].rendered_field = field1_n;
-        current_layers[n_layer_name].color_palette = { name: "Oranges", reversed: true };
-        current_layers[n_layer_name].options_disc = { breaks: [].concat(class_lim['max'][0], class_lim['min']).reverse() };
-        map.select("#" + _app.layer_to_id.get(n_layer_name)).selectAll("path").styles(function (d, i) {
-            return { 'fill': col_pal[nb_class - 1 - i], 'fill_opacity': 1, 'stroke-opacity': 0 };
-        });
-        handle_legend(n_layer_name);
-        switch_accordion_section();
-        // Todo : use the function render_choro to render the result from stewart too
-    }, function (error) {
-        display_error_during_computation();
-        console.log(error);
-    }).catch(function (err) {
-        display_error_during_computation();
-        console.log(err);
-    });;
+    current_layers[n_layer_name].fill_color = { 'class': [] };
+    current_layers[n_layer_name].renderer = 'Stewart';
+    current_layers[n_layer_name].colors_breaks = colors_breaks;
+    current_layers[n_layer_name].rendered_field = field1_n;
+    current_layers[n_layer_name].color_palette = { name: 'Oranges', reversed: true };
+    current_layers[n_layer_name].options_disc = { breaks: [].concat(class_lim['max'][0], class_lim['min']).reverse() };
+    map.select('#' + _app.layer_to_id.get(n_layer_name)).selectAll('path').styles(function (d, i) {
+      return { fill: col_pal[nb_class - 1 - i], 'fill_opacity': 1, 'stroke-opacity': 0 };
+    });
+    handle_legend(n_layer_name);
+    switch_accordion_section();
+    // Todo : use the function render_choro to render the result from stewart too
+  }, function (error) {
+    display_error_during_computation();
+    console.log(error);
+  }).catch(function (err) {
+    display_error_during_computation();
+    console.log(err);
+  });;
 }
 
 function fillMenu_Stewart() {
-    var dialog_content = make_template_functionnality(section2);
+  var dialog_content = make_template_functionnality(section2);
 
-    var a = dialog_content.append('p').attr('class', 'params_section2');
-    a.append('span').style("margin", "10px 0px 0px").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.field' }).html(i18next.t("app_page.func_options.smooth.field"));
-    a.append('span').insert('select').attrs({ class: 'params marg_auto', id: "stewart_field" });
+  var a = dialog_content.append('p').attr('class', 'params_section2');
+  a.append('span').style('margin', '10px 0px 0px').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.field' }).html(i18next.t('app_page.func_options.smooth.field'));
+  a.append('span').insert('select').attrs({ class: 'params marg_auto', id: 'stewart_field' });
 
-    var b = dialog_content.append('p').attr('class', 'params_section2');
-    b.append('span').style("margin", "10px 0px 0px").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.divide_field' }).html(i18next.t("app_page.func_options.smooth.divide_field"));
-    b.insert('select').attrs({ class: 'params marg_auto', id: "stewart_field2" });
+  var b = dialog_content.append('p').attr('class', 'params_section2');
+  b.append('span').style('margin', '10px 0px 0px').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.divide_field' }).html(i18next.t('app_page.func_options.smooth.divide_field'));
+  b.insert('select').attrs({ class: 'params marg_auto', id: 'stewart_field2' });
 
-    var p_span = dialog_content.append("p").attr('class', 'params_section2');
-    p_span.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.span' }).text(i18next.t("app_page.func_options.smooth.span"));
-    p_span.append('input').style("width", "60px").attrs({ type: 'number', class: 'params', id: "stewart_span", value: 5, min: 0, max: 100000, step: "any" });
-    p_span.append("span").html(" (km)");
+  var p_span = dialog_content.append('p').attr('class', 'params_section2');
+  p_span.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.span' }).text(i18next.t('app_page.func_options.smooth.span'));
+  p_span.append('input').style('width', '60px').attrs({ type: 'number', class: 'params', id: 'stewart_span', value: 5, min: 0, max: 100000, step: 'any' });
+  p_span.append('span').html(' (km)');
 
-    var d = dialog_content.append('p').attr('class', 'params_section2');
-    d.append('span').styles({ "margin-right": "35px" }).attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.beta' }).html(i18next.t("app_page.func_options.smooth.beta"));
-    d.insert('input').style("width", "60px").attrs({ type: 'number', class: 'params', id: "stewart_beta", value: 2, min: 0, max: 11, step: "any" });
+  var d = dialog_content.append('p').attr('class', 'params_section2');
+  d.append('span').styles({ 'margin-right': '35px' }).attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.beta' }).html(i18next.t('app_page.func_options.smooth.beta'));
+  d.insert('input').style('width', '60px').attrs({ type: 'number', class: 'params', id: 'stewart_beta', value: 2, min: 0, max: 11, step: 'any' });
 
-    var p_reso = dialog_content.append('p').attr('class', 'params_section2');
-    p_reso.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.resolution' }).text(i18next.t("app_page.func_options.smooth.resolution"));
-    p_reso.insert('input').style("width", "60px").attrs({ type: 'number', class: 'params', id: "stewart_resolution", min: 1, max: 1000000, step: "any" });
-    p_reso.insert("label").html(" (km)");
+  var p_reso = dialog_content.append('p').attr('class', 'params_section2');
+  p_reso.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.resolution' }).text(i18next.t('app_page.func_options.smooth.resolution'));
+  p_reso.insert('input').style('width', '60px').attrs({ type: 'number', class: 'params', id: 'stewart_resolution', min: 1, max: 1000000, step: 'any' });
+  p_reso.insert('label').html(' (km)');
 
-    var f = dialog_content.append('p').attr('class', 'params_section2');
-    f.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.func_options' }).html(i18next.t("app_page.func_options.smooth.function"));
-    var func_selec = f.insert('select').attrs({ class: 'params i18n', id: "stewart_func" });
+  var f = dialog_content.append('p').attr('class', 'params_section2');
+  f.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.func_options' }).html(i18next.t('app_page.func_options.smooth.function'));
+  var func_selec = f.insert('select').attrs({ class: 'params i18n', id: 'stewart_func' });
 
-    var g = dialog_content.append("p").attr('class', 'params_section2');
-    g.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.nb_class' }).html(i18next.t("app_page.func_options.smooth.nb_class"));
-    g.insert("input").style("width", "50px").attrs({ type: "number", class: 'params', id: "stewart_nb_class", value: 8, min: 1, max: 22, step: 1 });
+  var g = dialog_content.append('p').attr('class', 'params_section2');
+  g.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.nb_class' }).html(i18next.t('app_page.func_options.smooth.nb_class'));
+  g.insert('input').style('width', '50px').attrs({ type: 'number', class: 'params', id: 'stewart_nb_class', value: 8, min: 1, max: 22, step: 1 });
 
-    var bvs = dialog_content.append("p").attr('class', 'params_section2');
-    bvs.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.break_values' }).html(i18next.t("app_page.func_options.smooth.break_values"));
-    bvs.insert("textarea").styles({ width: "100%", height: "2.2em", "font-size": "0.9em" }).attrs({ class: 'params i18n', id: "stewart_breaks",
-        "data-i18n": "[placeholder]app_page.common.expected_class",
-        "placeholder": i18next.t("app_page.common.expected_class") });
-    var m = dialog_content.append('p').attr('class', 'params_section2').style('margin', 'auto');
-    m.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.mask' }).html(i18next.t("app_page.func_options.smooth.mask"));
+  var bvs = dialog_content.append('p').attr('class', 'params_section2');
+  bvs.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.break_values' }).html(i18next.t('app_page.func_options.smooth.break_values'));
+  bvs.insert('textarea').styles({ width: '100%', height: '2.2em', 'font-size': '0.9em' }).attrs({ class: 'params i18n', id: 'stewart_breaks',
+    'data-i18n': '[placeholder]app_page.common.expected_class',
+    'placeholder': i18next.t('app_page.common.expected_class') });
+  var m = dialog_content.append('p').attr('class', 'params_section2').style('margin', 'auto');
+  m.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.mask' }).html(i18next.t('app_page.func_options.smooth.mask'));
 
-    dialog_content.insert('select').attrs({ class: 'params', id: "stewart_mask" }).styles({ position: 'relative', float: 'right', margin: '1px 0px 10px 0px' });
+  dialog_content.insert('select').attrs({ class: 'params', id: 'stewart_mask' }).styles({ position: 'relative', float: 'right', margin: '1px 0px 10px 0px' });
 
-    [['exponential', 'app_page.func_options.smooth.func_exponential'], ['pareto', 'app_page.func_options.smooth.func_pareto']].forEach(function (fun_name) {
-        func_selec.append("option").text(i18next.t(fun_name[1])).attrs({ value: fun_name[0], 'data-i18n': '[text]' + fun_name[1] });
-    });
+  [['exponential', 'app_page.func_options.smooth.func_exponential'], ['pareto', 'app_page.func_options.smooth.func_pareto']].forEach(function (fun_name) {
+    func_selec.append('option').text(i18next.t(fun_name[1])).attrs({ value: fun_name[0], 'data-i18n': '[text]' + fun_name[1] });
+  });
 
-    make_layer_name_button(dialog_content, 'stewart_output_name');
-    make_ok_button(dialog_content, 'stewart_yes', false);
-    dialog_content.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dialog_content, 'stewart_output_name');
+  make_ok_button(dialog_content, 'stewart_yes', false);
+  dialog_content.selectAll('.params').attr('disabled', true);
 }
 
 var fields_Anamorphose = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        // let fields = type_col(layer, "number"),
-        var fields = getFieldsType('stock', layer),
-            field_selec = section2.select("#Anamorph_field"),
-            algo_selec = section2.select('#Anamorph_algo'),
-            ok_button = section2.select("#Anamorph_yes");
+  fill: function fill(layer) {
+    if (!layer) return;
+    // let fields = type_col(layer, "number"),
+    var fields = getFieldsType('stock', layer),
+        field_selec = section2.select('#Anamorph_field'),
+        algo_selec = section2.select('#Anamorph_algo'),
+        ok_button = section2.select('#Anamorph_yes');
 
-        if (fields.length == 0) {
-            display_error_num_field();
-            return;
-        }
-        algo_selec.on('change', function () {
-            if (this.value === "olson") {
-                section2.selectAll('.opt_dougenik').style('display', 'none');
-                section2.selectAll('.opt_olson').style('display', undefined);
-            } else if (this.value === "dougenik") {
-                section2.selectAll('.opt_olson').style('display', 'none');
-                section2.selectAll('.opt_dougenik').style('display', undefined);
-            }
-        });
-        section2.selectAll(".params").attr("disabled", null);
-        fields.forEach(function (field) {
-            field_selec.append("option").text(field).attr("value", field);
-        });
-
-        field_selec.on("change", function () {
-            var field_name = this.value,
-                ref_value_field = document.getElementById("Anamorph_opt3");
-
-            document.getElementById("Anamorph_output_name").value = ["Cartogram", this.value, layer].join('_');
-
-            if (ref_value_field) {
-                var max_val_field = max_fast(user_data[layer].map(function (obj) {
-                    return +obj[field_name];
-                }));
-                ref_value_field.setAttribute("max", max_val_field);
-                ref_value_field.value = max_val_field;
-            }
-        });
-
-        ok_button.on("click", function () {
-            var algo = algo_selec.node().value,
-                nb_features = user_data[layer].length,
-                field_name = field_selec.node().value,
-                new_user_layer_name = document.getElementById("Anamorph_output_name").value;
-
-            if (algo === "olson") {
-                // let ref_size = document.getElementById("Anamorph_olson_scale_kind").value,
-                // let opt_scale_max = document.getElementById("Anamorph_opt2");
-                // if(opt_scale_max.value > 100){
-                //     opt_scale_max.value = 100;
-                // }
-                // let scale_max = +document.getElementById("Anamorph_opt2").value / 100,
-                var nb_ft = current_layers[layer].n_features,
-                    dataset = user_data[layer];
-
-                // if(contains_empty_val(dataset.map(a => a[field_name]))){
-                //   discard_rendering_empty_val();
-                //   return;
-                // }
-
-                var layer_select = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName("path"),
-                    sqrt = Math.sqrt,
-                    abs = Math.abs,
-                    d_val = [],
-                    transform = [];
-
-                for (var i = 0; i < nb_ft; ++i) {
-                    var val = +dataset[i][field_name];
-                    // We deliberatly use 0 if this is a missing value :
-                    if (isNaN(val) || !isFinite(val)) val = 0;
-                    d_val.push([i, val, +path.area(layer_select[i].__data__.geometry)]);
-                }
-                d_val.sort(function (a, b) {
-                    return b[1] - a[1];
-                });
-                var ref = d_val[0][1] / d_val[0][2];
-                d_val[0].push(1);
-
-                for (var _i3 = 0; _i3 < nb_ft; ++_i3) {
-                    var _val = d_val[_i3][1] / d_val[_i3][2];
-                    var scale = sqrt(_val / ref);
-                    d_val[_i3].push(scale);
-                }
-                d_val.sort(function (a, b) {
-                    return a[0] - b[0];
-                });
-                var formToSend = new FormData();
-                formToSend.append("json", JSON.stringify({
-                    topojson: current_layers[layer].key_name,
-                    scale_values: d_val.map(function (ft) {
-                        return ft[3];
-                    }),
-                    field_name: field_name }));
-                xhrequest("POST", '/compute/olson', formToSend, true).then(function (result) {
-                    var options = { result_layer_on_add: true, func_name: 'cartogram' };
-                    if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-                        options["choosed_name"] = new_user_layer_name;
-                    }
-                    var n_layer_name = add_layer_topojson(result, options);
-                    current_layers[n_layer_name].renderer = "OlsonCarto";
-                    current_layers[n_layer_name].rendered_field = field_name;
-                    current_layers[n_layer_name].scale_max = 1;
-                    current_layers[n_layer_name].ref_layer_name = layer;
-                    current_layers[n_layer_name].scale_byFeature = transform;
-                    map.select("#" + _app.layer_to_id.get(n_layer_name)).selectAll("path").style("fill-opacity", 0.8).style("stroke", "black").style("stroke-opacity", 0.8);
-                    switch_accordion_section();
-                }, function (err) {
-                    display_error_during_computation();
-                    console.log(err);
-                });
-            } else if (algo === "dougenik") {
-                var _formToSend = new FormData(),
-                    var_to_send = {},
-                    nb_iter = document.getElementById("Anamorph_dougenik_iterations").value;
-
-                var_to_send[field_name] = [];
-                if (!current_layers[layer].original_fields.has(field_name)) {
-                    var table = user_data[layer],
-                        to_send = var_to_send[field_name];
-                    for (var _i4 = 0, i_len = table.length; _i4 < i_len; ++_i4) {
-                        to_send.push(+table[_i4][field_name]);
-                    }
-                }
-                _formToSend.append("json", JSON.stringify({
-                    "topojson": current_layers[layer].key_name,
-                    "var_name": var_to_send,
-                    "iterations": nb_iter }));
-
-                xhrequest("POST", '/compute/carto_doug', _formToSend, true).then(function (data) {
-                    var options = { result_layer_on_add: true, func_name: 'cartogram' };
-                    if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-                        options["choosed_name"] = new_user_layer_name;
-                    }
-                    var n_layer_name = add_layer_topojson(data, options);
-                    current_layers[n_layer_name].fill_color = { "random": true };
-                    current_layers[n_layer_name].is_result = true;
-                    current_layers[n_layer_name]['stroke-width-const'] = 0.8;
-                    current_layers[n_layer_name].renderer = "Carto_doug";
-                    current_layers[n_layer_name].rendered_field = field_name;
-                    map.select("#" + _app.layer_to_id.get(n_layer_name)).selectAll("path").style("fill", function (_) {
-                        return randomColor();
-                    }).style("fill-opacity", 0.8).style("stroke", "black").style("stroke-opacity", 0.8);
-                    switch_accordion_section();
-                }, function (error) {
-                    display_error_during_computation();
-                    console.log(error);
-                });
-            }
-        });
-        setSelected(field_selec.node(), field_selec.node().options[0].value);
-    },
-    unfill: function unfill() {
-        var field_selec = document.getElementById("Anamorph_field");
-        section2.selectAll(".params").attr("disabled", true);
-        unfillSelectInput(field_selec);
+    if (fields.length === 0) {
+      display_error_num_field();
+      return;
     }
+    algo_selec.on('change', function () {
+      if (this.value === 'olson') {
+        section2.selectAll('.opt_dougenik').style('display', 'none');
+        section2.selectAll('.opt_olson').style('display', undefined);
+      } else if (this.value === 'dougenik') {
+        section2.selectAll('.opt_olson').style('display', 'none');
+        section2.selectAll('.opt_dougenik').style('display', undefined);
+      }
+    });
+    section2.selectAll('.params').attr('disabled', null);
+    fields.forEach(function (field) {
+      field_selec.append('option').text(field).attr('value', field);
+    });
+
+    field_selec.on('change', function () {
+      var field_name = this.value,
+          ref_value_field = document.getElementById('Anamorph_opt3');
+
+      document.getElementById('Anamorph_output_name').value = ['Cartogram', this.value, layer].join('_');
+
+      if (ref_value_field) {
+        var max_val_field = max_fast(user_data[layer].map(function (obj) {
+          return +obj[field_name];
+        }));
+        ref_value_field.setAttribute('max', max_val_field);
+        ref_value_field.value = max_val_field;
+      }
+    });
+
+    ok_button.on('click', function () {
+      var algo = algo_selec.node().value,
+          nb_features = user_data[layer].length,
+          field_name = field_selec.node().value,
+          new_user_layer_name = document.getElementById('Anamorph_output_name').value;
+
+      if (algo === 'olson') {
+        // let ref_size = document.getElementById("Anamorph_olson_scale_kind").value,
+        // let opt_scale_max = document.getElementById("Anamorph_opt2");
+        // if (opt_scale_max.value > 100) {
+        //     opt_scale_max.value = 100;
+        // }
+        // let scale_max = +document.getElementById("Anamorph_opt2").value / 100,
+        var nb_ft = current_layers[layer].n_features,
+            dataset = user_data[layer];
+
+        // if (contains_empty_val(dataset.map(a => a[field_name]))) {
+        //   discard_rendering_empty_val();
+        //   return;
+        // }
+
+        var layer_select = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path'),
+            sqrt = Math.sqrt,
+            abs = Math.abs,
+            d_val = [],
+            transform = [];
+
+        for (var i = 0; i < nb_ft; ++i) {
+          var val = +dataset[i][field_name];
+          // We deliberatly use 0 if this is a missing value :
+          if (isNaN(val) || !isFinite(val)) val = 0;
+          d_val.push([i, val, +path.area(layer_select[i].__data__.geometry)]);
+        }
+        d_val.sort(function (a, b) {
+          return b[1] - a[1];
+        });
+        var ref = d_val[0][1] / d_val[0][2];
+        d_val[0].push(1);
+
+        for (var _i3 = 0; _i3 < nb_ft; ++_i3) {
+          var _val = d_val[_i3][1] / d_val[_i3][2];
+          var scale = sqrt(_val / ref);
+          d_val[_i3].push(scale);
+        }
+        d_val.sort(function (a, b) {
+          return a[0] - b[0];
+        });
+        var formToSend = new FormData();
+        formToSend.append('json', JSON.stringify({
+          topojson: current_layers[layer].key_name,
+          scale_values: d_val.map(function (ft) {
+            return ft[3];
+          }),
+          field_name: field_name }));
+        xhrequest('POST', 'compute/olson', formToSend, true).then(function (result) {
+          var options = { result_layer_on_add: true, func_name: 'cartogram' };
+          if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
+            options['choosed_name'] = new_user_layer_name;
+          }
+          var n_layer_name = add_layer_topojson(result, options);
+          current_layers[n_layer_name].renderer = 'OlsonCarto';
+          current_layers[n_layer_name].rendered_field = field_name;
+          current_layers[n_layer_name].scale_max = 1;
+          current_layers[n_layer_name].ref_layer_name = layer;
+          current_layers[n_layer_name].scale_byFeature = transform;
+          map.select('#' + _app.layer_to_id.get(n_layer_name)).selectAll('path').style('fill-opacity', 0.8).style('stroke', 'black').style('stroke-opacity', 0.8);
+          switch_accordion_section();
+        }, function (err) {
+          display_error_during_computation();
+          console.log(err);
+        });
+      } else if (algo === 'dougenik') {
+        var _formToSend = new FormData(),
+            var_to_send = {},
+            nb_iter = document.getElementById('Anamorph_dougenik_iterations').value;
+
+        var_to_send[field_name] = [];
+        if (!current_layers[layer].original_fields.has(field_name)) {
+          var table = user_data[layer],
+              to_send = var_to_send[field_name];
+          for (var _i4 = 0, i_len = table.length; _i4 < i_len; ++_i4) {
+            to_send.push(+table[_i4][field_name]);
+          }
+        }
+        _formToSend.append('json', JSON.stringify({
+          topojson: current_layers[layer].key_name,
+          var_name: var_to_send,
+          iterations: nb_iter
+        }));
+
+        xhrequest('POST', 'compute/carto_doug', _formToSend, true).then(function (data) {
+          var options = { result_layer_on_add: true, func_name: 'cartogram' };
+          if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
+            options['choosed_name'] = new_user_layer_name;
+          }
+          var n_layer_name = add_layer_topojson(data, options);
+          current_layers[n_layer_name].fill_color = { random: true };
+          current_layers[n_layer_name].is_result = true;
+          current_layers[n_layer_name]['stroke-width-const'] = 0.8;
+          current_layers[n_layer_name].renderer = 'Carto_doug';
+          current_layers[n_layer_name].rendered_field = field_name;
+          map.select('#' + _app.layer_to_id.get(n_layer_name)).selectAll('path').style('fill', function (_) {
+            return randomColor();
+          }).style('fill-opacity', 0.8).style('stroke', 'black').style('stroke-opacity', 0.8);
+          switch_accordion_section();
+        }, function (error) {
+          display_error_during_computation();
+          console.log(error);
+        });
+      }
+    });
+    setSelected(field_selec.node(), field_selec.node().options[0].value);
+  },
+
+  unfill: function unfill() {
+    var field_selec = document.getElementById('Anamorph_field');
+    section2.selectAll('.params').attr('disabled', true);
+    unfillSelectInput(field_selec);
+  }
 };
 
 function fillMenu_Anamorphose() {
-    var dialog_content = make_template_functionnality(section2);
+  var dialog_content = make_template_functionnality(section2);
 
-    var algo_choice = dialog_content.append('p').attr('class', 'params_section2');
-    algo_choice.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.algo' }).html(i18next.t("app_page.func_options.cartogram.algo"));
-    var algo_selec = algo_choice.insert('select').attrs({ id: 'Anamorph_algo', class: 'params i18n' });
+  var algo_choice = dialog_content.append('p').attr('class', 'params_section2');
+  algo_choice.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.algo' }).html(i18next.t('app_page.func_options.cartogram.algo'));
+  var algo_selec = algo_choice.insert('select').attrs({ id: 'Anamorph_algo', class: 'params i18n' });
 
-    var field_choice = dialog_content.append('p').attr('class', 'params_section2');
-    field_choice.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.field' }).html(i18next.t("app_page.func_options.cartogram.field"));
-    var field_selec = field_choice.insert('select').attrs({ class: 'params', id: 'Anamorph_field' });
+  var field_choice = dialog_content.append('p').attr('class', 'params_section2');
+  field_choice.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.field' }).html(i18next.t('app_page.func_options.cartogram.field'));
+  var field_selec = field_choice.insert('select').attrs({ class: 'params', id: 'Anamorph_field' });
 
-    // Options for Dougenik mode :
-    var doug1 = dialog_content.append('p').attr('class', 'params_section2 opt_dougenik');
-    doug1.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.dougenik_iterations' }).html(i18next.t("app_page.func_options.cartogram.dougenik_iterations"));
-    doug1.insert('input').attrs({ type: 'number', class: 'params', value: 5, min: 1, max: 12, step: 1, id: "Anamorph_dougenik_iterations" });
+  // Options for Dougenik mode :
+  var doug1 = dialog_content.append('p').attr('class', 'params_section2 opt_dougenik');
+  doug1.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.dougenik_iterations' }).html(i18next.t('app_page.func_options.cartogram.dougenik_iterations'));
+  doug1.insert('input').attrs({ type: 'number', class: 'params', value: 5, min: 1, max: 12, step: 1, id: 'Anamorph_dougenik_iterations' });
 
-    // let o2 = dialog_content.append('p').attr('class', 'params_section2 opt_olson');
+  // let o2 = dialog_content.append('p').attr('class', 'params_section2 opt_olson');
 
-    [['Dougenik & al. (1985)', 'dougenik'], ['Olson (2005)', 'olson']].forEach(function (fun_name) {
-        algo_selec.append("option").text(fun_name[0]).attr("value", fun_name[1]);
-    });
+  [['Dougenik & al. (1985)', 'dougenik'], ['Olson (2005)', 'olson']].forEach(function (fun_name) {
+    algo_selec.append('option').text(fun_name[0]).attr('value', fun_name[1]);
+  });
 
-    make_layer_name_button(dialog_content, "Anamorph_output_name");
-    make_ok_button(dialog_content, 'Anamorph_yes', false);
+  make_layer_name_button(dialog_content, 'Anamorph_output_name');
+  make_ok_button(dialog_content, 'Anamorph_yes', false);
 
-    dialog_content.selectAll(".params").attr("disabled", true);
-    dialog_content.selectAll(".opt_olson").style('display', 'none');
+  dialog_content.selectAll('.params').attr('disabled', true);
+  dialog_content.selectAll('.opt_olson').style('display', 'none');
 }
 
 function getCentroids(ref_layer_selection) {
-    var centroids = [];
-    for (var i = 0, nb_features = ref_layer_selection.length; i < nb_features; ++i) {
-        var geom = ref_layer_selection[i].__data__.geometry;
-        if (geom.type.indexOf('Multi') < 0) {
-            centroids.push(path.centroid(geom));
-        } else {
-            var areas = [];
-            for (var j = 0; j < geom.coordinates.length; j++) {
-                areas.push(path.area({
-                    type: geom.type,
-                    coordinates: [geom.coordinates[j]]
-                }));
-            }
-            var ix_max = areas.indexOf(max_fast(areas));
-            centroids.push(path.centroid({
-                type: geom.type,
-                coordinates: [geom.coordinates[ix_max]]
-            }));
-        }
+  var centroids = [];
+  for (var i = 0, nb_features = ref_layer_selection.length; i < nb_features; ++i) {
+    var geom = ref_layer_selection[i].__data__.geometry;
+    if (geom.type.indexOf('Multi') < 0) {
+      centroids.push(path.centroid(geom));
+    } else {
+      var areas = [];
+      for (var j = 0; j < geom.coordinates.length; j++) {
+        areas.push(path.area({
+          type: geom.type,
+          coordinates: [geom.coordinates[j]]
+        }));
+      }
+      var ix_max = areas.indexOf(max_fast(areas));
+      centroids.push(path.centroid({
+        type: geom.type,
+        coordinates: [geom.coordinates[ix_max]]
+      }));
     }
-    return centroids;
+  }
+  return centroids;
 }
 
 function make_prop_line(rendering_params, geojson_line_layer) {
-    var layer = rendering_params.ref_layer_name,
-        field = rendering_params.field,
-        color_field = rendering_params.color_field,
-        t_field_name = 'prop_value',
-        nb_features = rendering_params.nb_features,
-        abs = Math.abs,
-        ref_size = rendering_params.ref_size,
-        ref_value = rendering_params.ref_value,
-        symbol_type = rendering_params.symbol,
-        layer_to_add = rendering_params.new_name,
-        zs = d3.zoomTransform(svg_map).k,
-        propSize = new PropSizer(ref_value, ref_size, symbol_type);
+  var layer = rendering_params.ref_layer_name,
+      field = rendering_params.field,
+      color_field = rendering_params.color_field,
+      t_field_name = 'prop_value',
+      nb_features = rendering_params.nb_features,
+      abs = Math.abs,
+      ref_size = rendering_params.ref_size,
+      ref_value = rendering_params.ref_value,
+      symbol_type = rendering_params.symbol,
+      layer_to_add = rendering_params.new_name,
+      zs = d3.zoomTransform(svg_map).k,
+      propSize = new PropSizer(ref_value, ref_size, symbol_type);
 
-    if (!geojson_line_layer) {
-        var make_geojson_line_layer = function make_geojson_line_layer() {
-            var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName("path"),
-                result = [];
-            for (var i = 0, _nb_features2 = ref_layer_selection.length; i < _nb_features2; ++i) {
-                var ft = ref_layer_selection[i].__data__,
-                    value = +ft.properties[field],
-                    new_obj = {
-                    id: i,
-                    type: "Feature",
-                    properties: {},
-                    geometry: cloneObj(ft.geometry)
-                };
-                if (f_ix_len) {
-                    for (var f_ix = 0; f_ix < f_ix_len; f_ix++) {
-                        new_obj.properties[fields_id[f_ix]] = ft.properties[fields_id[f_ix]];
-                    }
-                }
-                new_obj.properties[field] = value;
-                new_obj.properties[t_field_name] = propSize.scale(value);
-                new_obj.properties['color'] = get_color(value, i);
-                if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
-                result.push([value, new_obj]);
-            }
-            result.sort(function (a, b) {
-                return abs(b[0]) - abs(a[0]);
-            });
-            return {
-                type: "FeatureCollection",
-                features: result.map(function (d) {
-                    return d[1];
-                })
-            };
+  if (!geojson_line_layer) {
+    var make_geojson_line_layer = function make_geojson_line_layer() {
+      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path'),
+          result = [];
+      for (var i = 0, _nb_features2 = ref_layer_selection.length; i < _nb_features2; ++i) {
+        var ft = ref_layer_selection[i].__data__,
+            value = +ft.properties[field],
+            new_obj = {
+          id: i,
+          type: 'Feature',
+          properties: {},
+          geometry: cloneObj(ft.geometry)
         };
-
-        var get_color = void 0,
-            col1 = void 0,
-            col2 = void 0,
-            fields_id = getFieldsType('id', layer),
-            f_ix_len = fields_id ? fields_id.length : 0;
-
-        if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
-            col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
-            get_color = function get_color(val, ix) {
-                return val > rendering_params.break_val ? col2 : col1;
-            };
-        } else if (rendering_params.fill_color instanceof Array && rendering_params.fill_color.length == nb_features) {
-            get_color = function get_color(val, ix) {
-                return rendering_params.fill_color[ix];
-            };
-        } else {
-            get_color = function get_color() {
-                return rendering_params.fill_color;
-            };
+        if (f_ix_len) {
+          for (var f_ix = 0; f_ix < f_ix_len; f_ix++) {
+            new_obj.properties[fields_id[f_ix]] = ft.properties[fields_id[f_ix]];
+          }
         }
-
-        geojson_line_layer = make_geojson_line_layer();
-    }
-
-    var layer_id = encodeId(layer_to_add);
-    _app.layer_to_id.set(layer_to_add, layer_id);
-    _app.id_to_layer.set(layer_id, layer_to_add);
-    result_data[layer_to_add] = [];
-    map.insert("g", '.legend').attrs({ id: layer_id, class: 'layer' }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
-        result_data[layer_to_add].push(d.properties);
-        return {
-            fill: 'transparent', stroke: d.properties.color, 'stroke-width': d.properties[t_field_name] };
-    });
-
-    current_layers[layer_to_add] = {
-        "n_features": nb_features,
-        "renderer": rendering_params.renderer || "PropSymbols",
-        "symbol": symbol_type,
-        "rendered_field": field,
-        "size": [ref_value, ref_size],
-        // "stroke-width-const": 1,
-        "is_result": true,
-        "ref_layer_name": layer,
-        "type": "Line"
+        new_obj.properties[field] = value;
+        new_obj.properties[t_field_name] = propSize.scale(value);
+        new_obj.properties['color'] = get_color(value, i);
+        if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
+        result.push([value, new_obj]);
+      }
+      result.sort(function (a, b) {
+        return abs(b[0]) - abs(a[0]);
+      });
+      return {
+        type: 'FeatureCollection',
+        features: result.map(function (d) {
+          return d[1];
+        })
+      };
     };
 
-    if (rendering_params.fill_color.two != undefined) {
-        current_layers[layer_to_add]["fill_color"] = cloneObj(rendering_params.fill_color);
-    } else if (rendering_params.fill_color instanceof Array) {
-        current_layers[layer_to_add]["fill_color"] = { 'class': geojson_line_layer.features.map(function (v) {
-                return v.properties.color;
-            }) };
+    var get_color = void 0,
+        col1 = void 0,
+        col2 = void 0,
+        fields_id = getFieldsType('id', layer),
+        f_ix_len = fields_id ? fields_id.length : 0;
+
+    if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
+      col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
+      get_color = function get_color(val, ix) {
+        return val > rendering_params.break_val ? col2 : col1;
+      };
+    } else if (rendering_params.fill_color instanceof Array && rendering_params.fill_color.length === nb_features) {
+      get_color = function get_color(val, ix) {
+        return rendering_params.fill_color[ix];
+      };
     } else {
-        current_layers[layer_to_add]["fill_color"] = { "single": rendering_params.fill_color };
+      get_color = function get_color() {
+        return rendering_params.fill_color;
+      };
     }
-    if (rendering_params.break_val != undefined) {
-        current_layers[layer_to_add]["break_val"] = rendering_params.break_val;
-    }
-    create_li_layer_elem(layer_to_add, nb_features, ["Line", "prop"], "result");
-    return;
+
+    geojson_line_layer = make_geojson_line_layer();
+  }
+
+  var layer_id = encodeId(layer_to_add);
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+  result_data[layer_to_add] = [];
+  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer' }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
+    result_data[layer_to_add].push(d.properties);
+    return {
+      fill: 'transparent', stroke: d.properties.color, 'stroke-width': d.properties[t_field_name] };
+  });
+
+  current_layers[layer_to_add] = {
+    n_features: nb_features,
+    renderer: rendering_params.renderer || 'PropSymbols',
+    symbol: symbol_type,
+    rendered_field: field,
+    size: [ref_value, ref_size],
+    // "stroke-width-const": 1,
+    is_result: true,
+    ref_layer_name: layer,
+    type: 'Line'
+  };
+
+  if (rendering_params.fill_color.two != undefined) {
+    current_layers[layer_to_add]['fill_color'] = cloneObj(rendering_params.fill_color);
+  } else if (rendering_params.fill_color instanceof Array) {
+    current_layers[layer_to_add]['fill_color'] = { 'class': geojson_line_layer.features.map(function (v) {
+        return v.properties.color;
+      }) };
+  } else {
+    current_layers[layer_to_add]['fill_color'] = { 'single': rendering_params.fill_color };
+  }
+  if (rendering_params.break_val != undefined) {
+    current_layers[layer_to_add]['break_val'] = rendering_params.break_val;
+  }
+  create_li_layer_elem(layer_to_add, nb_features, ['Line', 'prop'], 'result');
+  return;
 }
 
 function make_prop_symbols(rendering_params, geojson_pt_layer) {
-    var layer = rendering_params.ref_layer_name,
-        field = rendering_params.field,
-        color_field = rendering_params.color_field,
-        t_field_name = 'prop_value',
-        nb_features = rendering_params.nb_features,
-        abs = Math.abs,
-        ref_size = rendering_params.ref_size,
-        ref_value = rendering_params.ref_value,
-        symbol_type = rendering_params.symbol,
-        layer_to_add = rendering_params.new_name,
-        zs = d3.zoomTransform(svg_map).k,
-        propSize = new PropSizer(ref_value, ref_size, symbol_type);
+  var layer = rendering_params.ref_layer_name,
+      field = rendering_params.field,
+      color_field = rendering_params.color_field,
+      t_field_name = 'prop_value',
+      nb_features = rendering_params.nb_features,
+      abs = Math.abs,
+      ref_size = rendering_params.ref_size,
+      ref_value = rendering_params.ref_value,
+      symbol_type = rendering_params.symbol,
+      layer_to_add = rendering_params.new_name,
+      zs = d3.zoomTransform(svg_map).k,
+      propSize = new PropSizer(ref_value, ref_size, symbol_type);
 
-    if (!geojson_pt_layer) {
-        var make_geojson_pt_layer = function make_geojson_pt_layer() {
-            var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName("path"),
-                result = [];
-            for (var i = 0, _nb_features3 = ref_layer_selection.length; i < _nb_features3; ++i) {
-                var ft = ref_layer_selection[i].__data__,
-                    value = +ft.properties[field],
-                    new_obj = {
-                    id: i,
-                    type: "Feature",
-                    properties: {},
-                    geometry: { type: 'Point' }
-                };
-                if (ft.geometry.type.indexOf('Multi') < 0) {
-                    if (f_ix_len) {
-                        for (var f_ix = 0; f_ix < f_ix_len; f_ix++) {
-                            new_obj.properties[fields_id[f_ix]] = ft.properties[fields_id[f_ix]];
-                        }
-                    }
-                    new_obj.properties[field] = value;
-                    new_obj.properties[t_field_name] = propSize.scale(value);
-                    new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
-                    new_obj.properties['color'] = get_color(value, i);
-                    if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
-                    result.push([value, new_obj]);
-                } else {
-                    var areas = [];
-                    for (var j = 0; j < ft.geometry.coordinates.length; j++) {
-                        areas.push(path.area({
-                            type: ft.geometry.type,
-                            coordinates: [ft.geometry.coordinates[j]]
-                        }));
-                    }
-                    var ix_max = areas.indexOf(max_fast(areas));
-                    if (f_ix_len) {
-                        for (var _f_ix = 0; _f_ix < f_ix_len; _f_ix++) {
-                            new_obj.properties[fields_id[_f_ix]] = ft.properties[fields_id[_f_ix]];
-                        }
-                    }
-                    new_obj.properties[field] = value;
-                    new_obj.properties[t_field_name] = propSize.scale(value);
-                    new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
-                    new_obj.properties['color'] = get_color(value, i);
-                    if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
-                    result.push([value, new_obj]);
-                }
-            }
-            result.sort(function (a, b) {
-                return abs(b[0]) - abs(a[0]);
-            });
-            return {
-                type: "FeatureCollection",
-                features: result.map(function (d) {
-                    return d[1];
-                })
-            };
+  if (!geojson_pt_layer) {
+    var make_geojson_pt_layer = function make_geojson_pt_layer() {
+      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path'),
+          result = [];
+      for (var i = 0, _nb_features3 = ref_layer_selection.length; i < _nb_features3; ++i) {
+        var ft = ref_layer_selection[i].__data__,
+            value = +ft.properties[field],
+            new_obj = {
+          id: i,
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'Point' }
         };
-
-        var get_color = void 0,
-            col1 = void 0,
-            col2 = void 0,
-            fields_id = getFieldsType('id', layer),
-            f_ix_len = fields_id ? fields_id.length : 0;
-
-        if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
-            col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
-            get_color = function get_color(val, ix) {
-                return val > rendering_params.break_val ? col2 : col1;
-            };
-        } else if (rendering_params.fill_color instanceof Array && rendering_params.fill_color.length == nb_features) {
-            get_color = function get_color(val, ix) {
-                return rendering_params.fill_color[ix];
-            };
+        if (ft.geometry.type.indexOf('Multi') < 0) {
+          if (f_ix_len) {
+            for (var f_ix = 0; f_ix < f_ix_len; f_ix++) {
+              new_obj.properties[fields_id[f_ix]] = ft.properties[fields_id[f_ix]];
+            }
+          }
+          new_obj.properties[field] = value;
+          new_obj.properties[t_field_name] = propSize.scale(value);
+          new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
+          new_obj.properties['color'] = get_color(value, i);
+          if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
+          result.push([value, new_obj]);
         } else {
-            get_color = function get_color() {
-                return rendering_params.fill_color;
-            };
+          var areas = [];
+          for (var j = 0; j < ft.geometry.coordinates.length; j++) {
+            areas.push(path.area({
+              type: ft.geometry.type,
+              coordinates: [ft.geometry.coordinates[j]]
+            }));
+          }
+          var ix_max = areas.indexOf(max_fast(areas));
+          if (f_ix_len) {
+            for (var _f_ix = 0; _f_ix < f_ix_len; _f_ix++) {
+              new_obj.properties[fields_id[_f_ix]] = ft.properties[fields_id[_f_ix]];
+            }
+          }
+          new_obj.properties[field] = value;
+          new_obj.properties[t_field_name] = propSize.scale(value);
+          new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+          new_obj.properties['color'] = get_color(value, i);
+          if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
+          result.push([value, new_obj]);
         }
-
-        geojson_pt_layer = make_geojson_pt_layer();
-    }
-    var layer_id = encodeId(layer_to_add);
-    _app.layer_to_id.set(layer_to_add, layer_id);
-    _app.id_to_layer.set(layer_id, layer_to_add);
-    result_data[layer_to_add] = [];
-    if (symbol_type === 'circle') {
-        map.insert("g", '.legend').attr("id", layer_id).attr("class", "layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
-            result_data[layer_to_add].push(d.properties);
-            return {
-                'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
-                'r': d.properties[t_field_name],
-                'cx': path.centroid(d)[0],
-                'cy': path.centroid(d)[1]
-            };
-        }).style("fill", function (d) {
-            return d.properties.color;
-        }).style("stroke", "black").style("stroke-width", 1 / zs);
-    } else if (symbol_type === "rect") {
-        map.insert("g", '.legend').attr("id", layer_id).attr("class", "layer").selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
-            var size = d.properties[t_field_name];
-            result_data[layer_to_add].push(d.properties);
-            return {
-                'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
-                'height': size,
-                'width': size,
-                'x': path.centroid(d)[0] - size / 2,
-                'y': path.centroid(d)[1] - size / 2
-            };
-        }).style("fill", function (d) {
-            return d.properties.color;
-        }).style("stroke", "black").style("stroke-width", 1 / zs);
-    }
-
-    current_layers[layer_to_add] = {
-        "n_features": nb_features,
-        "renderer": rendering_params.renderer || "PropSymbols",
-        "symbol": symbol_type,
-        "rendered_field": field,
-        "size": [ref_value, ref_size],
-        "stroke-width-const": 1,
-        "is_result": true,
-        "ref_layer_name": layer
+      }
+      result.sort(function (a, b) {
+        return abs(b[0]) - abs(a[0]);
+      });
+      return {
+        type: 'FeatureCollection',
+        features: result.map(function (d) {
+          return d[1];
+        })
+      };
     };
 
-    if (rendering_params.fill_color.two != undefined) {
-        current_layers[layer_to_add]["fill_color"] = cloneObj(rendering_params.fill_color);
-    } else if (rendering_params.fill_color instanceof Array) {
-        current_layers[layer_to_add]["fill_color"] = { 'class': geojson_pt_layer.features.map(function (v) {
-                return v.properties.color;
-            }) };
+    var get_color = void 0,
+        col1 = void 0,
+        col2 = void 0,
+        fields_id = getFieldsType('id', layer),
+        f_ix_len = fields_id ? fields_id.length : 0;
+
+    if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
+      col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
+      get_color = function get_color(val, ix) {
+        return val > rendering_params.break_val ? col2 : col1;
+      };
+    } else if (rendering_params.fill_color instanceof Array && rendering_params.fill_color.length === nb_features) {
+      get_color = function get_color(val, ix) {
+        return rendering_params.fill_color[ix];
+      };
     } else {
-        current_layers[layer_to_add]["fill_color"] = { "single": rendering_params.fill_color };
+      get_color = function get_color() {
+        return rendering_params.fill_color;
+      };
     }
-    if (rendering_params.break_val != undefined) {
-        current_layers[layer_to_add]["break_val"] = rendering_params.break_val;
-    }
-    create_li_layer_elem(layer_to_add, nb_features, ["Point", "prop"], "result");
-    return;
+
+    geojson_pt_layer = make_geojson_pt_layer();
+  }
+  var layer_id = encodeId(layer_to_add);
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+  result_data[layer_to_add] = [];
+  if (symbol_type === 'circle') {
+    map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer').selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
+      result_data[layer_to_add].push(d.properties);
+      return {
+        'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
+        'r': d.properties[t_field_name],
+        'cx': path.centroid(d)[0],
+        'cy': path.centroid(d)[1]
+      };
+    }).style('fill', function (d) {
+      return d.properties.color;
+    }).style('stroke', 'black').style('stroke-width', 1 / zs).call(drag_elem_geo2);
+  } else if (symbol_type === 'rect') {
+    map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer').selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
+      var size = d.properties[t_field_name];
+      result_data[layer_to_add].push(d.properties);
+      return {
+        'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
+        'height': size,
+        'width': size,
+        'x': path.centroid(d)[0] - size / 2,
+        'y': path.centroid(d)[1] - size / 2
+      };
+    }).style('fill', function (d) {
+      return d.properties.color;
+    }).style('stroke', 'black').style('stroke-width', 1 / zs).call(drag_elem_geo2);
+  }
+
+  current_layers[layer_to_add] = {
+    n_features: nb_features,
+    renderer: rendering_params.renderer || 'PropSymbols',
+    symbol: symbol_type,
+    rendered_field: field,
+    size: [ref_value, ref_size],
+    'stroke-width-const': 1,
+    is_result: true,
+    ref_layer_name: layer,
+    draggable: false
+  };
+
+  if (rendering_params.fill_color.two != undefined) {
+    current_layers[layer_to_add]['fill_color'] = cloneObj(rendering_params.fill_color);
+  } else if (rendering_params.fill_color instanceof Array) {
+    current_layers[layer_to_add]['fill_color'] = { class: geojson_pt_layer.features.map(function (v) {
+        return v.properties.color;
+      }) };
+  } else {
+    current_layers[layer_to_add]['fill_color'] = { single: rendering_params.fill_color };
+  }
+  if (rendering_params.break_val != undefined) {
+    current_layers[layer_to_add]['break_val'] = rendering_params.break_val;
+  }
+  create_li_layer_elem(layer_to_add, nb_features, ['Point', 'prop'], 'result');
+  return;
 }
 
 function render_categorical(layer, rendering_params) {
-    if (rendering_params.new_name) {
-        var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
-        copy_layer(layer, rendering_params.new_name, "typo", fields);
-        current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
-        current_layers[rendering_params.new_name].type = current_layers[layer].type;
-        layer = rendering_params.new_name;
-    }
+  if (rendering_params.new_name) {
+    var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
+    copy_layer(layer, rendering_params.new_name, 'typo', fields);
+    current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
+    current_layers[rendering_params.new_name].type = current_layers[layer].type;
+    layer = rendering_params.new_name;
+  }
 
-    var colorsByFeature = rendering_params.colorByFeature,
-        color_map = rendering_params.color_map,
-        field = rendering_params.rendered_field;
-    var layer_to_render = map.select("#" + _app.layer_to_id.get(layer));
-    layer_to_render.style("opacity", 1).style("stroke-width", 0.75 / d3.zoomTransform(svg_map).k + "px");
-    if (current_layers[layer].type == "Line") {
-        layer_to_render.selectAll("path").styles({ 'fill': 'transparent', 'stroke-opacity': 1 }).style("stroke", function (d, i) {
-            return colorsByFeature[i];
-        });
-    } else {
-        layer_to_render.selectAll("path").style("fill", function (d, i) {
-            return colorsByFeature[i];
-        }).styles({ 'fill-opacity': 0.9, 'stroke-opacity': 0.9, 'stroke': '#000' });
-    }
-    current_layers[layer].renderer = rendering_params['renderer'];
-    current_layers[layer].rendered_field = field;
-    current_layers[layer].fill_color = { "class": rendering_params['colorByFeature'] };
-    current_layers[layer]['stroke-width-const'] = 0.75;
-    current_layers[layer].is_result = true;
-    current_layers[layer].color_map = color_map;
-    zoom_without_redraw();
+  var colorsByFeature = rendering_params.colorByFeature,
+      color_map = rendering_params.color_map,
+      field = rendering_params.rendered_field;
+  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer));
+  layer_to_render.style('opacity', 1).style('stroke-width', 0.75 / d3.zoomTransform(svg_map).k + 'px');
+  if (current_layers[layer].type === 'Line') {
+    layer_to_render.selectAll('path').styles({ fill: 'transparent', 'stroke-opacity': 1 }).style('stroke', function (d, i) {
+      return colorsByFeature[i];
+    });
+  } else {
+    layer_to_render.selectAll('path').style('fill', function (d, i) {
+      return colorsByFeature[i];
+    }).styles({ 'fill-opacity': 0.9, 'stroke-opacity': 0.9, stroke: '#000' });
+  }
+  current_layers[layer].renderer = rendering_params['renderer'];
+  current_layers[layer].rendered_field = field;
+  current_layers[layer].fill_color = { 'class': rendering_params['colorByFeature'] };
+  current_layers[layer]['stroke-width-const'] = 0.75;
+  current_layers[layer].is_result = true;
+  current_layers[layer].color_map = color_map;
+  zoom_without_redraw();
 }
 
 // Function to render the `layer` according to the `rendering_params`
 // (layer should be the name of group of path, ie. not a PropSymbol layer)
 // Currently used fo "choropleth", "MTA - relative deviations", "gridded map" functionnality
 function render_choro(layer, rendering_params) {
-    if (rendering_params.new_name) {
-        var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
-        copy_layer(layer, rendering_params.new_name, "choro", fields);
-        //Assign the same key to the cloned layer so it could be used transparently on server side
-        // after deletion of the reference layer if needed :
-        current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
-        current_layers[rendering_params.new_name].type = current_layers[layer].type;
-        layer = rendering_params.new_name;
-    }
-    var breaks = rendering_params["breaks"];
-    var options_disc = { schema: rendering_params.schema,
-        colors: rendering_params.colors,
-        no_data: rendering_params.no_data,
-        type: rendering_params.type,
-        breaks: breaks,
-        extra_options: rendering_params.extra_options };
-    var layer_to_render = map.select("#" + _app.layer_to_id.get(layer));
-    layer_to_render.style("opacity", 1).style("stroke-width", 0.75 / d3.zoomTransform(svg_map).k, +"px");
-    if (current_layers[layer].type == "Line") {
-        layer_to_render.selectAll("path").styles({ 'fill': 'transparent', 'stroke-opacity': 1 }).style("stroke", function (d, i) {
-            return rendering_params['colorsByFeature'][i];
-        });
-    } else {
-        layer_to_render.selectAll("path").styles({ 'fill-opacity': 1, 'stroke-opacity': 1, 'stroke': '#000' }).style("fill", function (d, i) {
-            return rendering_params['colorsByFeature'][i];
-        });
-    }
-    current_layers[layer].renderer = rendering_params['renderer'];
-    current_layers[layer].rendered_field = rendering_params['rendered_field'];
-    current_layers[layer].fill_color = { "class": rendering_params['colorsByFeature'] };
-    current_layers[layer]['stroke-width-const'] = 0.75;
-    current_layers[layer].is_result = true;
-    current_layers[layer].options_disc = options_disc;
-    var colors_breaks = [];
-    for (var i = breaks.length - 1; i > 0; --i) {
-        colors_breaks.push([[breaks[i - 1], " - ", breaks[i]].join(''), rendering_params['colors'][i - 1]]);
-    }
-    current_layers[layer].colors_breaks = colors_breaks;
-    zoom_without_redraw();
+  if (rendering_params.new_name) {
+    var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
+    copy_layer(layer, rendering_params.new_name, 'choro', fields);
+    //Assign the same key to the cloned layer so it could be used transparently on server side
+    // after deletion of the reference layer if needed :
+    current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
+    current_layers[rendering_params.new_name].type = current_layers[layer].type;
+    layer = rendering_params.new_name;
+  }
+  var breaks = rendering_params['breaks'];
+  var options_disc = { schema: rendering_params.schema,
+    colors: rendering_params.colors,
+    no_data: rendering_params.no_data,
+    type: rendering_params.type,
+    breaks: breaks,
+    extra_options: rendering_params.extra_options };
+  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer));
+  layer_to_render.style('opacity', 1).style('stroke-width', 0.75 / d3.zoomTransform(svg_map).k, +'px');
+  if (current_layers[layer].type === 'Line') {
+    layer_to_render.selectAll('path').styles({ fill: 'transparent', 'stroke-opacity': 1 }).style('stroke', function (d, i) {
+      return rendering_params['colorsByFeature'][i];
+    });
+  } else {
+    layer_to_render.selectAll('path').styles({ 'fill-opacity': 1, 'stroke-opacity': 1, 'stroke': '#000' }).style('fill', function (d, i) {
+      return rendering_params['colorsByFeature'][i];
+    });
+  }
+  current_layers[layer].renderer = rendering_params['renderer'];
+  current_layers[layer].rendered_field = rendering_params['rendered_field'];
+  current_layers[layer].fill_color = { 'class': rendering_params['colorsByFeature'] };
+  current_layers[layer]['stroke-width-const'] = 0.75;
+  current_layers[layer].is_result = true;
+  current_layers[layer].options_disc = options_disc;
+  var colors_breaks = [];
+  for (var i = breaks.length - 1; i > 0; --i) {
+    colors_breaks.push([[breaks[i - 1], ' - ', breaks[i]].join(''), rendering_params['colors'][i - 1]]);
+  }
+  current_layers[layer].colors_breaks = colors_breaks;
+  zoom_without_redraw();
 }
 
 function render_mini_chart_serie(values, parent, cap, bins) {
-    bins = bins || values.length > 20 ? 16 : values.length > 15 ? 10 : 5;
-    var class_count = getBinsCount(values, bins),
-        background = '#f1f1f1',
-        color = '#6633ff',
-        width = 3 * bins - 3,
-        height = 25,
-        canvas = document.createElement('canvas');
-    cap = cap || max_fast(class_count.counts);
-    canvas.width = width;
-    canvas.height = height;
+  bins = bins || values.length > 20 ? 16 : values.length > 15 ? 10 : 5;
+  var class_count = getBinsCount(values, bins),
+      background = '#f1f1f1',
+      color = '#6633ff',
+      width = 3 * bins - 3,
+      height = 25,
+      canvas = document.createElement('canvas');
+  cap = cap || max_fast(class_count.counts);
+  canvas.width = width;
+  canvas.height = height;
 
-    var old = parent.querySelector("canvas");
-    if (old) old.remove();
-    parent.appendChild(canvas);
+  var old = parent.querySelector('canvas');
+  if (old) old.remove();
+  parent.appendChild(canvas);
 
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = background;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  var ctx = canvas.getContext('2d');
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    var x = 0,
-        y = 0,
-        barwidth = 2,
-        barspace = 1;
+  var x = 0,
+      y = 0,
+      barwidth = 2,
+      barspace = 1;
 
-    ctx.fillStyle = color;
-    for (var i = 0; i < bins; i++) {
-        var barheight = Math.floor(Math.min(class_count.counts[i] / cap, 1) * (height - 1));
-        x += barspace;
-        ctx.fillRect(x, height, barwidth, -barheight);
-        x += barwidth;
-    }
-    canvas.setAttribute("tooltip-info", make_mini_summary(class_count));
-    new Tooltip(canvas, {
-        dataAttr: "tooltip-info",
-        animation: "slideNfade",
-        duration: 50,
-        delay: 100,
-        container: document.getElementById("twbs"),
-        placement: "top"
-    });
+  ctx.fillStyle = color;
+  for (var i = 0; i < bins; i++) {
+    var barheight = Math.floor(Math.min(class_count.counts[i] / cap, 1) * (height - 1));
+    x += barspace;
+    ctx.fillRect(x, height, barwidth, -barheight);
+    x += barwidth;
+  }
+  canvas.setAttribute('tooltip-info', make_mini_summary(class_count));
+  new Tooltip(canvas, {
+    dataAttr: 'tooltip-info',
+    animation: 'slideNfade',
+    duration: 50,
+    delay: 100,
+    container: document.getElementById('twbs'),
+    placement: 'top'
+  });
 }
 
 function make_mini_summary(summary) {
-    var p = Math.max(get_nb_decimals(summary.min), get_nb_decimals(summary.max)),
-        props = { min: summary.min, max: summary.max, mean: summary.mean.toFixed(p),
-        median: summary.median.toFixed(p), stddev: summary.stddev.toFixed(p) };
-    return i18next.t('app_page.stat_summary.mini_summary', props);
+  var p = Math.max(get_nb_decimals(summary.min), get_nb_decimals(summary.max)),
+      props = { min: summary.min, max: summary.max, mean: summary.mean.toFixed(p),
+    median: summary.median.toFixed(p), stddev: summary.stddev.toFixed(p) };
+  return i18next.t('app_page.stat_summary.mini_summary', props);
 }
 
 function fillMenu_PropSymbolTypo(layer) {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field1' }).html(i18next.t("app_page.func_options.proptypo.field1"));
-    var field1_selec = a.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_1' });
+  var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field1' }).html(i18next.t('app_page.func_options.proptypo.field1'));
+  var field1_selec = a.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_1' });
 
-    var b = dv2.append('p').attr('class', 'params_section2');
-    b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.fixed_size' }).html(i18next.t("app_page.func_options.proptypo.fixed_size"));
-    var ref_size = b.insert('input').attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_size',
-        min: 0.1, max: 100.0, value: 60.0, step: "any" }).style("width", "50px");
-    b.append('span').html(' (px)');
+  var b = dv2.append('p').attr('class', 'params_section2');
+  b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.fixed_size' }).html(i18next.t('app_page.func_options.proptypo.fixed_size'));
+  var ref_size = b.insert('input').attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_size',
+    min: 0.1, max: 100.0, value: 60.0, step: 'any' }).style('width', '50px');
+  b.append('span').html(' (px)');
 
-    var c = dv2.append('p').attr('class', 'params_section2');
-    c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.on_value' }).html(i18next.t("app_page.func_options.proptypo.on_value"));
-    var ref_value = c.insert('input').styles({ 'width': '100px', "margin-left": "10px" }).attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_value' }).attrs({ min: 0.1, step: 0.1 });
+  var c = dv2.append('p').attr('class', 'params_section2');
+  c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.on_value' }).html(i18next.t('app_page.func_options.proptypo.on_value'));
+  var ref_value = c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_value' }).attrs({ min: 0.1, step: 0.1 });
 
-    // Other symbols could probably easily be proposed :
-    var d = dv2.append('p').attr('class', 'params_section2');
-    d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.symbol_type' }).html(i18next.t("app_page.func_options.proptypo.symbol_type"));
-    var symb_selec = d.insert('select').attrs({ 'class': 'params', 'id': 'PropSymbolTypo_symbol_type' });
+  // Other symbols could probably easily be proposed :
+  var d = dv2.append('p').attr('class', 'params_section2');
+  d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.symbol_type' }).html(i18next.t('app_page.func_options.proptypo.symbol_type'));
+  var symb_selec = d.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_symbol_type' });
 
-    var e = dv2.append('p').attr('class', 'params_section2');
-    e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field2' }).html(i18next.t("app_page.func_options.proptypo.field2"));
-    var field2_selec = e.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_2' });
+  var e = dv2.append('p').attr('class', 'params_section2');
+  e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field2' }).html(i18next.t('app_page.func_options.proptypo.field2'));
+  var field2_selec = e.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_2' });
 
-    var f = dv2.insert('p').styles({ 'margin': 'auto', 'text-align': 'center' });
-    f.append("button").attrs({ id: "Typo_class", class: "button_disc params i18n",
-        'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ "font-size": "0.8em", "text-align": "center" }).html(i18next.t("app_page.func_options.typo.color_choice"));
+  var f = dv2.insert('p').styles({ margin: 'auto', 'text-align': 'center' });
+  f.append('button').attrs({ id: 'Typo_class', class: 'button_disc params i18n',
+    'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typo.color_choice'));
 
-    make_layer_name_button(dv2, 'PropSymbolTypo_output_name');
-    make_ok_button(dv2, 'propTypo_yes');
-    section2.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dv2, 'PropSymbolTypo_output_name');
+  make_ok_button(dv2, 'propTypo_yes');
+  section2.selectAll('.params').attr('disabled', true);
 }
 
 function prepare_categories_array(layer_name, selected_field, col_map) {
-    var cats = [];
-    if (!col_map) {
-        col_map = new Map();
-        for (var i = 0, data_layer = user_data[layer_name]; i < data_layer.length; ++i) {
-            var value = data_layer[i][selected_field],
-                ret_val = col_map.get(value);
-            col_map.set(value, ret_val ? [ret_val[0] + 1, [i].concat(ret_val[1])] : [1, [i]]);
-        }
-        col_map.forEach(function (v, k) {
-            cats.push({ name: k, display_name: k, nb_elem: v[0], color: randomColor() });
-        });
-        col_map = new Map();
-        for (var _i5 = 0; _i5 < cats.length; _i5++) {
-            col_map.set(cats[_i5].name, [cats[_i5].color, cats[_i5].name, cats[_i5].nb_elem]);
-        }
-    } else {
-        col_map.forEach(function (v, k) {
-            cats.push({ name: k, display_name: v[1], nb_elem: v[2], color: v[0] });
-        });
+  var cats = [];
+  if (!col_map) {
+    col_map = new Map();
+    for (var i = 0, data_layer = user_data[layer_name]; i < data_layer.length; ++i) {
+      var value = data_layer[i][selected_field],
+          ret_val = col_map.get(value);
+      col_map.set(value, ret_val ? [ret_val[0] + 1, [i].concat(ret_val[1])] : [1, [i]]);
     }
-    return [cats, col_map];
+    col_map.forEach(function (v, k) {
+      cats.push({ name: k, display_name: k, nb_elem: v[0], color: randomColor() });
+    });
+    col_map = new Map();
+    for (var _i5 = 0; _i5 < cats.length; _i5++) {
+      col_map.set(cats[_i5].name, [cats[_i5].color, cats[_i5].name, cats[_i5].nb_elem]);
+    }
+  } else {
+    col_map.forEach(function (v, k) {
+      cats.push({ name: k, display_name: v[1], nb_elem: v[2], color: v[0] });
+    });
+  }
+  return [cats, col_map];
 }
 
 var fields_PropSymbolTypo = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        section2.selectAll(".params").attr("disabled", null);
-        var self = this,
-            fields_num = getFieldsType('stock', layer),
-            fields_categ = getFieldsType('category', layer),
-            nb_features = user_data[layer].length,
-            field1_selec = section2.select("#PropSymbolTypo_field_1"),
-            field2_selec = section2.select("#PropSymbolTypo_field_2"),
-            ref_value_field = section2.select('#PropSymbolTypo_ref_value'),
-            ref_size = section2.select("#PropSymbolTypo_ref_size"),
-            symb_selec = section2.select('#PropSymbolTypo_symbol_type'),
-            uo_layer_name = section2.select('#PropSymbolTypo_output_name'),
-            btn_typo_class = section2.select('#Typo_class'),
-            ok_button = section2.select('#propTypo_yes');
+  fill: function fill(layer) {
+    if (!layer) return;
+    section2.selectAll('.params').attr('disabled', null);
+    var self = this,
+        fields_num = getFieldsType('stock', layer),
+        fields_categ = getFieldsType('category', layer),
+        nb_features = user_data[layer].length,
+        field1_selec = section2.select('#PropSymbolTypo_field_1'),
+        field2_selec = section2.select('#PropSymbolTypo_field_2'),
+        ref_value_field = section2.select('#PropSymbolTypo_ref_value'),
+        ref_size = section2.select('#PropSymbolTypo_ref_size'),
+        symb_selec = section2.select('#PropSymbolTypo_symbol_type'),
+        uo_layer_name = section2.select('#PropSymbolTypo_output_name'),
+        btn_typo_class = section2.select('#Typo_class'),
+        ok_button = section2.select('#propTypo_yes');
 
-        var prepare_colors = function prepare_colors(field) {
-            var _prepare_categories_a5 = prepare_categories_array(layer, field, null),
-                _prepare_categories_a6 = _slicedToArray(_prepare_categories_a5, 2),
-                cats = _prepare_categories_a6[0],
-                col_map = _prepare_categories_a6[1];
+    var prepare_colors = function prepare_colors(field) {
+      var _prepare_categories_a5 = prepare_categories_array(layer, field, null),
+          _prepare_categories_a6 = _slicedToArray(_prepare_categories_a5, 2),
+          cats = _prepare_categories_a6[0],
+          col_map = _prepare_categories_a6[1];
 
-            var nb_class = col_map.size;
-            var colorByFeature = user_data[layer].map(function (ft) {
-                return col_map.get(ft[field])[0];
-            });
-            self.rendering_params[field] = {
-                nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
-                renderer: 'Categorical', rendered_field: field, skip_alert: false
-            };
-        };
+      var nb_class = col_map.size;
+      var colorByFeature = user_data[layer].map(function (ft) {
+        return col_map.get(ft[field])[0];
+      });
+      self.rendering_params[field] = {
+        nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
+        renderer: 'Categorical', rendered_field: field, skip_alert: false
+      };
+    };
 
-        if (fields_categ.length == 0 || fields_num.length == 0) {
-            display_error_num_field();
-            return;
-        }
+    if (fields_categ.length === 0 || fields_num.length === 0) {
+      display_error_num_field();
+      return;
+    }
 
-        if (current_layers[layer].type == "Line") {
-            ref_size.attr('value', 10.0);
-            [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
-        } else {
-            ref_size.attr('value', 60.0);
-            [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
-        }
+    if (current_layers[layer].type === 'Line') {
+      ref_size.attr('value', 10.0);
+      [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
+    } else {
+      ref_size.attr('value', 60.0);
+      [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
+    }
 
-        fields_num.forEach(function (field) {
-            field1_selec.append("option").text(field).attr("value", field);
-        });
+    fields_num.forEach(function (field) {
+      field1_selec.append('option').text(field).attr('value', field);
+    });
 
-        fields_categ.forEach(function (field) {
-            field2_selec.append('option').text(field).attr('value', field);
-        });
+    fields_categ.forEach(function (field) {
+      field2_selec.append('option').text(field).attr('value', field);
+    });
 
-        // Set some default colors in order to not force to open the box for selecting them :
-        {
-            var first_field = fields_categ[0];
-            prepare_colors(first_field);
-            ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
-        }
+    // Set some default colors in order to not force to open the box for selecting them :
+    {
+      var first_field = fields_categ[0];
+      prepare_colors(first_field);
+      ok_button.attr('disabled', self.rendering_params[first_field] ? null : true);
+    }
 
-        field1_selec.on("change", function () {
-            var field_name = this.value,
-                max_val_field = max_fast(user_data[layer].map(function (obj) {
-                return +obj[field_name];
-            }));
-            ref_value_field.attrs({ max: max_val_field, value: max_val_field });
-            uo_layer_name.attr('value', ['Typo', field_name, field2_selec.node().value, layer].join('_'));
-        });
+    field1_selec.on('change', function () {
+      var field_name = this.value,
+          max_val_field = max_fast(user_data[layer].map(function (obj) {
+        return +obj[field_name];
+      }));
+      ref_value_field.attrs({ max: max_val_field, value: max_val_field });
+      uo_layer_name.attr('value', ['Typo', field_name, field2_selec.node().value, layer].join('_'));
+    });
 
-        field2_selec.on("change", function () {
-            var field_name = this.value;
-            prepare_colors(field_name);
-            // ok_button.attr("disabled", self.rendering_params[field_name] ? null : true);
-            uo_layer_name.attr('value', ['Typo', field1_selec.node().value, field_name, layer].join('_'));
-        });
+    field2_selec.on('change', function () {
+      var field_name = this.value;
+      prepare_colors(field_name);
+      // ok_button.attr("disabled", self.rendering_params[field_name] ? null : true);
+      uo_layer_name.attr('value', ['Typo', field1_selec.node().value, field_name, layer].join('_'));
+    });
 
-        btn_typo_class.on("click", function () {
-            var selected_field = field2_selec.node().value,
-                new_layer_name = check_layer_name(['Typo', field1_selec.node().value, selected_field, layer].join('_')),
-                col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
-                cats = void 0;
+    btn_typo_class.on('click', function () {
+      var selected_field = field2_selec.node().value,
+          new_layer_name = check_layer_name(['Typo', field1_selec.node().value, selected_field, layer].join('_')),
+          col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
+          cats = void 0;
 
-            var _prepare_categories_a7 = prepare_categories_array(layer, selected_field, col_map);
+      var _prepare_categories_a7 = prepare_categories_array(layer, selected_field, col_map);
 
-            var _prepare_categories_a8 = _slicedToArray(_prepare_categories_a7, 2);
+      var _prepare_categories_a8 = _slicedToArray(_prepare_categories_a7, 2);
 
-            cats = _prepare_categories_a8[0];
-            col_map = _prepare_categories_a8[1];
+      cats = _prepare_categories_a8[0];
+      col_map = _prepare_categories_a8[1];
 
 
-            if (cats.length > 15) {
-                swal({ title: "",
-                    text: i18next.t("app_page.common.error_too_many_features_color"),
-                    type: "warning",
-                    showCancelButton: true,
-                    allowOutsideClick: false,
-                    confirmButtonColor: "#DD6B55",
-                    confirmButtonText: i18next.t("app_page.common.valid") + "!",
-                    cancelButtonText: i18next.t("app_page.common.cancel")
-                }).then(function () {
-                    display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
-                        if (confirmed) {
-                            // ok_button.attr("disabled", null);
-                            self.rendering_params[selected_field] = {
-                                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                                renderer: "Categorical", rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
-                            };
-                        }
-                    });
-                }, function (dismiss) {
-                    return;
-                });
-            } else {
-                display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
-                    if (confirmed) {
-                        // ok_button.attr("disabled", null);
-                        self.rendering_params[selected_field] = {
-                            nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                            renderer: "Categorical", rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
-                        };
-                    }
-                });
+      if (cats.length > 15) {
+        swal({ title: '',
+          text: i18next.t('app_page.common.error_too_many_features_color'),
+          type: 'warning',
+          showCancelButton: true,
+          allowOutsideClick: false,
+          confirmButtonColor: '#DD6B55',
+          confirmButtonText: i18next.t('app_page.common.valid') + '!',
+          cancelButtonText: i18next.t('app_page.common.cancel')
+        }).then(function () {
+          display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
+            if (confirmed) {
+              // ok_button.attr("disabled", null);
+              self.rendering_params[selected_field] = {
+                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
+                renderer: 'Categorical', rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
+              };
             }
+          });
+        }, function (dismiss) {
+          return;
         });
-
-        ok_button.on('click', function () {
-            var render = function render() {
-                render_PropSymbolTypo(field1_selec.node().value, field2_selec.node().value, uo_layer_name.node().value, ref_value_field.node().value, section2.select('#PropSymbolTypo_ref_size').node().value, section2.select('#PropSymbolTypo_symbol_type').node().value);
+      } else {
+        display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
+          if (confirmed) {
+            // ok_button.attr("disabled", null);
+            self.rendering_params[selected_field] = {
+              nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
+              renderer: 'Categorical', rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
             };
-            var field_color = field2_selec.node().value;
-            if (self.rendering_params[field_color].color_map.size > 15 && !self.rendering_params[field_color].skip_alert) {
-                swal({ title: "",
-                    text: i18next.t("app_page.common.error_too_many_features_color"),
-                    type: "warning",
-                    showCancelButton: true,
-                    allowOutsideClick: false,
-                    confirmButtonColor: "#DD6B55",
-                    confirmButtonText: i18next.t("app_page.common.valid") + "!",
-                    cancelButtonText: i18next.t("app_page.common.cancel")
-                }).then(function () {
-                    render();
-                }, function (dismiss) {
-                    return;
-                });
-            } else {
-                render();
-            }
+          }
         });
-        setSelected(field1_selec.node(), fields_num[0]);
-        setSelected(field2_selec.node(), fields_categ[0]);
-    },
+      }
+    });
 
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("PropSymbolTypo_field_1"));
-        unfillSelectInput(document.getElementById("PropSymbolTypo_field_2"));
-        unfillSelectInput(document.getElementById("PropSymbolTypo_symbol_type"));
-        section2.selectAll(".params").attr("disabled", true);
-    },
-    rendering_params: {}
+    ok_button.on('click', function () {
+      var render = function render() {
+        render_PropSymbolTypo(field1_selec.node().value, field2_selec.node().value, uo_layer_name.node().value, ref_value_field.node().value, section2.select('#PropSymbolTypo_ref_size').node().value, section2.select('#PropSymbolTypo_symbol_type').node().value);
+      };
+      var field_color = field2_selec.node().value;
+      if (self.rendering_params[field_color].color_map.size > 15 && !self.rendering_params[field_color].skip_alert) {
+        swal({ title: '',
+          text: i18next.t('app_page.common.error_too_many_features_color'),
+          type: 'warning',
+          showCancelButton: true,
+          allowOutsideClick: false,
+          confirmButtonColor: '#DD6B55',
+          confirmButtonText: i18next.t('app_page.common.valid') + '!',
+          cancelButtonText: i18next.t('app_page.common.cancel')
+        }).then(function () {
+          render();
+        }, function (dismiss) {
+          return;
+        });
+      } else {
+        render();
+      }
+    });
+    setSelected(field1_selec.node(), fields_num[0]);
+    setSelected(field2_selec.node(), fields_categ[0]);
+  },
+
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('PropSymbolTypo_field_1'));
+    unfillSelectInput(document.getElementById('PropSymbolTypo_field_2'));
+    unfillSelectInput(document.getElementById('PropSymbolTypo_symbol_type'));
+    section2.selectAll('.params').attr('disabled', true);
+  },
+  rendering_params: {}
 };
 
 function render_PropSymbolTypo(field1, color_field, new_layer_name, ref_value, ref_size, symb_selec) {
-    if (!ref_value || !color_field || !fields_PropSymbolTypo.rendering_params[color_field]) return;
-    var layer = Object.getOwnPropertyNames(user_data)[0],
-        nb_features = user_data[layer].length,
-        rendering_params = fields_PropSymbolTypo.rendering_params[color_field],
-        rd_params = {};
+  if (!ref_value || !color_field || !fields_PropSymbolTypo.rendering_params[color_field]) return;
+  var layer = Object.getOwnPropertyNames(user_data)[0],
+      nb_features = user_data[layer].length,
+      rendering_params = fields_PropSymbolTypo.rendering_params[color_field],
+      rd_params = {};
 
-    new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ["PropSymbolsTypo", field1, color_field, layer].join('_'));
+  new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ['PropSymbolsTypo', field1, color_field, layer].join('_'));
 
-    rd_params.field = field1;
-    rd_params.new_name = new_layer_name;
-    rd_params.nb_features = nb_features;
-    rd_params.ref_layer_name = layer;
-    rd_params.symbol = symb_selec;
-    rd_params.ref_value = +ref_value;
-    rd_params.color_field = color_field;
-    rd_params.ref_size = +ref_size;
-    rd_params.fill_color = rendering_params.colorByFeature;
+  rd_params.field = field1;
+  rd_params.new_name = new_layer_name;
+  rd_params.nb_features = nb_features;
+  rd_params.ref_layer_name = layer;
+  rd_params.symbol = symb_selec;
+  rd_params.ref_value = +ref_value;
+  rd_params.color_field = color_field;
+  rd_params.ref_size = +ref_size;
+  rd_params.fill_color = rendering_params.colorByFeature;
 
-    if (symb_selec === "line") make_prop_line(rd_params);else make_prop_symbols(rd_params);
+  if (symb_selec === 'line') make_prop_line(rd_params);else make_prop_symbols(rd_params);
 
-    Object.assign(current_layers[new_layer_name], {
-        renderer: "PropSymbolsTypo",
-        rendered_field: field1,
-        rendered_field2: color_field,
-        color_map: rendering_params.color_map
-    });
-    zoom_without_redraw();
-    switch_accordion_section();
-    handle_legend(new_layer_name);
+  Object.assign(current_layers[new_layer_name], {
+    renderer: 'PropSymbolsTypo',
+    rendered_field: field1,
+    rendered_field2: color_field,
+    color_map: rendering_params.color_map
+  });
+  zoom_without_redraw();
+  switch_accordion_section();
+  handle_legend(new_layer_name);
 }
 
 function fillMenu_Discont() {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.field' }).html(i18next.t('app_page.func_options.discont.field'));
-    a.insert('select').attrs({ class: 'params', id: 'field_Discont' });
+  var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.field' }).html(i18next.t('app_page.func_options.discont.field'));
+  a.insert('select').attrs({ class: 'params', id: 'field_Discont' });
 
-    // let b = dv2.append('p').attr('class', 'params_section2');
-    // b.append('span')
-    //   .attrs({class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.id_field'})
-    //   .html(i18next.t('app_page.func_options.discont.id_field'));
-    // b.insert('select')
-    //   .attrs({class: 'params', id: 'field_id_Discont'});
+  // let b = dv2.append('p').attr('class', 'params_section2');
+  // b.append('span')
+  //   .attrs({class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.id_field'})
+  //   .html(i18next.t('app_page.func_options.discont.id_field'));
+  // b.insert('select')
+  //   .attrs({class: 'params', id: 'field_id_Discont'});
 
-    var c = dv2.append('p').attr('class', 'params_section2');
-    c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.type_discontinuity' }).html(i18next.t('app_page.func_options.discont.type_discontinuity'));
-    var discontinuity_type = c.insert('select').attrs({ class: 'params i18n', id: 'kind_Discont' });
+  var c = dv2.append('p').attr('class', 'params_section2');
+  c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.type_discontinuity' }).html(i18next.t('app_page.func_options.discont.type_discontinuity'));
+  var discontinuity_type = c.insert('select').attrs({ class: 'params i18n', id: 'kind_Discont' });
 
-    [['app_page.func_options.discont.type_relative', 'rel'], ['app_page.func_options.discont.type_absolute', 'abs']].forEach(function (k) {
-        discontinuity_type.append('option').text(i18next.t(k[0])).attrs({ 'value': k[1], 'data-i18n': '[text]' + k[0] });
-    });
+  [['app_page.func_options.discont.type_relative', 'rel'], ['app_page.func_options.discont.type_absolute', 'abs']].forEach(function (k) {
+    discontinuity_type.append('option').text(i18next.t(k[0])).attrs({ value: k[1], 'data-i18n': '[text]' + k[0] });
+  });
 
-    // let d = dv2.append('p').attr('class', 'params_section2');
-    // d.append('span')
-    //   .attrs({class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.nb_class'})
-    //   .html(i18next.t('app_page.func_options.discont.nb_class'));
-    // d.insert('input')
-    //   .attrs({type: 'number', class: 'params', id: 'Discont_nbClass', min: 1, max: 33, value: 4})
-    //   .style('width', '50px');
+  // let d = dv2.append('p').attr('class', 'params_section2');
+  // d.append('span')
+  //   .attrs({class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.nb_class'})
+  //   .html(i18next.t('app_page.func_options.discont.nb_class'));
+  // d.insert('input')
+  //   .attrs({type: 'number', class: 'params', id: 'Discont_nbClass', min: 1, max: 33, value: 4})
+  //   .style('width', '50px');
 
-    var e = dv2.append('p').attr('class', 'params_section2');
-    e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.discretization' }).html(i18next.t('app_page.func_options.discont.discretization'));
-    var disc_type = e.insert('select').attrs({ 'class': 'params i18n', 'id': 'Discont_discKind' });
+  var e = dv2.append('p').attr('class', 'params_section2');
+  e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.discretization' }).html(i18next.t('app_page.func_options.discont.discretization'));
+  var disc_type = e.insert('select').attrs({ class: 'params i18n', id: 'Discont_discKind' });
 
-    [['app_page.common.equal_interval', 'equal_interval'], ['app_page.common.quantiles', 'quantiles'], ['app_page.common.Q6', 'Q6'], ['app_page.common.arithmetic_progression', 'arithmetic_progression'], ['app_page.common.jenks', 'jenks']].forEach(function (field) {
-        disc_type.append('option').text(i18next.t(field[0])).attrs({ 'value': field[1], 'data-i18n': '[text]' + field[0] });
-    });
+  [['app_page.common.equal_interval', 'equal_interval'], ['app_page.common.quantiles', 'quantiles'], ['app_page.common.Q6', 'Q6'], ['app_page.common.arithmetic_progression', 'arithmetic_progression'], ['app_page.common.jenks', 'jenks']].forEach(function (field) {
+    disc_type.append('option').text(i18next.t(field[0])).attrs({ value: field[1], 'data-i18n': '[text]' + field[0] });
+  });
 
-    var f = dv2.append('p').attr('class', 'params_section2');
-    f.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.color' }).html(i18next.t('app_page.func_options.discont.color'));
-    f.insert('input').attrs({ class: 'params', id: 'color_Discont', type: 'color', value: ColorsSelected.random() });
+  var f = dv2.append('p').attr('class', 'params_section2');
+  f.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.discont.color' }).html(i18next.t('app_page.func_options.discont.color'));
+  f.insert('input').attrs({ class: 'params', id: 'color_Discont', type: 'color', value: ColorsSelected.random() });
 
-    make_layer_name_button(dv2, 'Discont_output_name');
-    make_ok_button(dv2, 'yes_Discont', false);
+  make_layer_name_button(dv2, 'Discont_output_name');
+  make_ok_button(dv2, 'yes_Discont', false);
 
-    dv2.selectAll('.params').attr('disabled', true);
+  dv2.selectAll('.params').attr('disabled', true);
 }
 
 var fields_Discont = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        var fields_num = getFieldsType('stock', layer).concat(getFieldsType('ratio', layer)),
-            fields_id = getFieldsType('id', layer),
-            select_type_discont = section2.select('#kind_Discont'),
-            field_discont = section2.select("#field_Discont"),
+  fill: function fill(layer) {
+    if (!layer) return;
+    var fields_num = getFieldsType('stock', layer).concat(getFieldsType('ratio', layer)),
+        fields_id = getFieldsType('id', layer),
+        select_type_discont = section2.select('#kind_Discont'),
+        field_discont = section2.select('#field_Discont'),
 
-        // field_id = section2.select("#field_id_Discont"),
-        ok_button = section2.select('#yes_Discont');
+    // field_id = section2.select("#field_id_Discont"),
+    ok_button = section2.select('#yes_Discont');
 
-        if (fields_num.length == 0) {
-            display_error_num_field();
-            return;
-        }
-
-        select_type_discont.on('change', function () {
-            var field_name = field_discont.node().value;
-            document.getElementById("Discont_output_name").value = ["Disc", field_name, this.value, layer].join('_');
-        });
-
-        fields_num.forEach(function (field) {
-            field_discont.append("option").text(field).attr("value", field);
-        });
-        // if(fields_id.length == 0){
-        //     field_id.append("option").text(i18next.t("app_page.common.default")).attrs({"value": "__default__", "class": "i18n", "data-i18n": "[text]app_page.common.default"});
-        // } else {
-        //   fields_id.forEach(function(field){
-        //       field_id.append("option").text(field).attr("value", field);
-        //   });
-        // }
-        field_discont.on("change", function () {
-            var discontinuity_type = document.getElementById("kind_Discont").value;
-            document.getElementById("Discont_output_name").value = ["Disc", this.value, discontinuity_type, layer].join('_');
-        });
-        ok_button.on('click', render_discont);
-        section2.selectAll(".params").attr("disabled", null);
-        document.getElementById("Discont_output_name").value = ["Disc", field_discont.node().value, select_type_discont.node().value, layer].join('_');
-    },
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("field_Discont"));
-        // unfillSelectInput(document.getElementById("field_id_Discont"));
-        section2.selectAll(".params").attr("disabled", true);
+    if (fields_num.length === 0) {
+      display_error_num_field();
+      return;
     }
+
+    select_type_discont.on('change', function () {
+      var field_name = field_discont.node().value;
+      document.getElementById('Discont_output_name').value = ['Disc', field_name, this.value, layer].join('_');
+    });
+
+    fields_num.forEach(function (field) {
+      field_discont.append('option').text(field).attr('value', field);
+    });
+    // if (fields_id.length == 0) {
+    //     field_id.append("option").text(i18next.t("app_page.common.default")).attrs({"value": "__default__", "class": "i18n", "data-i18n": "[text]app_page.common.default"});
+    // } else {
+    //   fields_id.forEach(function(field) {
+    //       field_id.append("option").text(field).attr("value", field);
+    //   });
+    // }
+    field_discont.on('change', function () {
+      var discontinuity_type = document.getElementById('kind_Discont').value;
+      document.getElementById('Discont_output_name').value = ['Disc', this.value, discontinuity_type, layer].join('_');
+    });
+    ok_button.on('click', render_discont);
+    section2.selectAll('.params').attr('disabled', null);
+    document.getElementById('Discont_output_name').value = ['Disc', field_discont.node().value, select_type_discont.node().value, layer].join('_');
+  },
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('field_Discont'));
+    // unfillSelectInput(document.getElementById("field_id_Discont"));
+    section2.selectAll('.params').attr('disabled', true);
+  }
 };
 
 var render_discont = function render_discont() {
-    var layer = Object.getOwnPropertyNames(user_data)[0],
-        field = document.getElementById("field_Discont").value,
+  var layer = Object.getOwnPropertyNames(user_data)[0],
+      field = document.getElementById('field_Discont').value,
 
-    // field_id = document.getElementById("field_id_Discont").value,
-    min_size = 1,
-        max_size = 10,
-        discontinuity_type = document.getElementById("kind_Discont").value,
-        discretization_type = document.getElementById('Discont_discKind').value,
-        nb_class = 4,
-        user_color = document.getElementById("color_Discont").value,
-        new_layer_name = document.getElementById("Discont_output_name").value;
+  // field_id = document.getElementById("field_id_Discont").value,
+  min_size = 1,
+      max_size = 10,
+      discontinuity_type = document.getElementById('kind_Discont').value,
+      discretization_type = document.getElementById('Discont_discKind').value,
+      nb_class = 4,
+      user_color = document.getElementById('color_Discont').value,
+      new_layer_name = document.getElementById('Discont_output_name').value;
 
-    new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ["Disc", field, discontinuity_type, layer].join('_'));
+  new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ['Disc', field, discontinuity_type, layer].join('_'));
 
-    var id_layer = encodeId(new_layer_name);
-    _app.layer_to_id.set(new_layer_name, id_layer);
-    _app.id_to_layer.set(id_layer, new_layer_name);
+  var id_layer = encodeId(new_layer_name);
+  _app.layer_to_id.set(new_layer_name, id_layer);
+  _app.id_to_layer.set(id_layer, new_layer_name);
 
-    // field_id = field_id == "__default__" ? undefined : field_id;
-    var field_id = undefined;
+  // field_id = field_id == "__default__" ? undefined : field_id;
+  var field_id = undefined;
 
-    var result_value = new Map(),
-        result_geom = {},
-        topo_mesh = topojson.mesh,
-        math_max = Math.max,
-        topo_to_use = _target_layer_file;
+  var result_value = new Map(),
+      result_geom = {},
+      topo_mesh = topojson.mesh,
+      math_max = Math.max,
+      topo_to_use = _target_layer_file;
 
-    document.getElementById("overlay").style.display = "";
+  document.getElementById('overlay').style.display = '';
 
-    // Discontinuity are computed in another thread to avoid blocking the ui (and so error message on large layer)
-    // (a waiting message is displayed during this time to avoid action from the user)
-    var discont_worker = new Worker('/static/js/webworker_discont.js');
-    _app.webworker_to_cancel = discont_worker;
-    discont_worker.postMessage([topo_to_use, layer, field, discontinuity_type, discretization_type, field_id]);
-    discont_worker.onmessage = function (e) {
-        var _e$data = _slicedToArray(e.data, 2),
-            arr_tmp = _e$data[0],
-            d_res = _e$data[1];
+  // Discontinuity are computed in another thread to avoid blocking the ui (and so error message on large layer)
+  // (a waiting message is displayed during this time to avoid action from the user)
+  var discont_worker = new Worker('static/js/webworker_discont.js');
+  _app.webworker_to_cancel = discont_worker;
+  discont_worker.postMessage([topo_to_use, layer, field, discontinuity_type, discretization_type, field_id]);
+  discont_worker.onmessage = function (e) {
+    var _e$data = _slicedToArray(e.data, 2),
+        arr_tmp = _e$data[0],
+        d_res = _e$data[1];
 
-        _app.webworker_to_cancel = undefined;
-        var nb_ft = arr_tmp.length,
-            step = (max_size - min_size) / (nb_class - 1),
-            class_size = Array(nb_class).fill(0).map(function (d, i) {
-            return min_size + i * step;
-        });
+    _app.webworker_to_cancel = undefined;
+    var nb_ft = arr_tmp.length,
+        step = (max_size - min_size) / (nb_class - 1),
+        class_size = Array(nb_class).fill(0).map(function (d, i) {
+      return min_size + i * step;
+    });
 
-        var _discretize_to_size = discretize_to_size(arr_tmp, discretization_type, nb_class, min_size, max_size),
-            _discretize_to_size2 = _slicedToArray(_discretize_to_size, 4),
-            breaks = _discretize_to_size2[2],
-            serie = _discretize_to_size2[3];
+    var _discretize_to_size = discretize_to_size(arr_tmp, discretization_type, nb_class, min_size, max_size),
+        _discretize_to_size2 = _slicedToArray(_discretize_to_size, 4),
+        breaks = _discretize_to_size2[2],
+        serie = _discretize_to_size2[3];
 
-        if (!serie || !breaks) {
-            var opt_nb_class = Math.floor(1 + 3.3 * Math.log10(nb_ft));
-            var w = nb_class > opt_nb_class ? i18next.t("app_page.common.smaller") : i18next.t("app_page.common.larger");
-            swal("", i18next.t("app_page.common.error_discretization", { arg: w }), "error");
-            return;
-        }
+    if (!serie || !breaks) {
+      var opt_nb_class = Math.floor(1 + 3.3 * Math.log10(nb_ft));
+      var w = nb_class > opt_nb_class ? i18next.t('app_page.common.smaller') : i18next.t('app_page.common.larger');
+      swal('', i18next.t('app_page.common.error_discretization', { arg: w }), 'error');
+      return;
+    }
 
-        breaks = breaks.map(function (ft) {
-            return [ft[0], ft[1]];
-        }).filter(function (d) {
-            return d[1] !== undefined;
-        });
-        var result_layer = map.insert("g", '.legend').attr("id", id_layer).styles({ "stroke-linecap": "round", "stroke-linejoin": "round" }).attr("class", "layer");
+    breaks = breaks.map(function (ft) {
+      return [ft[0], ft[1]];
+    }).filter(function (d) {
+      return d[1] !== undefined;
+    });
+    var result_layer = map.insert('g', '.legend').attr('id', id_layer).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).attr('class', 'layer');
 
-        result_data[new_layer_name] = [];
-        var data_result = result_data[new_layer_name],
-            result_lyr_node = result_layer.node();
+    result_data[new_layer_name] = [];
+    var data_result = result_data[new_layer_name],
+        result_lyr_node = result_layer.node();
 
-        for (var i = 0; i < nb_ft; i++) {
-            var val = d_res[i][0],
-                p_size = class_size[serie.getClass(val)],
-                elem = result_layer.append("path").datum(d_res[i][2]).attrs({ d: path, id: ["feature", i].join('_') }).styles({ stroke: user_color, "stroke-width": p_size, "fill": "transparent", "stroke-opacity": 1 });
-            data_result.push(d_res[i][1]);
-            elem.node().__data__.geometry = d_res[i][2];
-            elem.node().__data__.properties = data_result[i];
-            elem.node().__data__.properties['prop_val'] = p_size;
-        }
-        document.getElementById("overlay").style.display = "none";
-        current_layers[new_layer_name] = {
-            "renderer": "DiscLayer",
-            "breaks": breaks,
-            "min_display": 0, // FIXME
-            "type": "Line",
-            "rendered_field": field,
-            "size": [0.5, 10],
-            "is_result": true,
-            "fixed_stroke": true,
-            "ref_layer_name": layer,
-            "fill_color": { "single": user_color },
-            "n_features": nb_ft
-        };
-        create_li_layer_elem(new_layer_name, nb_ft, ["Line", "discont"], "result");
-
-        {
-            // Only display the 50% most important values :
-            // TODO : reintegrate this upstream in the layer creation :
-            var lim = 0.5 * current_layers[new_layer_name].n_features;
-            result_layer.selectAll('path').style("display", function (d, i) {
-                return i <= lim ? null : "none";
-            });
-            current_layers[new_layer_name].min_display = 0.5;
-        }
-
-        d3.select('#layer_to_export').append('option').attr('value', new_layer_name).text(new_layer_name);
-        zoom_without_redraw();
-        switch_accordion_section();
-        handle_legend(new_layer_name);
-        send_layer_server(new_layer_name, "/layers/add");
-        discont_worker.terminate();
+    for (var i = 0; i < nb_ft; i++) {
+      var val = d_res[i][0],
+          p_size = class_size[serie.getClass(val)],
+          elem = result_layer.append('path').datum(d_res[i][2]).attrs({ d: path, id: ['feature', i].join('_') }).styles({ stroke: user_color, 'stroke-width': p_size, 'fill': 'transparent', 'stroke-opacity': 1 });
+      data_result.push(d_res[i][1]);
+      elem.node().__data__.geometry = d_res[i][2];
+      elem.node().__data__.properties = data_result[i];
+      elem.node().__data__.properties['prop_val'] = p_size;
+    }
+    document.getElementById('overlay').style.display = 'none';
+    current_layers[new_layer_name] = {
+      renderer: 'DiscLayer',
+      breaks: breaks,
+      min_display: 0, // FIXME
+      type: 'Line',
+      rendered_field: field,
+      size: [0.5, 10],
+      is_result: true,
+      fixed_stroke: true,
+      ref_layer_name: layer,
+      fill_color: { 'single': user_color },
+      n_features: nb_ft
     };
+    create_li_layer_elem(new_layer_name, nb_ft, ['Line', 'discont'], 'result');
+
+    {
+      // Only display the 50% most important values :
+      // TODO : reintegrate this upstream in the layer creation :
+      var lim = 0.5 * current_layers[new_layer_name].n_features;
+      result_layer.selectAll('path').style('display', function (d, i) {
+        return i <= lim ? null : 'none';
+      });
+      current_layers[new_layer_name].min_display = 0.5;
+    }
+
+    d3.select('#layer_to_export').append('option').attr('value', new_layer_name).text(new_layer_name);
+    zoom_without_redraw();
+    switch_accordion_section();
+    handle_legend(new_layer_name);
+    send_layer_server(new_layer_name, '/layers/add');
+    discont_worker.terminate();
+  };
 };
 
 function fillMenu_PropSymbol(layer) {
-    var dialog_content = make_template_functionnality(section2),
-        max_allowed_size = Math.round(h / 2 - h / 10);
+  var dialog_content = make_template_functionnality(section2),
+      max_allowed_size = Math.round(h / 2 - h / 10);
 
-    var a = dialog_content.append('p').attr('class', 'params_section2').style('margin-top', '2px');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t("app_page.func_options.common.field"));
-    var field_selec = a.insert('select').attrs({ class: 'params', 'id': "PropSymbol_field_1" });
+  var a = dialog_content.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t('app_page.func_options.common.field'));
+  var field_selec = a.insert('select').attrs({ class: 'params', 'id': 'PropSymbol_field_1' });
 
-    var b = dialog_content.append('p').attr('class', 'params_section2');
-    b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.fixed_size' }).html(i18next.t("app_page.func_options.prop.fixed_size"));
-    var ref_size = b.insert('input').attrs({ id: 'PropSymbol_ref_size', type: 'number', class: 'params', min: 0.2, max: max_allowed_size, value: 60.0, step: 0.1 }).style("width", "50px");
-    b.append('span').html(" px");
+  var b = dialog_content.append('p').attr('class', 'params_section2');
+  b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.fixed_size' }).html(i18next.t('app_page.func_options.prop.fixed_size'));
+  var ref_size = b.insert('input').attrs({ id: 'PropSymbol_ref_size', type: 'number', class: 'params', min: 0.2, max: max_allowed_size, value: 60.0, step: 0.1 }).style('width', '50px');
+  b.append('span').html(' px');
 
-    var c = dialog_content.append('p').attr('class', 'params_section2');
-    c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.on_value' }).html(i18next.t("app_page.func_options.prop.on_value"));
-    var ref_value = c.insert('input').styles({ 'width': '100px', "margin-left": "10px" }).attrs({ id: 'PropSymbol_ref_value', type: 'number', class: "params", min: 0.1, step: 0.1 });
+  var c = dialog_content.append('p').attr('class', 'params_section2');
+  c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.on_value' }).html(i18next.t('app_page.func_options.prop.on_value'));
+  var ref_value = c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ id: 'PropSymbol_ref_value', type: 'number', class: 'params', min: 0.1, step: 0.1 });
 
-    var d = dialog_content.append('p').attr('class', 'params_section2');
-    d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_type' }).html(i18next.t("app_page.func_options.prop.symbol_type"));
-    var symb_selec = d.insert('select').attrs({ 'class': 'params i18n', "id": "PropSymbol_symbol" });
+  var d = dialog_content.append('p').attr('class', 'params_section2');
+  d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_type' }).html(i18next.t('app_page.func_options.prop.symbol_type'));
+  var symb_selec = d.insert('select').attrs({ class: 'params i18n', id: 'PropSymbol_symbol' });
 
-    // [['app_page.func_options.common.symbol_circle', 'circle'],
-    //  ['app_page.func_options.common.symbol_square', 'rect']
-    // ].forEach(function(symb){
-    //     symb_selec.append("option").text(i18next.t(symb[0])).attrs({"value": symb[1], 'data-i18n': '[text]' + symb[0]});});
+  // [['app_page.func_options.common.symbol_circle', 'circle'],
+  //  ['app_page.func_options.common.symbol_square', 'rect']
+  // ].forEach(function(symb) {
+  //     symb_selec.append("option").text(i18next.t(symb[0])).attrs({"value": symb[1], 'data-i18n': '[text]' + symb[0]});});
 
-    var color_section = dialog_content.append('p').attr('class', 'params_section2');
-    color_section.append("span").attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_color' }).html(i18next.t("app_page.func_options.prop.symbol_color"));
-    var color_par = color_section.append('select').attrs({ id: 'PropSymbol_nb_colors', class: 'params' });
-    color_par.append("option").attrs({ value: 1, class: 'i18n', 'data-i18n': '[text]app_page.func_options.prop.options_one_color' }).text(i18next.t("app_page.func_options.prop.options_one_color"));
-    color_par.append("option").attrs({ value: 2, class: 'i18n', 'data-i18n': '[text]app_page.func_options.prop.options_two_colors' }).text(i18next.t("app_page.func_options.prop.options_two_colors"));
+  var color_section = dialog_content.append('p').attr('class', 'params_section2');
+  color_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_color' }).html(i18next.t('app_page.func_options.prop.symbol_color'));
+  var color_par = color_section.append('select').attrs({ id: 'PropSymbol_nb_colors', class: 'params' });
+  color_par.append('option').attrs({ value: 1, class: 'i18n', 'data-i18n': '[text]app_page.func_options.prop.options_one_color' }).text(i18next.t('app_page.func_options.prop.options_one_color'));
+  color_par.append('option').attrs({ value: 2, class: 'i18n', 'data-i18n': '[text]app_page.func_options.prop.options_two_colors' }).text(i18next.t('app_page.func_options.prop.options_two_colors'));
 
-    var col_p = dialog_content.append("p").attr('class', 'params_section2').styles({ 'padding-top': '5px', 'margin-bottom': '-5px', 'text-align': 'center' });
-    col_p.insert('input').styles({ "position": "unset" }).attrs({ type: "color", class: "params", id: "PropSymbol_color1", value: ColorsSelected.random() });
-    col_p.insert('input').styles({ "display": "none", "position": "unset" }).attrs({ type: "color", class: "params", id: "PropSymbol_color2", value: ColorsSelected.random() });
+  var col_p = dialog_content.append('p').attr('class', 'params_section2').styles({ 'padding-top': '5px', 'margin-bottom': '-5px', 'text-align': 'center' });
+  col_p.insert('input').styles({ position: 'unset' }).attrs({ type: 'color', class: 'params', id: 'PropSymbol_color1', value: ColorsSelected.random() });
+  col_p.insert('input').styles({ display: 'none', position: 'unset' }).attrs({ type: 'color', class: 'params', id: 'PropSymbol_color2', value: ColorsSelected.random() });
 
-    var col_b = dialog_content.insert("p").attr('class', 'params_section2');
-    col_b.insert("span").style("display", "none").attrs({ id: 'PropSymbol_color_txt', class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.options_break_two_colors' }).html(i18next.t("app_page.func_options.prop.options_break_two_colors"));
-    col_b.insert('input').attrs({ id: 'PropSymbol_break_val', 'type': 'number', class: "params" }).styles({ "display": "none", "width": "75px" });
+  var col_b = dialog_content.insert('p').attr('class', 'params_section2');
+  col_b.insert('span').style('display', 'none').attrs({ id: 'PropSymbol_color_txt', class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.options_break_two_colors' }).html(i18next.t('app_page.func_options.prop.options_break_two_colors'));
+  col_b.insert('input').attrs({ id: 'PropSymbol_break_val', 'type': 'number', class: 'params' }).styles({ display: 'none', width: '75px' });
 
-    make_layer_name_button(dialog_content, 'PropSymbol_output_name');
-    make_ok_button(dialog_content, 'PropSymbol_yes', false);
-    dialog_content.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dialog_content, 'PropSymbol_output_name');
+  make_ok_button(dialog_content, 'PropSymbol_yes', false);
+  dialog_content.selectAll('.params').attr('disabled', true);
 }
 
 var fields_PropSymbol = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        section2.selectAll(".params").attr("disabled", null);
-        // let fields = type_col(layer, "number"),
-        var fields = getFieldsType('stock', layer),
-            nb_features = user_data[layer].length,
-            field_selec = section2.select("#PropSymbol_field_1"),
-            nb_color = section2.select('#PropSymbol_nb_colors'),
-            ok_button = section2.select('#PropSymbol_yes'),
-            ref_value_field = section2.select('#PropSymbol_ref_value'),
-            ref_size = section2.select('#PropSymbol_ref_size'),
-            symb_selec = section2.select('#PropSymbol_symbol'),
-            uo_layer_name = section2.select('#PropSymbol_output_name'),
-            fill_color = section2.select('#PropSymbol_color1'),
-            fill_color2 = section2.select('#PropSymbol_color2'),
-            fill_color_opt = section2.select('#PropSymbol_break_val'),
-            fill_color_text = section2.select('#PropSymbol_color_txt');
+  fill: function fill(layer) {
+    if (!layer) return;
+    section2.selectAll('.params').attr('disabled', null);
+    // let fields = type_col(layer, "number"),
+    var fields = getFieldsType('stock', layer),
+        nb_features = user_data[layer].length,
+        field_selec = section2.select('#PropSymbol_field_1'),
+        nb_color = section2.select('#PropSymbol_nb_colors'),
+        ok_button = section2.select('#PropSymbol_yes'),
+        ref_value_field = section2.select('#PropSymbol_ref_value'),
+        ref_size = section2.select('#PropSymbol_ref_size'),
+        symb_selec = section2.select('#PropSymbol_symbol'),
+        uo_layer_name = section2.select('#PropSymbol_output_name'),
+        fill_color = section2.select('#PropSymbol_color1'),
+        fill_color2 = section2.select('#PropSymbol_color2'),
+        fill_color_opt = section2.select('#PropSymbol_break_val'),
+        fill_color_text = section2.select('#PropSymbol_color_txt');
 
-        if (current_layers[layer].type == "Line") {
-            ref_size.attr('value', 10.0);
-            [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
-        } else {
-            ref_size.attr('value', 60.0);
-            [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
-                symb_selec.append("option").text(i18next.t(symb[0])).attrs({ "value": symb[1], 'data-i18n': '[text]' + symb[0] });
-            });
-        }
-
-        fields.forEach(function (field) {
-            field_selec.append("option").text(field).attr("value", field);
-        });
-
-        field_selec.on("change", function () {
-            var field_name = this.value,
-                field_values = user_data[layer].map(function (obj) {
-                return +obj[field_name];
-            }),
-                max_val_field = max_fast(field_values);
-
-            uo_layer_name.attr('value', ["PropSymbol", this.value, layer].join('_'));
-            ref_value_field.attrs({ "max": max_val_field, 'value': max_val_field });
-            if (has_negative(field_values)) {
-                setSelected(nb_color.node(), 2);
-                break_val.attr('value', 0);
-            } else {
-                setSelected(nb_color.node(), 1);
-            }
-        });
-
-        nb_color.on("change", function () {
-            if (this.value == 1) {
-                fill_color2.style("display", "none");
-                fill_color_opt.style("display", "none");
-                fill_color_text.style("display", "none");
-            } else {
-                fill_color2.style("display", null);
-                fill_color_opt.style("display", null);
-                fill_color_text.style("display", "inline");
-            }
-        });
-        ok_button.on("click", function () {
-            var nb_features = user_data[layer].length,
-                field_to_render = field_selec.node().value,
-                symbol_to_use = symb_selec.node().value,
-                user_new_layer_name = uo_layer_name.node().value,
-                new_layer_name = check_layer_name(user_new_layer_name.length > 0 ? user_new_layer_name : ["PropSymbols", field_to_render, layer].join('_'));
-            var rendering_params = {
-                field: field_to_render,
-                nb_features: nb_features,
-                new_name: new_layer_name,
-                ref_layer_name: layer,
-                symbol: symbol_to_use,
-                ref_size: +ref_size.node().value,
-                ref_value: +ref_value_field.node().value,
-                fill_color: fill_color.node().value
-            };
-            if (+nb_color.node().value == 2) {
-                rendering_params["break_val"] = +fill_color_opt.node().value;
-                rendering_params["fill_color"] = { "two": [fill_color.node().value, fill_color2.node().value] };
-            }
-            if (symbol_to_use === "line") make_prop_line(rendering_params);else make_prop_symbols(rendering_params);
-            zoom_without_redraw();
-            switch_accordion_section();
-            handle_legend(new_layer_name);
-        });
-        uo_layer_name.attr('value', ["PropSymbols", layer].join('_'));
-        setSelected(field_selec.node(), fields[0]);
-    },
-
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("PropSymbol_field_1"));
-        unfillSelectInput(document.getElementById('PropSymbol_symbol'));
-        section2.selectAll(".params").attr("disabled", true);
+    if (current_layers[layer].type === 'Line') {
+      ref_size.attr('value', 10.0);
+      [['app_page.func_options.common.symbol_line', 'line'], ['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
+    } else {
+      ref_size.attr('value', 60.0);
+      [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
+        symb_selec.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
+      });
     }
+
+    fields.forEach(function (field) {
+      field_selec.append('option').text(field).attr('value', field);
+    });
+
+    field_selec.on('change', function () {
+      var field_name = this.value,
+          field_values = user_data[layer].map(function (obj) {
+        return +obj[field_name];
+      }),
+          max_val_field = max_fast(field_values);
+
+      uo_layer_name.attr('value', ['PropSymbol', this.value, layer].join('_'));
+      ref_value_field.attrs({ max: max_val_field, value: max_val_field });
+      if (has_negative(field_values)) {
+        setSelected(nb_color.node(), 2);
+        break_val.attr('value', 0);
+      } else {
+        setSelected(nb_color.node(), 1);
+      }
+    });
+
+    nb_color.on('change', function () {
+      if (this.value === 1) {
+        fill_color2.style('display', 'none');
+        fill_color_opt.style('display', 'none');
+        fill_color_text.style('display', 'none');
+      } else {
+        fill_color2.style('display', null);
+        fill_color_opt.style('display', null);
+        fill_color_text.style('display', 'inline');
+      }
+    });
+    ok_button.on('click', function () {
+      var nb_features = user_data[layer].length,
+          field_to_render = field_selec.node().value,
+          symbol_to_use = symb_selec.node().value,
+          user_new_layer_name = uo_layer_name.node().value,
+          new_layer_name = check_layer_name(user_new_layer_name.length > 0 ? user_new_layer_name : ['PropSymbols', field_to_render, layer].join('_'));
+      var rendering_params = {
+        field: field_to_render,
+        nb_features: nb_features,
+        new_name: new_layer_name,
+        ref_layer_name: layer,
+        symbol: symbol_to_use,
+        ref_size: +ref_size.node().value,
+        ref_value: +ref_value_field.node().value,
+        fill_color: fill_color.node().value
+      };
+      if (+nb_color.node().value === 2) {
+        rendering_params['break_val'] = +fill_color_opt.node().value;
+        rendering_params['fill_color'] = { two: [fill_color.node().value, fill_color2.node().value] };
+      }
+      if (symbol_to_use === 'line') make_prop_line(rendering_params);else make_prop_symbols(rendering_params);
+      zoom_without_redraw();
+      switch_accordion_section();
+      handle_legend(new_layer_name);
+    });
+    uo_layer_name.attr('value', ['PropSymbols', layer].join('_'));
+    setSelected(field_selec.node(), fields[0]);
+  },
+
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('PropSymbol_field_1'));
+    unfillSelectInput(document.getElementById('PropSymbol_symbol'));
+    section2.selectAll('.params').attr('disabled', true);
+  }
 };
 
 function fillMenu_TypoSymbol() {
-    var dv2 = make_template_functionnality(section2);
-    var a = dv2.append("p").attr('class', 'params_section2').style('margin-top', '2px');
-    a.append('span').attrs({ "class": "i18n", "data-i18n": "[html]app_page.func_options.typosymbol.field" }).html(i18next.t("app_page.func_options.typosymbol.field"));
-    var field_selec = a.insert('select').attrs({ class: "params", id: "field_Symbol" });
+  var dv2 = make_template_functionnality(section2);
+  var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.typosymbol.field' }).html(i18next.t('app_page.func_options.typosymbol.field'));
+  var field_selec = a.insert('select').attrs({ class: 'params', id: 'field_Symbol' });
 
-    var b = dv2.insert('p').attr('class', 'params_section2').styles({ 'text-align': 'center', 'margin': 'auto' });
-    b.append("button").attrs({ id: "selec_Symbol", class: "button_disc params i18n",
-        "data-i18n": "[html]app_page.func_options.typosymbol.symbols_choice" }).styles({ "font-size": "0.8em", "text-align": "center" }).html(i18next.t("app_page.func_options.typosymbol.symbols_choice"));
+  var b = dv2.insert('p').attr('class', 'params_section2').styles({ 'text-align': 'center', 'margin': 'auto' });
+  b.append('button').attrs({ id: 'selec_Symbol', class: 'button_disc params i18n',
+    'data-i18n': '[html]app_page.func_options.typosymbol.symbols_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typosymbol.symbols_choice'));
 
-    make_layer_name_button(dv2, 'TypoSymbols_output_name');
-    make_ok_button(dv2, 'yesTypoSymbols');
-    dv2.selectAll(".params").attr("disabled", true);
-    if (!window.default_symbols) {
-        window.default_symbols = [];
-        prepare_available_symbols();
-    }
+  make_layer_name_button(dv2, 'TypoSymbols_output_name');
+  make_ok_button(dv2, 'yesTypoSymbols');
+  dv2.selectAll('.params').attr('disabled', true);
+  if (!window.default_symbols) {
+    window.default_symbols = [];
+    prepare_available_symbols();
+  }
 }
 
 function discard_rendering_empty_val() {
-    swal({ title: "", type: "error",
-        text: i18next.t("app_page.common.error_empty_vals") });
+  swal({
+    title: '',
+    type: 'error',
+    text: i18next.t('app_page.common.error_empty_vals')
+  });
 }
 
 var fields_TypoSymbol = {
-    fill: function fill(layer) {
-        if (!layer) return;
-        var fields_all = Object.getOwnPropertyNames(user_data[layer][0]),
-            field_to_use = section2.select("#field_Symbol"),
-            selec_symbol = section2.select("#selec_Symbol"),
-            uo_layer_name = section2.select('#TypoSymbols_output_name'),
-            ok_button = section2.select('#yesTypoSymbols'),
-            self = this;
+  fill: function fill(layer) {
+    if (!layer) return;
+    var fields_all = Object.getOwnPropertyNames(user_data[layer][0]),
+        field_to_use = section2.select('#field_Symbol'),
+        selec_symbol = section2.select('#selec_Symbol'),
+        uo_layer_name = section2.select('#TypoSymbols_output_name'),
+        ok_button = section2.select('#yesTypoSymbols'),
+        self = this;
 
-        section2.selectAll(".params").attr("disabled", null);
-        fields_all.forEach(function (field) {
-            field_to_use.append("option").text(field).attr("value", field);
+    section2.selectAll('.params').attr('disabled', null);
+    fields_all.forEach(function (field) {
+      field_to_use.append('option').text(field).attr('value', field);
+    });
+    field_to_use.on('change', function () {
+      var field = this.value;
+      ok_button.attr('disabled', self.rendering_params[field] ? null : true);
+    });
+    selec_symbol.on('click', function () {
+      swal({ title: '',
+        text: i18next.t('app_page.common.error_too_many_features'),
+        type: 'warning',
+        showCancelButton: true,
+        allowOutsideClick: false,
+        confirmButtonColor: '#DD6B55',
+        confirmButtonText: i18next.t('app_page.common.valid') + '!',
+        cancelButtonText: i18next.t('app_page.common.cancel')
+      }).then(function () {
+        var field = document.getElementById('field_Symbol').value,
+            symbol_map = self.rendering_params[field] ? self.rendering_params[field].symbols_map : undefined;
+        display_box_symbol_typo(layer, field, symbol_map).then(function (confirmed) {
+          if (confirmed) {
+            document.getElementById('yesTypoSymbols').disabled = null;
+            self.rendering_params[field] = {
+              nb_cat: confirmed[0],
+              symbols_map: confirmed[1],
+              field: field
+            };
+          }
         });
-        field_to_use.on("change", function () {
-            var field = this.value;
-            ok_button.attr('disabled', self.rendering_params[field] ? null : true);
-        });
-        selec_symbol.on("click", function () {
-            swal({ title: "",
-                text: i18next.t("app_page.common.error_too_many_features"),
-                type: "warning",
-                showCancelButton: true,
-                allowOutsideClick: false,
-                confirmButtonColor: "#DD6B55",
-                confirmButtonText: i18next.t("app_page.common.valid") + "!",
-                cancelButtonText: i18next.t("app_page.common.cancel")
-            }).then(function () {
-                var field = document.getElementById("field_Symbol").value,
-                    symbol_map = self.rendering_params[field] ? self.rendering_params[field].symbols_map : undefined;
-                display_box_symbol_typo(layer, field, symbol_map).then(function (confirmed) {
-                    if (confirmed) {
-                        document.getElementById("yesTypoSymbols").disabled = null;
-                        self.rendering_params[field] = {
-                            nb_cat: confirmed[0],
-                            symbols_map: confirmed[1],
-                            field: field
-                        };
-                    }
-                });
-            }, function () {
-                return;
-            });
-        });
-        ok_button.on('click', function () {
-            var field = field_to_use.node().value;
-            render_TypoSymbols(self.rendering_params[field], uo_layer_name.node().value);
-        });
-        setSelected(field_to_use.node(), fields_all[0]);
-        uo_layer_name.attr('value', ["Symbols", layer].join('_'));
-    },
-    unfill: function unfill() {
-        unfillSelectInput(document.getElementById("field_Symbol"));
-        section2.selectAll(".params").attr("disabled", true);
-    },
-    rendering_params: {}
+      }, function () {
+        return;
+      });
+    });
+    ok_button.on('click', function () {
+      var field = field_to_use.node().value;
+      render_TypoSymbols(self.rendering_params[field], uo_layer_name.node().value);
+    });
+    setSelected(field_to_use.node(), fields_all[0]);
+    uo_layer_name.attr('value', ['Symbols', layer].join('_'));
+  },
+  unfill: function unfill() {
+    unfillSelectInput(document.getElementById('field_Symbol'));
+    section2.selectAll('.params').attr('disabled', true);
+  },
+  rendering_params: {}
 };
 
 function render_TypoSymbols(rendering_params, new_name) {
-    var layer_name = Object.getOwnPropertyNames(user_data)[0];
-    var ref_layer_id = _app.layer_to_id.get(layer_name);
-    var field = rendering_params.field;
-    var layer_to_add = check_layer_name(new_name.length > 0 ? new_name : ["Symbols", field, layer_name].join("_"));
-    var ref_selection = document.getElementById(_app.layer_to_id.get(ref_layer_id)).getElementsByTagName("path");
-    var nb_ft = ref_selection.length;
+  var layer_name = Object.getOwnPropertyNames(user_data)[0];
+  var ref_layer_id = _app.layer_to_id.get(layer_name);
+  var field = rendering_params.field;
+  var layer_to_add = check_layer_name(new_name.length > 0 ? new_name : ['Symbols', field, layer_name].join('_'));
+  var ref_selection = document.getElementById(_app.layer_to_id.get(ref_layer_id)).getElementsByTagName('path');
+  var nb_ft = ref_selection.length;
 
-    function make_geojson_pt_layer() {
-        var result = [];
-        for (var i = 0, nb_features = ref_selection.length; i < nb_features; ++i) {
-            var ft = ref_selection[i].__data__,
-                value = ft.properties[field],
-                new_obj = {
-                id: i,
-                type: "Feature",
-                properties: {},
-                geometry: { type: 'Point' }
-            };
-            if (ft.geometry.type.indexOf('Multi') < 0) {
-                new_obj.properties['symbol_field'] = value;
-                new_obj.properties['id_parent'] = ft.id;
-                new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
-                result.push(new_obj);
-            } else {
-                var areas = [];
-                for (var j = 0; j < ft.geometry.coordinates.length; j++) {
-                    areas.push(path.area({
-                        type: ft.geometry.type,
-                        coordinates: [ft.geometry.coordinates[j]]
-                    }));
-                }
-                var ix_max = areas.indexOf(max_fast(areas));
-                new_obj.properties['symbol_field'] = value;
-                new_obj.properties['id_parent'] = ft.id;
-                new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
-                result.push(new_obj);
-            }
+  function make_geojson_pt_layer() {
+    var result = [];
+    for (var i = 0, nb_features = ref_selection.length; i < nb_features; ++i) {
+      var ft = ref_selection[i].__data__,
+          value = ft.properties[field],
+          new_obj = {
+        id: i,
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'Point' }
+      };
+      if (ft.geometry.type.indexOf('Multi') < 0) {
+        new_obj.properties['symbol_field'] = value;
+        new_obj.properties['id_parent'] = ft.id;
+        new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
+        result.push(new_obj);
+      } else {
+        var areas = [];
+        for (var j = 0; j < ft.geometry.coordinates.length; j++) {
+          areas.push(path.area({
+            type: ft.geometry.type,
+            coordinates: [ft.geometry.coordinates[j]]
+          }));
         }
-        return {
-            type: "FeatureCollection",
-            features: result
-        };
+        var ix_max = areas.indexOf(max_fast(areas));
+        new_obj.properties['symbol_field'] = value;
+        new_obj.properties['id_parent'] = ft.id;
+        new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+        result.push(new_obj);
+      }
     }
-
-    var new_layer_data = make_geojson_pt_layer();
-    var layer_id = encodeId(layer_to_add);
-    _app.layer_to_id.set(layer_to_add, layer_id);
-    _app.id_to_layer.set(layer_id, layer_to_add);
-    var context_menu = new ContextMenu(),
-        getItems = function getItems(self_parent) {
-        return [{ "name": i18next.t("app_page.common.edit_style"), "action": function action() {
-                make_style_box_indiv_symbol(self_parent);
-            } }, { "name": i18next.t("app_page.common.delete"), "action": function action() {
-                self_parent.style.display = "none";
-            } }];
+    return {
+      type: 'FeatureCollection',
+      features: result
     };
+  }
 
-    map.insert("g", '.legend').attrs({ id: layer_id, class: "layer" }).selectAll("image").data(new_layer_data.features).enter().insert("image").attrs(function (d) {
-        var symb = rendering_params.symbols_map.get(d.properties.symbol_field),
-            coords = path.centroid(d.geometry);
-        return {
-            "x": coords[0] - symb[1] / 2,
-            "y": coords[1] - symb[1] / 2,
-            "width": symb[1],
-            "height": symb[1],
-            "xlink:href": symb[0]
-        };
-    }).on("mouseover", function () {
-        this.style.cursor = "pointer";
-    }).on("mouseout", function () {
-        this.style.cursor = "initial";
-    }).on("contextmenu dblclick", function () {
-        context_menu.showMenu(d3.event, document.querySelector("body"), getItems(this));
-    }).call(drag_elem_geo);
+  var new_layer_data = make_geojson_pt_layer();
+  var layer_id = encodeId(layer_to_add);
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+  var context_menu = new ContextMenu(),
+      getItems = function getItems(self_parent) {
+    return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
+        make_style_box_indiv_symbol(self_parent);
+      } }, { name: i18next.t('app_page.common.delete'), action: function action() {
+        self_parent.style.display = 'none';
+      } }];
+  };
 
-    create_li_layer_elem(layer_to_add, nb_ft, ["Point", "symbol"], "result");
-
-    current_layers[layer_to_add] = {
-        "n_features": current_layers[layer_name].n_features,
-        "renderer": "TypoSymbols",
-        "symbols_map": rendering_params.symbols_map,
-        "rendered_field": field,
-        "is_result": true,
-        "symbol": "image",
-        "ref_layer_name": layer_name
+  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer' }).selectAll('image').data(new_layer_data.features).enter().insert('image').attrs(function (d) {
+    var symb = rendering_params.symbols_map.get(d.properties.symbol_field),
+        coords = path.centroid(d.geometry);
+    return {
+      x: coords[0] - symb[1] / 2,
+      y: coords[1] - symb[1] / 2,
+      width: symb[1],
+      height: symb[1],
+      'xlink:href': symb[0]
     };
-    handle_legend(layer_to_add);
-    zoom_without_redraw();
-    switch_accordion_section();
+  }).on('mouseover', function () {
+    this.style.cursor = 'pointer';
+  }).on('mouseout', function () {
+    this.style.cursor = 'initial';
+  }).on('contextmenu dblclick', function () {
+    context_menu.showMenu(d3.event, document.querySelector('body'), getItems(this));
+  }).call(drag_elem_geo);
+
+  create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'symbol'], 'result');
+
+  current_layers[layer_to_add] = {
+    n_features: current_layers[layer_name].n_features,
+    renderer: 'TypoSymbols',
+    symbols_map: rendering_params.symbols_map,
+    rendered_field: field,
+    is_result: true,
+    symbol: 'image',
+    ref_layer_name: layer_name
+  };
+  handle_legend(layer_to_add);
+  zoom_without_redraw();
+  switch_accordion_section();
 }
 
 function fillMenu_griddedMap(layer) {
-    var dialog_content = make_template_functionnality(section2);
+  var dialog_content = make_template_functionnality(section2);
 
-    var a = dialog_content.append('p').attr('class', 'params_section2').style('margin-top', '2px');
-    a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t("app_page.func_options.common.field"));
-    a.insert('select').attrs({ class: 'params', id: "Gridded_field" });
+  var a = dialog_content.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t('app_page.func_options.common.field'));
+  a.insert('select').attrs({ class: 'params', id: 'Gridded_field' });
 
-    var b = dialog_content.append('p').attr('class', 'params_section2');
-    b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.cellsize' }).html(i18next.t("app_page.func_options.grid.cellsize"));
-    b.insert('input').style("width", "100px").attrs({ type: 'number', class: 'params', id: "Gridded_cellsize",
-        value: 10.0, min: 1.000, max: 7000, step: "any" });
+  var b = dialog_content.append('p').attr('class', 'params_section2');
+  b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.cellsize' }).html(i18next.t('app_page.func_options.grid.cellsize'));
+  b.insert('input').style('width', '100px').attrs({ type: 'number', class: 'params', id: 'Gridded_cellsize',
+    value: 10.0, min: 1.000, max: 7000, step: 'any' });
 
-    var c = dialog_content.append('p').attr('class', 'params_section2');
-    c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.shape' }).html(i18next.t("app_page.func_options.grid.shape"));
+  var c = dialog_content.append('p').attr('class', 'params_section2');
+  c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.shape' }).html(i18next.t('app_page.func_options.grid.shape'));
 
-    var grid_shape = c.insert('select').attrs({ class: 'params i18n', id: "Gridded_shape" });
+  var grid_shape = c.insert('select').attrs({ class: 'params i18n', id: 'Gridded_shape' });
 
-    var d = dialog_content.append('p').attr('class', 'params_section2');
-    d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.coloramp' }).html(i18next.t("app_page.func_options.grid.coloramp"));
-    var col_pal = d.insert('select').attrs({ 'class': 'params', 'id': 'Gridded_color_pal' });
+  var d = dialog_content.append('p').attr('class', 'params_section2');
+  d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.coloramp' }).html(i18next.t('app_page.func_options.grid.coloramp'));
+  var col_pal = d.insert('select').attrs({ class: 'params', id: 'Gridded_color_pal' });
 
-    ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (color) {
-        col_pal.append("option").text(color).attr("value", color);
-    });
+  ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (color) {
+    col_pal.append('option').text(color).attr('value', color);
+  });
 
-    [['app_page.func_options.grid.square', 'Square'], ['app_page.func_options.grid.diamond', 'Diamond'], ['app_page.func_options.grid.hexagon', 'Hexagon']].forEach(function (shape) {
-        grid_shape.append("option").text(i18next.t(shape[0])).attrs({ 'value': shape[1], 'data-i18n': '[text]' + shape[0] });
-    });
+  [['app_page.func_options.grid.square', 'Square'], ['app_page.func_options.grid.diamond', 'Diamond'], ['app_page.func_options.grid.hexagon', 'Hexagon']].forEach(function (shape) {
+    grid_shape.append('option').text(i18next.t(shape[0])).attrs({ value: shape[1], 'data-i18n': '[text]' + shape[0] });
+  });
 
-    make_layer_name_button(dialog_content, 'Gridded_output_name');
-    make_ok_button(dialog_content, 'Gridded_yes', false);
-    section2.selectAll(".params").attr("disabled", true);
+  make_layer_name_button(dialog_content, 'Gridded_output_name');
+  make_ok_button(dialog_content, 'Gridded_yes', false);
+  section2.selectAll('.params').attr('disabled', true);
 }
 
 var fields_griddedMap = {
-    fill: function fill(layer) {
-        if (!layer) return;
+  fill: function fill(layer) {
+    if (!layer) return;
 
-        // let fields = type_col(layer, "number"),
-        var fields = getFieldsType('stock', layer),
-            field_selec = section2.select("#Gridded_field"),
-            output_name = section2.select('#Gridded_output_name'),
-            grip_shape = section2.select('#Gridded_shape'),
-            ok_button = section2.select('#Gridded_yes');
+    // let fields = type_col(layer, "number"),
+    var fields = getFieldsType('stock', layer),
+        field_selec = section2.select('#Gridded_field'),
+        output_name = section2.select('#Gridded_output_name'),
+        grip_shape = section2.select('#Gridded_shape'),
+        ok_button = section2.select('#Gridded_yes');
 
-        fields.forEach(function (field) {
-            field_selec.append("option").text(field).attr("value", field);
-        });
-        field_selec.on("change", function () {
-            output_name.attr('value', ["Gridded", this.value, layer].join('_'));
-        });
-        ok_button.on("click", function () {
-            render_Gridded(field_selec.node().value, document.getElementById('Gridded_cellsize').value, grip_shape.node().value, document.getElementById('Gridded_color_pal').value, output_name.node().value);
-        });
-        output_name.attr('value', ["Gridded", layer].join('_'));
-        document.getElementById("Gridded_cellsize").value = get_first_guess_span('grid');
-        section2.selectAll(".params").attr("disabled", null);
-    },
-    unfill: function unfill() {
-        var field_selec = document.getElementById("Gridded_field");
-        unfillSelectInput(field_selec);
-        section2.selectAll(".params").attr("disabled", true);
-    }
+    fields.forEach(function (field) {
+      field_selec.append('option').text(field).attr('value', field);
+    });
+    field_selec.on('change', function () {
+      output_name.attr('value', ['Gridded', this.value, layer].join('_'));
+    });
+    ok_button.on('click', function () {
+      render_Gridded(field_selec.node().value, document.getElementById('Gridded_cellsize').value, grip_shape.node().value, document.getElementById('Gridded_color_pal').value, output_name.node().value);
+    });
+    output_name.attr('value', ['Gridded', layer].join('_'));
+    document.getElementById('Gridded_cellsize').value = get_first_guess_span('grid');
+    section2.selectAll('.params').attr('disabled', null);
+  },
+  unfill: function unfill() {
+    var field_selec = document.getElementById('Gridded_field');
+    unfillSelectInput(field_selec);
+    section2.selectAll('.params').attr('disabled', true);
+  }
 };
 
 function render_Gridded(field_n, resolution, cell_shape, color_palette, new_user_layer_name) {
-    var layer = Object.getOwnPropertyNames(user_data)[0],
-        formToSend = new FormData(),
-        var_to_send = {},
-        res_test = test_maxmin_resolution(resolution);
+  var layer = Object.getOwnPropertyNames(user_data)[0],
+      formToSend = new FormData(),
+      var_to_send = {},
+      res_test = test_maxmin_resolution(resolution);
 
-    if (res_test) {
-        var message = res_test === "low" ? i18next.t("app_page.common.error_too_low_resolution") : i18next.t("app_page.common.error_too_high_resolution");
-        display_error_during_computation(message);
-        return;
+  if (res_test) {
+    var message = res_test === 'low' ? i18next.t('app_page.common.error_too_low_resolution') : i18next.t('app_page.common.error_too_high_resolution');
+    display_error_during_computation(message);
+    return;
+  }
+
+  if (current_layers[layer].original_fields.has(field_n)) var_to_send[field_n] = [];else var_to_send[field_n] = user_data[layer].map(function (i) {
+    return i[field_n];
+  });
+
+  formToSend.append('json', JSON.stringify({
+    topojson: current_layers[layer].key_name,
+    var_name: var_to_send,
+    cellsize: resolution * 1000,
+    grid_shape: cell_shape
+  }));
+  xhrequest('POST', 'compute/gridded', formToSend, true).then(function (data) {
+    var options = { result_layer_on_add: true, func_name: 'grid' };
+    if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
+      options['choosed_name'] = new_user_layer_name;
+    }
+    var rendered_field = field_n + '_densitykm';
+    var n_layer_name = add_layer_topojson(data, options);
+    if (!n_layer_name) return;
+    var res_data = result_data[n_layer_name],
+        nb_ft = res_data.length,
+        opt_nb_class = Math.floor(1 + 3.3 * Math.log10(nb_ft)),
+        d_values = [];
+
+    for (var i = 0; i < nb_ft; i++) {
+      d_values.push(+res_data[i][rendered_field]);
     }
 
-    if (current_layers[layer].original_fields.has(field_n)) var_to_send[field_n] = [];else var_to_send[field_n] = user_data[layer].map(function (i) {
-        return i[field_n];
-    });
-
-    formToSend.append("json", JSON.stringify({
-        "topojson": current_layers[layer].key_name,
-        "var_name": var_to_send,
-        "cellsize": resolution * 1000,
-        "grid_shape": cell_shape
-    }));
-    xhrequest("POST", '/compute/gridded', formToSend, true).then(function (data) {
-        var options = { result_layer_on_add: true, func_name: 'grid' };
-        if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-            options["choosed_name"] = new_user_layer_name;
-        }
-        var rendered_field = field_n + "_densitykm";
-        var n_layer_name = add_layer_topojson(data, options);
-        if (!n_layer_name) return;
-        var res_data = result_data[n_layer_name],
-            nb_ft = res_data.length,
-            opt_nb_class = Math.floor(1 + 3.3 * Math.log10(nb_ft)),
-            d_values = [];
-
-        for (var i = 0; i < nb_ft; i++) {
-            d_values.push(+res_data[i][rendered_field]);
-        }
-
-        current_layers[n_layer_name].renderer = "Gridded";
-        var disc_result = discretize_to_colors(d_values, "quantiles", opt_nb_class, color_palette),
-            rendering_params = {
-            nb_class: opt_nb_class,
-            type: "quantiles",
-            schema: [color_palette],
-            breaks: disc_result[2],
-            colors: disc_result[3],
-            colorsByFeature: disc_result[4],
-            renderer: "Gridded",
-            rendered_field: rendered_field
-        };
-        render_choro(n_layer_name, rendering_params);
-        handle_legend(n_layer_name);
-        switch_accordion_section();
-    }, function (error) {
-        display_error_during_computation();
-        console.log(error);
-    });
+    current_layers[n_layer_name].renderer = 'Gridded';
+    var disc_result = discretize_to_colors(d_values, 'quantiles', opt_nb_class, color_palette);
+    var rendering_params = {
+      nb_class: opt_nb_class,
+      type: 'quantiles',
+      schema: [color_palette],
+      breaks: disc_result[2],
+      colors: disc_result[3],
+      colorsByFeature: disc_result[4],
+      renderer: 'Gridded',
+      rendered_field: rendered_field
+    };
+    render_choro(n_layer_name, rendering_params);
+    handle_legend(n_layer_name);
+    switch_accordion_section();
+  }, function (error) {
+    display_error_during_computation();
+    console.log(error);
+  });
 }
 
 function fillMenu_FlowMap() {
-    var dv2 = make_template_functionnality(section2);
+  var dv2 = make_template_functionnality(section2);
 
-    var subtitle = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
-    subtitle.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.subtitle1' }).html(i18next.t("app_page.func_options.flow.subtitle1"));
+  var subtitle = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
+  subtitle.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.subtitle1' }).html(i18next.t('app_page.func_options.flow.subtitle1'));
 
-    var origin_section = dv2.append('p').attr('class', 'params_section2');
-    origin_section.append('span').attrs({ 'class': 'i18n', 'data-i18n': '[html]app_page.func_options.flow.origin_field' }).html(i18next.t('app_page.func_options.flow.origin_field'));
-    origin_section.insert('select').attrs({ id: 'FlowMap_field_i', class: 'params' });
+  var origin_section = dv2.append('p').attr('class', 'params_section2');
+  origin_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.origin_field' }).html(i18next.t('app_page.func_options.flow.origin_field'));
+  origin_section.insert('select').attrs({ id: 'FlowMap_field_i', class: 'params' });
 
-    var destination_section = dv2.append('p').attr('class', 'params_section2');
-    destination_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.destination_field' }).html(i18next.t('app_page.func_options.flow.destination_field'));
-    destination_section.append('select').attrs({ class: 'params', id: 'FlowMap_field_j' });
+  var destination_section = dv2.append('p').attr('class', 'params_section2');
+  destination_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.destination_field' }).html(i18next.t('app_page.func_options.flow.destination_field'));
+  destination_section.append('select').attrs({ class: 'params', id: 'FlowMap_field_j' });
 
-    var intensity_section = dv2.append('p').attr('class', 'params_section2');
-    intensity_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.intensity_field' }).html(i18next.t('app_page.func_options.flow.intensity_field'));
-    intensity_section.append('select').attrs({ class: 'params', id: 'FlowMap_field_fij' });
+  var intensity_section = dv2.append('p').attr('class', 'params_section2');
+  intensity_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.intensity_field' }).html(i18next.t('app_page.func_options.flow.intensity_field'));
+  intensity_section.append('select').attrs({ class: 'params', id: 'FlowMap_field_fij' });
 
-    var discretization_section = dv2.append('p').attr('class', 'params_section2');
-    discretization_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.discretization' }).html(i18next.t("app_page.func_options.flow.discretization"));
-    var disc_type = discretization_section.insert('select').attrs({ class: 'params i18n', id: "FlowMap_discKind" });
+  var discretization_section = dv2.append('p').attr('class', 'params_section2');
+  discretization_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.discretization' }).html(i18next.t('app_page.func_options.flow.discretization'));
+  var disc_type = discretization_section.insert('select').attrs({ class: 'params i18n', id: 'FlowMap_discKind' });
 
-    [["app_page.common.equal_interval", "equal_interval"], ["app_page.common.quantiles", "quantiles"], ["app_page.common.Q6", "Q6"], ["app_page.common.arithmetic_progression", "arithmetic_progression"], ["app_page.common.jenks", "jenks"]].forEach(function (field) {
-        disc_type.append("option").text(i18next.t(field[0])).attrs({ "value": field[1], 'data-i18n': '[text]' + field[0] });
-    });
+  [['app_page.common.equal_interval', 'equal_interval'], ['app_page.common.quantiles', 'quantiles'], ['app_page.common.Q6', 'Q6'], ['app_page.common.arithmetic_progression', 'arithmetic_progression'], ['app_page.common.jenks', 'jenks']].forEach(function (field) {
+    disc_type.append('option').text(i18next.t(field[0])).attrs({ value: field[1], 'data-i18n': '[text]' + field[0] });
+  });
 
-    var nb_class_section = dv2.append('p').attr('class', 'params_section2');
-    nb_class_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.nb_class' }).html(i18next.t("app_page.func_options.flow.nb_class"));
-    nb_class_section.insert('input').attrs({ type: "number", class: 'params', id: "FlowMap_nbClass", min: 1, max: 33, value: 8 }).style("width", "50px");
+  var nb_class_section = dv2.append('p').attr('class', 'params_section2');
+  nb_class_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.nb_class' }).html(i18next.t('app_page.func_options.flow.nb_class'));
+  nb_class_section.insert('input').attrs({ type: 'number', class: 'params', id: 'FlowMap_nbClass', min: 1, max: 33, value: 8 }).style('width', '50px');
 
-    dv2.append('p').attrs({ class: 'params', id: 'FlowMap_discTable' });
-    dv2.append('p').attr('class', 'params_section2').insert('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.ref_layer_field' }).html(i18next.t('app_page.func_options.flow.ref_layer_field'));
+  dv2.append('p').attrs({ class: 'params', id: 'FlowMap_discTable' });
+  dv2.append('p').attr('class', 'params_section2').insert('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.ref_layer_field' }).html(i18next.t('app_page.func_options.flow.ref_layer_field'));
 
-    var join_field_section = dv2.append('p').attr('class', 'params_section2');
-    join_field_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.join_field' }).html(i18next.t('app_page.func_options.flow.join_field'));
-    join_field_section.insert('select').attrs({ class: 'params', id: 'FlowMap_field_join' });
+  var join_field_section = dv2.append('p').attr('class', 'params_section2');
+  join_field_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.flow.join_field' }).html(i18next.t('app_page.func_options.flow.join_field'));
+  join_field_section.insert('select').attrs({ class: 'params', id: 'FlowMap_field_join' });
 
-    make_layer_name_button(dv2, "FlowMap_output_name");
-    make_ok_button(dv2, 'FlowMap_yes', false);
+  make_layer_name_button(dv2, 'FlowMap_output_name');
+  make_ok_button(dv2, 'FlowMap_yes', false);
 
-    d3.selectAll(".params").attr("disabled", true);
+  d3.selectAll('.params').attr('disabled', true);
 }
 
 var fields_FlowMap = {
-    fill: function fill(layer) {
-        var self = this,
-            field_i = section2.select('#FlowMap_field_i'),
-            field_j = section2.select('#FlowMap_field_j'),
-            field_fij = section2.select('#FlowMap_field_fij'),
-            join_field = section2.select('#FlowMap_field_join'),
-            nb_class_input = section2.select('#FlowMap_nbClass'),
-            disc_type = section2.select('#FlowMap_discKind'),
-            ok_button = section2.select('#FlowMap_yes'),
-            uo_layer_name = section2.select('#FlowMap_output_name');
+  fill: function fill(layer) {
+    var self = this,
+        field_i = section2.select('#FlowMap_field_i'),
+        field_j = section2.select('#FlowMap_field_j'),
+        field_fij = section2.select('#FlowMap_field_fij'),
+        join_field = section2.select('#FlowMap_field_join'),
+        nb_class_input = section2.select('#FlowMap_nbClass'),
+        disc_type = section2.select('#FlowMap_discKind'),
+        ok_button = section2.select('#FlowMap_yes'),
+        uo_layer_name = section2.select('#FlowMap_output_name');
 
-        if (joined_dataset.length > 0 && document.getElementById("FlowMap_field_i").options.length == 0) {
-            var fields = Object.getOwnPropertyNames(joined_dataset[0][0]);
-            fields.forEach(function (field) {
-                field_i.append("option").text(field).attr("value", field);
-                field_j.append("option").text(field).attr("value", field);
-                field_fij.append("option").text(field).attr("value", field);
-            });
-        }
-        if (layer) {
-            var ref_fields = Object.getOwnPropertyNames(user_data[layer][0]);
-
-            ref_fields.forEach(function (field) {
-                join_field.append("option").text(field).attr("value", field);
-            });
-        }
-        if (layer || joined_dataset.length > 0) {
-            section2.selectAll(".params").attr("disabled", null);
-            uo_layer_name.attr('value', ["Links", layer].join('_'));
-        }
-        var values_fij;
-
-        field_fij.on("change", function () {
-            var name = this.value,
-                nclass = nb_class_input.node().value,
-                disc = disc_type.node().value,
-                min_size = 0.5,
-                max_size = 10;
-            values_fij = joined_dataset[0].map(function (obj) {
-                return +obj[name];
-            });
-            make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, "FlowMap_discTable");
-        });
-
-        disc_type.on("change", function () {
-            var name = field_fij.node().value,
-                nclass = nb_class_input.node().value,
-                disc = this.value,
-                min_size = 0.5,
-                max_size = 10;
-            if (disc == "Q6") {
-                nclass = 6;
-                nb_class_input.attr("value", 6);
-            }
-            make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, "FlowMap_discTable");
-        });
-
-        nb_class_input.on("change", function () {
-            var name = field_fij.node().value,
-                nclass = this.value,
-                disc = disc_type.node().value,
-                min_size = 0.5,
-                max_size = 10;
-            make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, "FlowMap_discTable");
-        });
-
-        ok_button.on('click', function () {
-            render_FlowMap(field_i.node().value, field_j.node().value, field_fij.node().value, join_field.node().value, disc_type.node().value, uo_layer_name.node().value);
-        });
-    },
-
-    unfill: function unfill() {
-        var field_i = document.getElementById('FlowMap_field_i'),
-            field_j = document.getElementById('FlowMap_field_j'),
-            field_fij = document.getElementById('FlowMap_field_fij'),
-            join_field = document.getElementById('FlowMap_field_join');
-
-        for (var i = field_i.childElementCount - 1; i > -1; --i) {
-            field_i.removeChild(field_i.children[i]);
-            field_j.removeChild(field_j.children[i]);
-            field_fij.removeChild(field_fij.children[i]);
-        }
-        unfillSelectInput(join_field);
-        document.getElementById("FlowMap_discTable").innerHTML = "";
-        document.getElementById("FlowMap_output_name").value = "";
-        section2.selectAll(".params").attr("disabled", true);
+    if (joined_dataset.length > 0 && document.getElementById('FlowMap_field_i').options.length === 0) {
+      var fields = Object.getOwnPropertyNames(joined_dataset[0][0]);
+      fields.forEach(function (field) {
+        field_i.append('option').text(field).attr('value', field);
+        field_j.append('option').text(field).attr('value', field);
+        field_fij.append('option').text(field).attr('value', field);
+      });
     }
+    if (layer) {
+      var ref_fields = Object.getOwnPropertyNames(user_data[layer][0]);
+
+      ref_fields.forEach(function (field) {
+        join_field.append('option').text(field).attr('value', field);
+      });
+    }
+    if (layer || joined_dataset.length > 0) {
+      section2.selectAll('.params').attr('disabled', null);
+      uo_layer_name.attr('value', ['Links', layer].join('_'));
+    }
+    var values_fij;
+
+    field_fij.on('change', function () {
+      var name = this.value,
+          nclass = nb_class_input.node().value,
+          disc = disc_type.node().value,
+          min_size = 0.5,
+          max_size = 10;
+      values_fij = joined_dataset[0].map(function (obj) {
+        return +obj[name];
+      });
+      make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, 'FlowMap_discTable');
+    });
+
+    disc_type.on('change', function () {
+      var name = field_fij.node().value,
+          nclass = nb_class_input.node().value,
+          disc = this.value,
+          min_size = 0.5,
+          max_size = 10;
+      if (disc === 'Q6') {
+        nclass = 6;
+        nb_class_input.attr('value', 6);
+      }
+      make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, 'FlowMap_discTable');
+    });
+
+    nb_class_input.on('change', function () {
+      var name = field_fij.node().value,
+          nclass = this.value,
+          disc = disc_type.node().value,
+          min_size = 0.5,
+          max_size = 10;
+      make_min_max_tableau(values_fij, nclass, disc, min_size, max_size, 'FlowMap_discTable');
+    });
+
+    ok_button.on('click', function () {
+      render_FlowMap(field_i.node().value, field_j.node().value, field_fij.node().value, join_field.node().value, disc_type.node().value, uo_layer_name.node().value);
+    });
+  },
+
+  unfill: function unfill() {
+    var field_i = document.getElementById('FlowMap_field_i'),
+        field_j = document.getElementById('FlowMap_field_j'),
+        field_fij = document.getElementById('FlowMap_field_fij'),
+        join_field = document.getElementById('FlowMap_field_join');
+
+    for (var i = field_i.childElementCount - 1; i > -1; --i) {
+      field_i.removeChild(field_i.children[i]);
+      field_j.removeChild(field_j.children[i]);
+      field_fij.removeChild(field_fij.children[i]);
+    }
+    unfillSelectInput(join_field);
+    document.getElementById('FlowMap_discTable').innerHTML = '';
+    document.getElementById('FlowMap_output_name').value = '';
+    section2.selectAll('.params').attr('disabled', true);
+  }
 };
 
 function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type, new_user_layer_name) {
-    var ref_layer = Object.getOwnPropertyNames(user_data)[0],
-        formToSend = new FormData(),
-        join_field_to_send = {};
+  var ref_layer = Object.getOwnPropertyNames(user_data)[0],
+      formToSend = new FormData(),
+      join_field_to_send = {};
 
-    var disc_params = fetch_min_max_table_value("FlowMap_discTable"),
-        mins = disc_params.mins,
-        maxs = disc_params.maxs,
-        sizes = disc_params.sizes,
-        nb_class = mins.length,
-        user_breaks = [].concat(mins, maxs[nb_class - 1]),
-        min_size = min_fast(sizes),
-        max_size = max_fast(sizes);
+  var disc_params = fetch_min_max_table_value('FlowMap_discTable'),
+      mins = disc_params.mins,
+      maxs = disc_params.maxs,
+      sizes = disc_params.sizes,
+      nb_class = mins.length,
+      user_breaks = [].concat(mins, maxs[nb_class - 1]),
+      min_size = min_fast(sizes),
+      max_size = max_fast(sizes);
 
-    join_field_to_send[name_join_field] = user_data[ref_layer].map(function (obj) {
-        return obj[name_join_field];
+  join_field_to_send[name_join_field] = user_data[ref_layer].map(function (obj) {
+    return obj[name_join_field];
+  });
+
+  formToSend.append('json', JSON.stringify({
+    topojson: current_layers[ref_layer].key_name,
+    csv_table: JSON.stringify(joined_dataset[0]),
+    field_i: field_i,
+    field_j: field_j,
+    field_fij: field_fij,
+    join_field: join_field_to_send
+  }));
+
+  xhrequest('POST', 'compute/links', formToSend, true).then(function (data) {
+    // FIXME : should use the user selected new name if any
+    var options = { result_layer_on_add: true, func_name: 'flow' };
+    if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
+      options['choosed_name'] = new_user_layer_name;
+    }
+
+    var new_layer_name = add_layer_topojson(data, options);
+    if (!new_layer_name) return;
+    var layer_to_render = map.select('#' + _app.layer_to_id.get(new_layer_name)).selectAll('path'),
+        fij_field_name = field_fij,
+        fij_values = result_data[new_layer_name].map(function (obj) {
+      return +obj[fij_field_name];
+    }),
+        nb_ft = fij_values.length,
+        serie = new geostats(fij_values);
+
+    if (user_breaks[0] < serie.min()) user_breaks[0] = serie.min();
+    if (user_breaks[nb_class] > serie.max()) user_breaks[nb_class] = serie.max();
+
+    serie.setClassManually(user_breaks);
+
+    current_layers[new_layer_name].fixed_stroke = true;
+    current_layers[new_layer_name].renderer = 'Links';
+    current_layers[new_layer_name].breaks = [];
+    current_layers[new_layer_name].linksbyId = [];
+    current_layers[new_layer_name].size = [min_size, max_size];
+    current_layers[new_layer_name].rendered_field = fij_field_name;
+    current_layers[new_layer_name].ref_layer_name = ref_layer;
+    current_layers[new_layer_name].min_display = 0;
+
+    var links_byId = current_layers[new_layer_name].linksbyId;
+
+    for (var i = 0; i < nb_ft; ++i) {
+      var val = +fij_values[i];
+      links_byId.push([i, val, sizes[serie.getClass(val)]]);
+    }
+    for (var _i6 = 0; _i6 < nb_class; ++_i6) {
+      current_layers[new_layer_name].breaks.push([[user_breaks[_i6], user_breaks[_i6 + 1]], sizes[_i6]]);
+    }
+    layer_to_render.style('fill-opacity', 0).style('stroke-opacity', 0.8).style('stroke-width', function (d, i) {
+      return links_byId[i][2];
     });
-
-    formToSend.append("json", JSON.stringify({
-        "topojson": current_layers[ref_layer].key_name,
-        "csv_table": JSON.stringify(joined_dataset[0]),
-        "field_i": field_i,
-        "field_j": field_j,
-        "field_fij": field_fij,
-        "join_field": join_field_to_send
-    }));
-
-    xhrequest("POST", '/compute/links', formToSend, true).then(function (data) {
-        // FIXME : should use the user selected new name if any
-        var options = { result_layer_on_add: true, func_name: 'flow' };
-        if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-            options["choosed_name"] = new_user_layer_name;
-        }
-
-        var new_layer_name = add_layer_topojson(data, options);
-        if (!new_layer_name) return;
-        var layer_to_render = map.select("#" + _app.layer_to_id.get(new_layer_name)).selectAll("path"),
-            fij_field_name = field_fij,
-            fij_values = result_data[new_layer_name].map(function (obj) {
-            return +obj[fij_field_name];
-        }),
-            nb_ft = fij_values.length,
-            serie = new geostats(fij_values);
-
-        if (user_breaks[0] < serie.min()) user_breaks[0] = serie.min();
-
-        if (user_breaks[nb_class] > serie.max()) user_breaks[nb_class] = serie.max();
-
-        serie.setClassManually(user_breaks);
-
-        current_layers[new_layer_name].fixed_stroke = true;
-        current_layers[new_layer_name].renderer = "Links";
-        current_layers[new_layer_name].breaks = [];
-        current_layers[new_layer_name].linksbyId = [];
-        current_layers[new_layer_name].size = [min_size, max_size];
-        current_layers[new_layer_name].rendered_field = fij_field_name;
-        current_layers[new_layer_name].ref_layer_name = ref_layer;
-        current_layers[new_layer_name].min_display = 0;
-
-        var links_byId = current_layers[new_layer_name].linksbyId;
-
-        for (var i = 0; i < nb_ft; ++i) {
-            var val = +fij_values[i];
-            links_byId.push([i, val, sizes[serie.getClass(val)]]);
-        }
-
-        for (var _i6 = 0; _i6 < nb_class; ++_i6) {
-            current_layers[new_layer_name].breaks.push([[user_breaks[_i6], user_breaks[_i6 + 1]], sizes[_i6]]);
-        }layer_to_render.style('fill-opacity', 0).style('stroke-opacity', 0.8).style("stroke-width", function (d, i) {
-            return links_byId[i][2];
-        });
-        switch_accordion_section();
-        handle_legend(new_layer_name);
-    }, function (error) {
-        display_error_during_computation();
-        console.log(error);
-    });
+    switch_accordion_section();
+    handle_legend(new_layer_name);
+  }, function (error) {
+    display_error_during_computation();
+    console.log(error);
+  });
 };
 
 var render_label = function render_label(layer, rendering_params, options) {
-    var label_field = rendering_params.label_field;
-    var txt_color = rendering_params.color;
-    var selected_font = rendering_params.font;
-    var font_size = rendering_params.ref_font_size + "px";
-    var new_layer_data = [];
-    var layer_to_add = rendering_params.uo_layer_name && rendering_params.uo_layer_name.length > 0 ? check_layer_name(rendering_params.uo_layer_name) : check_layer_name("Labels_" + layer);
-    var layer_id = encodeId(layer_to_add);
-    var pt_position = void 0;
-    _app.layer_to_id.set(layer_to_add, layer_id);
-    _app.id_to_layer.set(layer_id, layer_to_add);
-    var nb_ft = void 0;
-    if (options && options.current_position) {
-        pt_position = options.current_position;
-    }
-    if (options && options.data) {
-        new_layer_data = options.data;
-        nb_ft = new_layer_data.length;
-    } else if (layer) {
-        var type_ft_ref = current_layers[layer].symbol || "path";
-        var ref_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName(type_ft_ref);
+  var label_field = rendering_params.label_field;
+  var txt_color = rendering_params.color;
+  var selected_font = rendering_params.font;
+  var font_size = rendering_params.ref_font_size + 'px';
+  var new_layer_data = [];
+  var layer_to_add = rendering_params.uo_layer_name && rendering_params.uo_layer_name.length > 0 ? check_layer_name(rendering_params.uo_layer_name) : check_layer_name('Labels_' + layer);
+  var layer_id = encodeId(layer_to_add);
+  var pt_position = void 0;
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+  var nb_ft = void 0;
+  if (options && options.current_position) {
+    pt_position = options.current_position;
+  }
+  if (options && options.data) {
+    new_layer_data = options.data;
+    nb_ft = new_layer_data.length;
+  } else if (layer) {
+    var type_ft_ref = current_layers[layer].symbol || 'path';
+    var ref_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName(type_ft_ref);
 
-        nb_ft = ref_selection.length;
-        for (var i = 0; i < nb_ft; i++) {
-            var ft = ref_selection[i].__data__;
-            var coords = void 0;
-            if (ft.geometry.type.indexOf('Multi') == -1) {
-                coords = d3.geoCentroid(ft.geometry);
-            } else {
-                var areas = [];
-                for (var j = 0; j < ft.geometry.coordinates.length; j++) {
-                    areas.push(path.area({
-                        type: ft.geometry.type,
-                        coordinates: [ft.geometry.coordinates[j]]
-                    }));
-                }
-                var ix_max = areas.indexOf(max_fast(areas));
-                coords = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
-            }
-
-            new_layer_data.push({
-                id: i,
-                type: "Feature",
-                properties: { label: ft.properties[label_field], x: coords[0], y: coords[1] },
-                geometry: { type: "Point", coordinates: coords }
-            });
-            // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
+    nb_ft = ref_selection.length;
+    for (var i = 0; i < nb_ft; i++) {
+      var ft = ref_selection[i].__data__;
+      var coords = void 0;
+      if (ft.geometry.type.indexOf('Multi') === -1) {
+        coords = d3.geoCentroid(ft.geometry);
+      } else {
+        var areas = [];
+        for (var j = 0; j < ft.geometry.coordinates.length; j++) {
+          areas.push(path.area({
+            type: ft.geometry.type,
+            coordinates: [ft.geometry.coordinates[j]]
+          }));
         }
+        var ix_max = areas.indexOf(max_fast(areas));
+        coords = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+      }
+
+      new_layer_data.push({
+        id: i,
+        type: 'Feature',
+        properties: { label: ft.properties[label_field], x: coords[0], y: coords[1] },
+        geometry: { type: 'Point', coordinates: coords }
+      });
+      // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
     }
-    var context_menu = new ContextMenu(),
-        getItems = function getItems(self_parent) {
-        return [{ "name": i18next.t("app_page.common.edit_style"), "action": function action() {
-                make_style_box_indiv_label(self_parent);
-            } }, { "name": i18next.t("app_page.common.delete"), "action": function action() {
-                self_parent.style.display = "none";
-            } }];
-    };
+  }
+  var context_menu = new ContextMenu(),
+      getItems = function getItems(self_parent) {
+    return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
+        make_style_box_indiv_label(self_parent);
+      } }, { name: i18next.t('app_page.common.delete'), action: function action() {
+        self_parent.style.display = 'none';
+      } }];
+  };
 
-    var selection = map.insert("g", '.legend').attrs({ id: layer_id, class: "layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text");
-    if (pt_position) {
-        selection.attrs(function (d, i) {
-            return {
-                "id": "Feature_" + i,
-                "x": pt_position[i][0],
-                "y": pt_position[i][1],
-                "alignment-baseline": "middle",
-                "text-anchor": "middle"
-            };
-        }).styles(function (d, i) {
-            return {
-                display: pt_position[i][2], 'font-size': pt_position[i][3], 'font-family': pt_position[i][4], fill: pt_position[i][5]
-            };
-        }).text(function (_, i) {
-            return pt_position[i][6];
-        });
-    } else {
-        selection.attrs(function (d, i) {
-            var pt = path.centroid(d.geometry);
-            return {
-                "id": "Feature_" + i,
-                "x": pt[0],
-                "y": pt[1],
-                "alignment-baseline": "middle",
-                "text-anchor": "middle"
-            };
-        }).styles({ "font-size": font_size, "font-family": selected_font, fill: txt_color }).text(function (d) {
-            return d.properties.label;
-        });
-    }
+  var selection = map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer no_clip' }).selectAll('text').data(new_layer_data).enter().insert('text');
+  if (pt_position) {
+    selection.attrs(function (d, i) {
+      return {
+        id: 'Feature_' + i,
+        x: pt_position[i][0],
+        y: pt_position[i][1],
+        'alignment-baseline': 'middle',
+        'text-anchor': 'middle' };
+    }).styles(function (d, i) {
+      return {
+        display: pt_position[i][2],
+        'font-size': pt_position[i][3],
+        'font-family': pt_position[i][4],
+        fill: pt_position[i][5] };
+    }).text(function (_, i) {
+      return pt_position[i][6];
+    });
+  } else {
+    selection.attrs(function (d, i) {
+      var pt = path.centroid(d.geometry);
+      return {
+        id: 'Feature_' + i,
+        x: pt[0],
+        y: pt[1],
+        'alignment-baseline': 'middle',
+        'text-anchor': 'middle'
+      };
+    }).styles({ 'font-size': font_size, 'font-family': selected_font, fill: txt_color }).text(function (d) {
+      return d.properties.label;
+    });
+  }
 
-    selection.on("mouseover", function () {
-        this.style.cursor = "pointer";
-    }).on("mouseout", function () {
-        this.style.cursor = "initial";
-    }).on("dblclick contextmenu", function () {
-        context_menu.showMenu(d3.event, document.querySelector("body"), getItems(this));
-    }).call(drag_elem_geo);;
+  selection.on('mouseover', function () {
+    this.style.cursor = 'pointer';
+  }).on('mouseout', function () {
+    this.style.cursor = 'initial';
+  }).on('dblclick contextmenu', function () {
+    context_menu.showMenu(d3.event, document.querySelector('body'), getItems(this));
+  }).call(drag_elem_geo);;
 
-    create_li_layer_elem(layer_to_add, nb_ft, ["Point", "label"], "result");
-    current_layers[layer_to_add] = {
-        "n_features": new_layer_data.length,
-        "renderer": "Label",
-        "symbol": "text",
-        "fill_color": txt_color,
-        "rendered_field": label_field,
-        "is_result": true,
-        "ref_layer_name": layer,
-        "default_size": font_size,
-        "default_font": selected_font
-    };
-    zoom_without_redraw();
-    return layer_to_add;
+  create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'label'], 'result');
+  current_layers[layer_to_add] = {
+    n_features: new_layer_data.length,
+    renderer: 'Label',
+    symbol: 'text',
+    fill_color: txt_color,
+    rendered_field: label_field,
+    is_result: true,
+    ref_layer_name: layer,
+    default_size: font_size,
+    default_font: selected_font
+  };
+  zoom_without_redraw();
+  return layer_to_add;
 };
 
 var render_label_graticule = function render_label_graticule(layer, rendering_params, options) {
-    var txt_color = rendering_params.color;
-    var selected_font = rendering_params.font;
-    var font_size = rendering_params.ref_font_size + "px";
-    var position_lat = rendering_params.position_lat || 'bottom';
-    var position_lon = rendering_params.position_lon || 'left';
-    var new_layer_data = [];
-    var layer_to_add = check_layer_name("Labels_Graticule");
-    var layer_id = encodeId(layer_to_add);
-    _app.layer_to_id.set(layer_to_add, layer_id);
-    _app.id_to_layer.set(layer_id, layer_to_add);
-    var nb_ft = void 0;
-    if (options && options.data) {
-        new_layer_data = options.data;
-        nb_ft = new_layer_data.length;
-    } else if (layer) {
-        var grat = d3.geoGraticule().step([current_layers['Graticule'].step, current_layers['Graticule'].step]);
-        grat = current_layers['Graticule'].extent ? grat.extent(current_layers['Graticule'].extent).lines() : grat.lines();
-        nb_ft = grat.length;
-        for (var i = 0; i < nb_ft; i++) {
-            var txt = void 0,
-                geometry = void 0,
-                line = grat[i];
-            if (line.coordinates[0][0] == line.coordinates[1][0]) {
-                txt = line.coordinates[0][0];
-                geometry = position_lat == 'bottom' ? { type: "Point", coordinates: line.coordinates[0] } : { type: "Point", coordinates: line.coordinates[line.length - 1] };
-            } else if (line.coordinates[0][1] == line.coordinates[1][1]) {
-                txt = line.coordinates[0][1];
-                geometry = position_lon == 'left' ? { type: "Point", coordinates: line.coordinates[0] } : { type: "Point", coordinates: line.coordinates[line.length - 1] };
-            }
-            if (txt != undefined) {
-                new_layer_data.push({
-                    id: i,
-                    type: "Feature",
-                    properties: { label: txt },
-                    geometry: geometry
-                });
-            }
-            // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
-        }
+  var txt_color = rendering_params.color;
+  var selected_font = rendering_params.font;
+  var font_size = rendering_params.ref_font_size + 'px';
+  var position_lat = rendering_params.position_lat || 'bottom';
+  var position_lon = rendering_params.position_lon || 'left';
+  var new_layer_data = [];
+  var layer_to_add = check_layer_name('Labels_Graticule');
+  var layer_id = encodeId(layer_to_add);
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+  var nb_ft = void 0;
+  if (options && options.data) {
+    new_layer_data = options.data;
+    nb_ft = new_layer_data.length;
+  } else if (layer) {
+    var grat = d3.geoGraticule().step([current_layers['Graticule'].step, current_layers['Graticule'].step]);
+    grat = current_layers['Graticule'].extent ? grat.extent(current_layers['Graticule'].extent).lines() : grat.lines();
+    nb_ft = grat.length;
+    for (var i = 0; i < nb_ft; i++) {
+      var txt = void 0,
+          geometry = void 0,
+          line = grat[i];
+      if (line.coordinates[0][0] === line.coordinates[1][0]) {
+        txt = line.coordinates[0][0];
+        geometry = position_lat === 'bottom' ? { type: 'Point', coordinates: line.coordinates[0] } : { type: 'Point', coordinates: line.coordinates[line.length - 1] };
+      } else if (line.coordinates[0][1] === line.coordinates[1][1]) {
+        txt = line.coordinates[0][1];
+        geometry = position_lon === 'left' ? { type: 'Point', coordinates: line.coordinates[0] } : { type: 'Point', coordinates: line.coordinates[line.length - 1] };
+      }
+      if (txt != undefined) {
+        new_layer_data.push({
+          id: i,
+          type: 'Feature',
+          properties: { label: txt },
+          geometry: geometry
+        });
+      }
+      // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
     }
-    var context_menu = new ContextMenu(),
-        getItems = function getItems(self_parent) {
-        return [{ "name": i18next.t("app_page.common.edit_style"), "action": function action() {
-                make_style_box_indiv_label(self_parent);
-            } }, { "name": i18next.t("app_page.common.delete"), "action": function action() {
-                self_parent.style.display = "none";
-            } }];
-    };
+  }
+  var context_menu = new ContextMenu(),
+      getItems = function getItems(self_parent) {
+    return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
+        make_style_box_indiv_label(self_parent);
+      } }, { name: i18next.t('app_page.common.delete'), action: function action() {
+        self_parent.style.display = 'none';
+      } }];
+  };
 
-    map.insert("g", '.legend').attrs({ id: layer_id, class: "layer no_clip" }).selectAll("text").data(new_layer_data).enter().insert("text").attrs(function (d, i) {
-        var pt = path.centroid(d.geometry);
-        return {
-            "id": "Feature_" + i,
-            "x": pt[0],
-            "y": pt[1],
-            "alignment-baseline": "middle",
-            "text-anchor": "middle"
-        };
-    }).styles({ "font-size": font_size, "font-family": selected_font, fill: txt_color }).text(function (d) {
-        return d.properties.label;
-    }).on("mouseover", function () {
-        this.style.cursor = "pointer";
-    }).on("mouseout", function () {
-        this.style.cursor = "initial";
-    }).on("dblclick contextmenu", function () {
-        context_menu.showMenu(d3.event, document.querySelector("body"), getItems(this));
-    }).call(drag_elem_geo);
-    create_li_layer_elem(layer_to_add, nb_ft, ["Point", "label"], "result");
-    current_layers[layer_to_add] = {
-        "n_features": new_layer_data.length,
-        "renderer": "Label",
-        "symbol": "text",
-        "fill_color": txt_color,
-        "is_result": true,
-        "ref_layer_name": layer,
-        "default_size": font_size,
-        "default_font": selected_font
+  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer no_clip' }).selectAll('text').data(new_layer_data).enter().insert('text').attrs(function (d, i) {
+    var pt = path.centroid(d.geometry);
+    return {
+      id: 'Feature_' + i,
+      x: pt[0],
+      y: pt[1],
+      'alignment-baseline': 'middle',
+      'text-anchor': 'middle'
     };
-    zoom_without_redraw();
-    return layer_to_add;
+  }).styles({ 'font-size': font_size, 'font-family': selected_font, fill: txt_color }).text(function (d) {
+    return d.properties.label;
+  }).on('mouseover', function () {
+    this.style.cursor = 'pointer';
+  }).on('mouseout', function () {
+    this.style.cursor = 'initial';
+  }).on('dblclick contextmenu', function () {
+    context_menu.showMenu(d3.event, document.querySelector('body'), getItems(this));
+  }).call(drag_elem_geo);
+  create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'label'], 'result');
+  current_layers[layer_to_add] = {
+    n_features: new_layer_data.length,
+    renderer: 'Label',
+    symbol: 'text',
+    fill_color: txt_color,
+    is_result: true,
+    ref_layer_name: layer,
+    default_size: font_size,
+    default_font: selected_font
+  };
+  zoom_without_redraw();
+  return layer_to_add;
 };
 'use strict';
 
@@ -7398,6 +7451,46 @@ var drag_elem_geo = d3.drag().subject(function () {
   }
 }).on('drag', function () {
   d3.select(this).attr('x', d3.event.x).attr('y', d3.event.y);
+});
+
+var drag_elem_geo2 = d3.drag().filter(function () {
+  return current_layers[_app.id_to_layer.get(this.parentElement.id)].draggable;
+}).subject(function () {
+  // const layer_name = _app.id_to_layer.get(this.parentElement.id);
+  var symbol = current_layers[_app.id_to_layer.get(this.parentElement.id)].symbol;
+  var t = d3.select(this);
+  if (symbol === 'rect') {
+    return {
+      x: t.attr('x'),
+      y: t.attr('y'),
+      symbol: symbol,
+      map_locked: !!map_div.select('#hand_button').classed('locked')
+    };
+  } else if (symbol === 'circle') {
+    return {
+      x: t.attr('cx'),
+      y: t.attr('cy'),
+      symbol: symbol,
+      map_locked: !!map_div.select('#hand_button').classed('locked')
+    };
+  }
+}).on('start', function () {
+  d3.event.sourceEvent.stopPropagation();
+  d3.event.sourceEvent.preventDefault();
+  handle_click_hand('lock');
+  var centroid = path.centroid(this.__data__.geometry);
+  map.append('rect').attrs({ x: centroid[0] - 2, y: centroid[1] - 2, height: 4, width: 4, id: 'ref_symbol_location' }).style('fill', 'red');
+}).on('end', function () {
+  if (d3.event.subject && !d3.event.subject.map_locked) {
+    handle_click_hand('unlock');
+  }
+  map.selectAll('#ref_symbol_location').remove();
+}).on('drag', function () {
+  if (d3.event.subject.symbol === 'rect') {
+    d3.select(this).attr('x', d3.event.x).attr('y', d3.event.y);
+  } else if (d3.event.subject.symbol === 'circle') {
+    d3.select(this).attr('cx', d3.event.x).attr('cy', d3.event.y);
+  }
 });
 
 function setSelected(selectNode, value) {
@@ -7909,30 +8002,32 @@ function getAvailablesFunctionnalities(layerName) {
       fields_ratio = getFieldsType('ratio', layerName),
       fields_categ = getFieldsType('category', layerName),
       section = document.getElementById('section2_pre');
-
-  if (current_layers[layerName].type == 'Line') {
+  var func_stock = void 0,
+      func_ratio = void 0,
+      func_categ = void 0;
+  if (current_layers[layerName].type === 'Line') {
     // Layer type is Line
     var elems = section.querySelectorAll('#button_grid, #button_discont, #button_smooth, #button_cartogram, #button_typosymbol, #button_flow');
     for (var i = 0, len_i = elems.length; i < len_i; i++) {
       elems[i].style.filter = 'grayscale(100%)';
     }
-    var func_stock = section.querySelectorAll('#button_prop'),
-        func_ratio = section.querySelectorAll('#button_choro, #button_choroprop'),
-        func_categ = section.querySelectorAll('#button_typo, #button_proptypo');
-  } else if (current_layers[layerName].type == 'Point') {
+    func_stock = section.querySelectorAll('#button_prop');
+    func_ratio = section.querySelectorAll('#button_choro, #button_choroprop');
+    func_categ = section.querySelectorAll('#button_typo, #button_proptypo');
+  } else if (current_layers[layerName].type === 'Point') {
     // layer type is Point
     var _elems = section.querySelectorAll('#button_grid, #button_discont, #button_cartogram');
     for (var _i2 = 0, _len_i = _elems.length; _i2 < _len_i; _i2++) {
       _elems[_i2].style.filter = 'grayscale(100%)';
     }
-    var func_stock = section.querySelectorAll('#button_smooth, #button_prop'),
-        func_ratio = section.querySelectorAll('#button_choro, #button_choroprop'),
-        func_categ = section.querySelectorAll('#button_typo, #button_proptypo, #button_typosymbol');
+    func_stock = section.querySelectorAll('#button_smooth, #button_prop');
+    func_ratio = section.querySelectorAll('#button_choro, #button_choroprop');
+    func_categ = section.querySelectorAll('#button_typo, #button_proptypo, #button_typosymbol');
   } else {
     // Layer type is Polygon
-    var func_stock = section.querySelectorAll('#button_smooth, #button_prop, #button_grid, #button_cartogram, #button_discont'),
-        func_ratio = section.querySelectorAll('#button_choro, #button_choroprop, #button_discont'),
-        func_categ = section.querySelectorAll('#button_typo, #button_proptypo, #button_typosymbol');
+    func_stock = section.querySelectorAll('#button_smooth, #button_prop, #button_grid, #button_cartogram, #button_discont');
+    func_ratio = section.querySelectorAll('#button_choro, #button_choroprop, #button_discont');
+    func_categ = section.querySelectorAll('#button_typo, #button_proptypo, #button_typosymbol');
   }
   if (fields_stock.length === 0) {
     Array.prototype.forEach.call(func_stock, function (d) {
@@ -8778,14 +8873,15 @@ function handle_upload_files(files, target_layer_on_add, elem) {
     }
   } else if (files[0].name.toLowerCase().indexOf('json') > -1 || files[0].name.toLowerCase().indexOf('zip') > -1 || files[0].name.toLowerCase().indexOf('gml') > -1 || files[0].name.toLowerCase().indexOf('kml') > -1) {
     elem.style.border = '';
-    console.log(files);
     if (target_layer_on_add && _app.targeted_layer_added) {
-      swal({ title: i18next.t('app_page.common.error') + '!',
+      swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.error_only_one'),
         customClass: 'swal2_custom',
         type: 'error',
         allowEscapeKey: false,
-        allowOutsideClick: false });
+        allowOutsideClick: false
+      });
       // Send the file to the server for conversion :
     } else {
       if (files[0].name.toLowerCase().indexOf('json') < 0) {
@@ -8798,12 +8894,14 @@ function handle_upload_files(files, target_layer_on_add, elem) {
             tmp = JSON.parse(rd.result);
           } catch (e) {
             console.log(e);
-            return swal({ title: i18next.t('app_page.common.error') + '!',
+            return swal({
+              title: i18next.t('app_page.common.error') + '!',
               text: i18next.t('app_page.common.alert_upload_invalid'),
               type: 'error',
               customClass: 'swal2_custom',
               allowOutsideClick: false,
-              allowEscapeKey: false });
+              allowEscapeKey: false
+            });
           }
           if (tmp.type && tmp.type === 'FeatureCollection') {
             handle_single_file(files[0], target_layer_on_add);
@@ -8830,24 +8928,28 @@ function handle_upload_files(files, target_layer_on_add, elem) {
     if (target_layer_on_add) {
       handle_dataset(files[0], target_layer_on_add);
     } else {
-      swal({ title: i18next.t('app_page.common.error') + '!',
+      swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.error_only_layout'),
         type: 'error',
         customClass: 'swal2_custom',
         allowEscapeKey: false,
-        allowOutsideClick: false });
+        allowOutsideClick: false
+      });
     }
   } else if (files[0].name.toLowerCase().indexOf('.xls') > -1 || files[0].name.toLowerCase().indexOf('.ods') > -1) {
     elem.style.border = '';
     if (target_layer_on_add) {
       convert_dataset(files[0]);
     } else {
-      swal({ title: i18next.t('app_page.common.error') + '!',
+      swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.error_only_layout'),
         type: 'error',
         customClass: 'swal2_custom',
         allowEscapeKey: false,
-        allowOutsideClick: false });
+        allowOutsideClick: false
+      });
     }
   } else {
     elem.style.border = '';
@@ -9005,7 +9107,7 @@ function handleOneByOneShp(files, target_layer_on_add) {
 *
 */
 function prepare_drop_section() {
-  var timeout;
+  var timeout = void 0;
   Array.prototype.forEach.call(document.querySelectorAll('#map,.overlay_drop'), function (elem) {
     elem.addEventListener('dragenter', function (e) {
       e.preventDefault();e.stopPropagation();
@@ -9125,7 +9227,7 @@ function prepare_drop_section() {
         return;
       }
       var files = e.dataTransfer.files,
-          target_layer_on_add = elem.id === 'section1' ? true : false;
+          target_layer_on_add = elem.id === 'section1';
       if (files.length === 1 && (files[0].name.indexOf('.shp') > -1 || files[0].name.indexOf('.shx') > -1 || files[0].name.indexOf('.dbf') > -1 || files[0].name.indexOf('.prj') > -1)) {
         handleOneByOneShp(files, target_layer_on_add);
       } else {
@@ -9165,7 +9267,7 @@ function convert_dataset(file) {
       }).then(function () {
         add_dataset(d3.csvParse(data.file));
       }, function (dismiss) {
-        null;
+        return null;
       });
     }, function (error) {
       display_error_during_computation();
@@ -9302,8 +9404,8 @@ function handle_dataset(f, target_layer_on_add) {
     ask_replace_dataset().then(function () {
       remove_ext_dataset_cleanup();
       check_dataset();
-    }, function () {
-      null;
+    }, function (dismiss) {
+      return null;
     });
   } else {
     check_dataset();
@@ -9358,16 +9460,16 @@ function handle_dataset(f, target_layer_on_add) {
 function update_menu_dataset() {
   var d_name = dataset_name.length > 20 ? [dataset_name.substring(0, 17), '(...)'].join('') : dataset_name,
       nb_features = joined_dataset[0].length,
-      field_names = Object.getOwnPropertyNames(joined_dataset[0][0]);
-
-  var data_ext = document.getElementById('data_ext');
+      field_names = Object.getOwnPropertyNames(joined_dataset[0][0]),
+      data_ext = document.getElementById('data_ext');
 
   d3.select(data_ext.parentElement.firstChild).attrs({
-    'id': 'img_data_ext',
-    'class': 'user_panel',
-    'src': 'static/img/b/tabular.png',
-    'width': '26', 'height': '26',
-    'alt': 'Additional dataset' });
+    id: 'img_data_ext',
+    class: 'user_panel',
+    src: 'static/img/b/tabular.png',
+    width: '26',
+    height: '26',
+    alt: 'Additional dataset' });
 
   data_ext.classList.remove('i18n');
   data_ext.removeAttribute('data-i18n');
@@ -9421,7 +9523,7 @@ function add_dataset(readed_dataset) {
       if (readed_dataset[j][cols[_i]].replace && (!isNaN(+readed_dataset[j][cols[_i]].replace(',', '.')) || !isNaN(+readed_dataset[j][cols[_i]].split(' ').join(''))) || !isNaN(+readed_dataset[j][cols[_i]])) {
         // Add the converted value to temporary field if its ok ...
         var t_val = readed_dataset[j][cols[_i]].replace(',', '.').split(' ').join('');
-        tmp.push(isFinite(t_val) && t_val != '' && t_val != null ? +t_val : t_val);
+        tmp.push(isFinite(t_val) && t_val !== '' && t_val != null ? +t_val : t_val);
       } else {
         // Or break early if a value can't be coerced :
         break; // So no value of this field will be converted
@@ -9723,7 +9825,7 @@ function add_layer_topojson(text) {
   }
 
   if (!skip_alert) {
-    if (fields_type != undefined) {
+    if (fields_type) {
       current_layers[lyr_name_to_add].fields_type = fields_type;
     }
     if (_proj === undefined) {
@@ -9807,12 +9909,12 @@ function get_bbox_layer_path(name) {
   }
   if (current_proj_name === 'ConicConformal') {
     var s1 = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
-    var bbox_layer_path2 = path.bounds({ 'type': 'MultiPoint', 'coordinates': [[-69.3, -55.1], [20.9, -36.7], [147.2, -42.2], [162.1, 67.0], [-160.2, 65.7]] });
+    var bbox_layer_path2 = path.bounds({ type: 'MultiPoint', coordinates: [[-69.3, -55.1], [20.9, -36.7], [147.2, -42.2], [162.1, 67.0], [-160.2, 65.7]] });
     var s2 = Math.max((bbox_layer_path2[1][0] - bbox_layer_path2[0][0]) / w, (bbox_layer_path2[1][1] - bbox_layer_path2[0][1]) / h);
     if (s2 < s1) bbox_layer_path = bbox_layer_path2;
   } else if (current_proj_name === 'Armadillo') {
     var _s = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
-    var _bbox_layer_path = path.bounds({ 'type': 'MultiPoint', 'coordinates': [[-69.3, -35.0], [20.9, -35.0], [147.2, -35.0], [175.0, 75.0], [-175.0, 75.0]] });
+    var _bbox_layer_path = path.bounds({ type: 'MultiPoint', coordinates: [[-69.3, -35.0], [20.9, -35.0], [147.2, -35.0], [175.0, 75.0], [-175.0, 75.0]] });
     var _s2 = Math.max((_bbox_layer_path[1][0] - _bbox_layer_path[0][0]) / w, (_bbox_layer_path[1][1] - _bbox_layer_path[0][1]) / h);
     if (_s2 < _s) bbox_layer_path = _bbox_layer_path;
   }
@@ -10060,7 +10162,11 @@ function add_single_symbol(symbol_dataurl, x, y) {
 
   x = x || w / 2;
   y = y || h / 2;
-  return map.append('g').attrs({ class: 'legend single_symbol', id: symbol_id }).insert('image').attrs({ x: x, y: y, width: width, height: height,
+  return map.append('g').attrs({ class: 'legend single_symbol', id: symbol_id }).insert('image').attrs({
+    x: x,
+    y: y,
+    width: width,
+    height: height,
     'xlink:href': symbol_dataurl }).on('mouseover', function () {
     this.style.cursor = 'pointer';
   }).on('mouseout', function () {
@@ -10200,8 +10306,8 @@ function send_remove_server(layer_name) {
   var formToSend = new FormData();
   formToSend.append('layer_name', current_layers[layer_name].key_name);
   xhrequest('POST', 'layers/delete', formToSend, true).then(function (data) {
-    data = JSON.parse(data);
-    if (!data.code || data.code !== 'Ok') console.log(data);
+    var parsed = JSON.parse(data);
+    if (!parsed.code || parsed.code !== 'Ok') console.log(data);
   }).catch(function (err) {
     console.log(err);
   });
@@ -10239,21 +10345,20 @@ var getIdLayoutFeature = function getIdLayoutFeature(type) {
   } else if (features.length > 30) {
     swal(i18next.t('app_page.common.error'), i18next.t('app_page.common.' + error_name), 'error').catch(swal.noop);
     return null;
-  } else {
-    var ids = [];
-    for (var i = 0; i < features.length; i++) {
-      ids.push(+features[i].id.split(id_prefix)[1]);
-    }
-    if (ids.indexOf(features.length) === -1) {
-      return features.length;
-    }
-    for (var _i2 = 0; _i2 < features.length; _i2++) {
-      if (ids.indexOf(_i2) === -1) {
-        return _i2;
-      }
-    }
-    return null;
   }
+  var ids = [];
+  for (var i = 0; i < features.length; i++) {
+    ids.push(+features[i].id.split(id_prefix)[1]);
+  }
+  if (ids.indexOf(features.length) === -1) {
+    return features.length;
+  }
+  for (var _i2 = 0; _i2 < features.length; _i2++) {
+    if (ids.indexOf(_i2) === -1) {
+      return _i2;
+    }
+  }
+  return null;
 };
 
 function handleClickAddRectangle() {
@@ -10306,7 +10411,7 @@ function handleClickAddEllipse() {
     msg.dismiss();
     start_point = [d3.event.layerX, d3.event.layerY];
     tmp_start_point = map.append('rect').attrs({ x: start_point[0] - 2, y: start_point[1] - 2, height: 4, width: 4 }).style('fill', 'red');
-    setTimeout(function (_) {
+    setTimeout(function () {
       tmp_start_point.remove();
     }, 1000);
     map.style('cursor', '').on('click', null);
@@ -10323,7 +10428,7 @@ function handleClickTextBox(text_box_id) {
     map.style('cursor', '').on('click', null);
     document.body.style.cursor = '';
     var text_box = new Textbox(svg_map, text_box_id, [d3.event.layerX, d3.event.layerY]);
-    setTimeout(function (_) {
+    setTimeout(function () {
       text_box.editStyle();
     }, 350);
   });
@@ -10334,11 +10439,11 @@ function handleClickAddPicto() {
   if (symbol_id === null) {
     return;
   }
+  var msg = alertify.notify(i18next.t('app_page.notification.instruction_click_map'), 'warning', 0);
   var map_point = void 0,
       click_pt = void 0,
       prep_symbols = void 0,
-      available_symbols = false,
-      msg = alertify.notify(i18next.t('app_page.notification.instruction_click_map'), 'warning', 0);
+      available_symbols = false;
 
   if (!window.default_symbols) {
     window.default_symbols = [];
@@ -10441,8 +10546,8 @@ function handleClickAddArrow() {
 }
 
 function prepare_available_symbols() {
-  return xhrequest('GET', 'static/json/list_symbols.json', null).then(function (list_res) {
-    list_res = JSON.parse(list_res);
+  return xhrequest('GET', 'static/json/list_symbols.json', null).then(function (result) {
+    var list_res = JSON.parse(result);
     return Promise.all(list_res.map(function (name) {
       return getImgDataUrl('static/img/svg_symbols/' + name);
     })).then(function (symbols) {
@@ -10457,11 +10562,11 @@ function accordionize() {
   var css_selector = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '.accordion';
   var parent = arguments[1];
 
-  parent = parent && (typeof parent === 'undefined' ? 'undefined' : _typeof(parent)) === 'object' ? parent : parent && typeof parent === 'string' ? document.querySelector(parent) : document;
-  var acc = parent.querySelectorAll(css_selector);
+  var _parent = parent && (typeof parent === 'undefined' ? 'undefined' : _typeof(parent)) === 'object' ? parent : parent && typeof parent === 'string' ? document.querySelector(parent) : document;
+  var acc = _parent.querySelectorAll(css_selector);
   for (var i = 0; i < acc.length; i++) {
     acc[i].onclick = function () {
-      var opened = parent.querySelector(css_selector + '.active');
+      var opened = _parent.querySelector(css_selector + '.active');
       if (opened) {
         opened.classList.toggle('active');
         opened.nextElementSibling.classList.toggle('show');
@@ -10570,8 +10675,8 @@ function valid_join_check_display(val, prop) {
 //    -the update of the global "user_data" object, adding actualy the value to each object representing each feature of the layer
 function valid_join_on(layer_name, field1, field2) {
   var join_values1 = [],
-      join_values2 = [],
-      hits = 0,
+      join_values2 = [];
+  var hits = 0,
       val = void 0;
 
   field_join_map = [];
@@ -10590,8 +10695,9 @@ function valid_join_on(layer_name, field1, field2) {
   if (typeof join_values1[0] === 'number' && typeof join_values2[0] === 'string') {
     for (var _i2 = 0, _len2 = join_values1.length; _i2 < _len2; _i2++) {
       val = join_values2.indexOf(String(join_values1[_i2]));
-      if (val != -1) {
-        field_join_map.push(val);hits++;
+      if (val !== -1) {
+        field_join_map.push(val);
+        hits += 1;
       } else {
         field_join_map.push(undefined);
       }
@@ -10599,8 +10705,9 @@ function valid_join_on(layer_name, field1, field2) {
   } else if (typeof join_values2[0] === 'number' && typeof join_values1[0] === 'string') {
     for (var _i3 = 0, _len3 = join_values1.length; _i3 < _len3; _i3++) {
       val = join_values2.indexOf(Number(join_values1[_i3]));
-      if (val != -1) {
-        field_join_map.push(val);hits++;
+      if (val !== -1) {
+        field_join_map.push(val);
+        hist += 1;
       } else {
         field_join_map.push(undefined);
       }
@@ -10608,8 +10715,9 @@ function valid_join_on(layer_name, field1, field2) {
   } else if (typeof join_values2[0] === 'number' && typeof join_values1[0] === 'number') {
     for (var _i4 = 0, _len4 = join_values1.length; _i4 < _len4; _i4++) {
       val = join_values2.indexOf(join_values1[_i4]);
-      if (val != -1) {
-        field_join_map.push(val);hits++;
+      if (val !== -1) {
+        field_join_map.push(val);
+        hist += 1;
       } else {
         field_join_map.push(undefined);
       }
@@ -10617,18 +10725,19 @@ function valid_join_on(layer_name, field1, field2) {
   } else {
     for (var _i5 = 0, _len5 = join_values1.length; _i5 < _len5; _i5++) {
       val = join_values2.indexOf(String(join_values1[_i5]));
-      if (val != -1) {
-        field_join_map.push(val);hits++;
+      if (val !== -1) {
+        field_join_map.push(val);
+        hist += 1;
       } else {
         field_join_map.push(undefined);
       }
     }
   }
 
-  var prop = [hits, '/', join_values1.length].join(''),
-      f_name = '';
+  var prop = [hits, '/', join_values1.length].join('');
+  var f_name = '';
 
-  if (hits == join_values1.length) {
+  if (hits === join_values1.length) {
     swal({ title: '',
       text: i18next.t('app_page.common.success'),
       type: 'success',
@@ -10742,7 +10851,11 @@ var removeExistingJointure = function removeExistingJointure(layer_name) {
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 function handle_click_layer(layer_name) {
-  if (current_layers[layer_name].graticule) createStyleBoxGraticule();else if (current_layers[layer_name].type === 'Line') createStyleBox_Line(layer_name);else if (current_layers[layer_name].renderer && current_layers[layer_name].renderer.indexOf('PropSymbol') > -1) {
+  if (current_layers[layer_name].graticule) {
+    createStyleBoxGraticule();
+  } else if (current_layers[layer_name].type === 'Line') {
+    createStyleBox_Line(layer_name);
+  } else if (current_layers[layer_name].renderer && current_layers[layer_name].renderer.indexOf('PropSymbol') > -1) {
     createStyleBox_ProbSymbol(layer_name);
   } else if (current_layers[layer_name].renderer && current_layers[layer_name].renderer === 'Label') {
     createStyleBoxLabel(layer_name);
@@ -10751,8 +10864,7 @@ function handle_click_layer(layer_name) {
   } else {
     createStyleBox(layer_name);
   }
-  return;
-};
+}
 
 function make_single_color_menu(layer, fill_prev) {
   var symbol = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'path';
@@ -10869,7 +10981,7 @@ function createStyleBoxTypoSymbols(layer_name) {
         position: [features[i].getAttribute('x'), features[i].getAttribute('y')]
       });
     }
-    prev_settings_defaults['size'] = current_layers[layer_name].default_size;
+    prev_settings_defaults.size = current_layers[layer_name].default_size;
   }
 
   var restore_prev_settings = function restore_prev_settings() {
@@ -10886,7 +10998,7 @@ function createStyleBoxTypoSymbols(layer_name) {
 
   check_remove_existing_box('.styleBox');
 
-  var selection = map.select('#' + _app.layer_to_id.get(layer_name)).selectAll('image'),
+  var selection = map.select('#' + _app.layer_to_id.get(layer)).selectAll('image'),
       ref_layer_name = current_layers[layer_name].ref_layer_name,
       symbols_map = current_layers[layer_name].symbols_map,
       rendered_field = current_layers[layer_name].rendered_field;
@@ -10900,10 +11012,8 @@ function createStyleBoxTypoSymbols(layer_name) {
   make_confirm_dialog2('styleBox', layer_name, { top: true, widthFitContent: true, draggable: true }).then(function (confirmed) {
     if (!confirmed) {
       restore_prev_settings();
-    } else {
-      if (new_layer_name !== layer_name) {
-        change_layer_name(layer_name, check_layer_name(new_layer_name.trim()));
-      }
+    } else if (new_layer_name !== layer_name) {
+      change_layer_name(layer_name, check_layer_name(new_layer_name.trim()));
     }
   });
 
@@ -10930,7 +11040,7 @@ function createStyleBoxTypoSymbols(layer_name) {
   });
 
   var size_section = popup.append('p');
-  size_section.append('span').html('Symbol sizes (will be applyed to all symbols)');
+  size_section.append('span').html(i18next.t('app_page.layer_style_popup.symbols_size'));
   size_section.append('input').attrs({ min: 0, max: 200, step: 'any', value: 32, type: 'number' }).styles({ width: '60px', margin: 'auto' }).on('change', function () {
     var value = this.value;
     selection.transition().attrs(function () {
@@ -10976,11 +11086,11 @@ function createStyleBoxLabel(layer_name) {
     prev_settings = [];
     for (var i = 0; i < features.length; i++) {
       prev_settings.push({
-        'color': features[i].style.fill,
-        'size': features[i].style.fontSize,
-        'display': features[i].style.display ? features[i].style.display : null,
-        'position': [features[i].getAttribute('x'), features[i].getAttribute('y')],
-        'font': features[i].style.fontFamily
+        color: features[i].style.fill,
+        size: features[i].style.fontSize,
+        display: features[i].style.display ? features[i].style.display : null,
+        position: [features[i].getAttribute('x'), features[i].getAttribute('y')],
+        font: features[i].style.fontFamily
       });
     }
     prev_settings_defaults = {
@@ -11004,7 +11114,7 @@ function createStyleBoxLabel(layer_name) {
     current_layers[layer_name].fill_color = prev_settings_defaults.color;
     current_layers[layer_name].default_size = prev_settings_defaults.size;
     current_layers[layer_name].default_font = prev_settings_defaults.font;
-  };
+  }
 
   check_remove_existing_box('.styleBox');
 
@@ -11087,9 +11197,9 @@ function createStyleBoxGraticule(layer_name) {
 
   make_confirm_dialog2('styleBox', layer_name, { top: true, widthFitContent: true, draggable: true }).then(function (confirmed) {
     if (confirmed) {
-      null;
+      return null;
     } else {
-      null;
+      return null;
     }
   });
 
@@ -11132,7 +11242,7 @@ function createStyleBoxGraticule(layer_name) {
     var dasharray_val = +document.getElementById('graticule_dasharray_txt').value;
     current_layers['Graticule'].step = step_val;
     map.select('#Graticule').remove();
-    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(d3.geoGraticule().step([step_val, step_val])).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', 'stroke': current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
+    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(d3.geoGraticule().step([step_val, step_val])).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
     zoom_without_redraw();
     selection = map.select('#Graticule').selectAll('path');
     selection_strokeW = map.select('#Graticule');
@@ -11162,8 +11272,8 @@ function createStyleBoxGraticule(layer_name) {
   clip_extent_section.append('input').attrs({ type: 'checkbox', id: 'clip_graticule', checked: current_params['extent'] ? true : null }).on('change', function () {
     var next_layer = selection_strokeW.node().nextSibling,
         step_val = +document.getElementById('graticule_step_txt').value,
-        dasharray_val = +document.getElementById('graticule_dasharray_txt').value,
-        graticule = d3.geoGraticule().step([step_val, step_val]);
+        dasharray_val = +document.getElementById('graticule_dasharray_txt').value;
+    var graticule = d3.geoGraticule().step([step_val, step_val]);
     map.select('#Graticule').remove();
     if (this.checked) {
       var bbox_layer = _target_layer_file.bbox;
@@ -11178,7 +11288,7 @@ function createStyleBoxGraticule(layer_name) {
     } else {
       current_layers['Graticule'].extent = undefined;
     }
-    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(graticule).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', 'stroke': current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
+    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(graticule).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
     zoom_without_redraw();
     selection = map.select('#Graticule').selectAll('path');
     selection_strokeW = map.select('#Graticule');
@@ -11227,25 +11337,29 @@ function redraw_legend(type_legend, layer_name, field) {
 
 function createStyleBox_Line(layer_name) {
   check_remove_existing_box('.styleBox');
-  var rendering_params,
-      renderer = current_layers[layer_name].renderer,
+  var renderer = current_layers[layer_name].renderer,
       g_lyr_name = '#' + _app.layer_to_id.get(layer_name),
       selection = map.select(g_lyr_name).selectAll('path'),
       opacity = selection.style('fill-opacity');
 
-  var fill_prev = cloneObj(current_layers[layer_name].fill_color),
-      prev_col_breaks;
+  var fill_prev = cloneObj(current_layers[layer_name].fill_color);
+  var prev_col_breaks = void 0;
+  var rendering_params = void 0;
 
-  if (current_layers[layer_name].colors_breaks && current_layers[layer_name].colors_breaks instanceof Array) prev_col_breaks = current_layers[layer_name].colors_breaks.concat([]);
+  if (current_layers[layer_name].colors_breaks && current_layers[layer_name].colors_breaks instanceof Array) {
+    prev_col_breaks = current_layers[layer_name].colors_breaks.concat([]);
+  }
 
-  var stroke_prev = selection.style('stroke'),
-      border_opacity = selection.style('stroke-opacity'),
-      stroke_width = +current_layers[layer_name]['stroke-width-const'],
-      prev_min_display,
-      prev_size,
-      prev_breaks;
+  var border_opacity = selection.style('stroke-opacity'),
+      stroke_width = +current_layers[layer_name]['stroke-width-const'];
+  var stroke_prev = selection.style('stroke');
+  var prev_min_display = void 0,
+      prev_size = void 0,
+      prev_breaks = void 0;
 
-  if (stroke_prev.startsWith('rgb')) stroke_prev = rgb2hex(stroke_prev);
+  if (stroke_prev.startsWith('rgb')) {
+    stroke_prev = rgb2hex(stroke_prev);
+  }
 
   var table = [];
   Array.prototype.forEach.call(svg_map.querySelector(g_lyr_name).querySelectorAll('path'), function (d) {
@@ -11344,7 +11458,9 @@ function createStyleBox_Line(layer_name) {
           }).style('stroke', stroke_prev);
         }
       }
-      if (current_layers[layer_name].colors_breaks) current_layers[layer_name].colors_breaks = prev_col_breaks;
+      if (current_layers[layer_name].colors_breaks) {
+        current_layers[layer_name].colors_breaks = prev_col_breaks;
+      }
       current_layers[layer_name].fill_color = fill_prev;
       zoom_without_redraw();
     }
@@ -11469,7 +11585,7 @@ function createStyleBox_Line(layer_name) {
     disc_part.append('span').html(i18next.t('app_page.layer_style_popup.discont_threshold'));
     disc_part.insert('input').attrs({ type: 'range', min: 0, max: 1, step: 0.1, value: prev_min_display }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
       var val = +this.value;
-      var lim = val != 0 ? val * current_layers[layer_name].n_features : -1;
+      var lim = val !== 0 ? val * current_layers[layer_name].n_features : -1;
       popup.select('#larger_than').html(['<i> ', val * 100, ' % </i>'].join(''));
       selection.style('display', function (d, i) {
         return i <= lim ? null : 'none';
@@ -11535,8 +11651,8 @@ function createStyleBox_Line(layer_name) {
     var prop_val_content2 = popup.append('p').attr('class', 'line_elem');
     prop_val_content2.append('span').html(i18next.t('app_page.layer_style_popup.on_value'));
     prop_val_content2.insert('input').styles({ width: '100px', float: 'right' }).attrs({ type: 'number', min: 0.1, step: 0.1, value: +current_layers[layer_name].size[0] }).on('change', function () {
-      var f_val = +this.value,
-          prop_values = prop_sizer3_e(d_values, f_val, current_layers[layer_name].size[1], 'line');
+      var f_val = +this.value;
+      var prop_values = prop_sizer3_e(d_values, f_val, current_layers[layer_name].size[1], 'line');
       redraw_prop_val(prop_values);
       current_layers[layer_name].size[0] = f_val;
     });
@@ -11663,15 +11779,15 @@ function createStyleBox(layer_name) {
   }
 
   if (type === 'Point') {
-    var current_pt_size = current_layers[layer_name].pointRadius;
+    var _current_pt_size = current_layers[layer_name].pointRadius;
     var pt_size = popup.append('p').attr('class', 'line_elem');
     pt_size.append('span').html(i18next.t('app_page.layer_style_popup.point_radius'));
-    pt_size.append('input').attrs({ type: 'range', min: 0, max: 80, value: current_pt_size, id: 'point_radius_size' }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
-      current_pt_size = +this.value;
-      document.getElementById('point_radius_size_txt').value = current_pt_size;
-      selection.attr('d', path.pointRadius(current_pt_size));
+    pt_size.append('input').attrs({ type: 'range', min: 0, max: 80, value: _current_pt_size, id: 'point_radius_size' }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
+      _current_pt_size = +this.value;
+      document.getElementById('point_radius_size_txt').value = _current_pt_size;
+      selection.attr('d', path.pointRadius(_current_pt_size));
     });
-    pt_size.append('input').attrs({ type: 'number', value: +current_pt_size, min: 0, max: 80, step: 'any', class: 'without_spinner', id: 'point_radius_size_txt' }).styles({ width: '30px', 'margin-left': '10px', float: 'right' }).on('change', function () {
+    pt_size.append('input').attrs({ type: 'number', value: +_current_pt_size, min: 0, max: 80, step: 'any', class: 'without_spinner', id: 'point_radius_size_txt' }).styles({ width: '30px', 'margin-left': '10px', float: 'right' }).on('change', function () {
       var pt_size_range = document.getElementById('point_radius_size');
       var old_value = pt_size_range.value;
       if (this.value === '' || isNaN(+this.value)) {
@@ -11755,7 +11871,7 @@ function createStyleBox(layer_name) {
             field: current_layers[layer_name].rendered_field,
             extra_options: confirmed[7]
           };
-          var opacity_val = fill_opacity_section ? +fill_opacity_section.node().value : 0.9;
+          //  let opacity_val = fill_opacity_section ? +fill_opacity_section.node().value : 0.9
           selection.transition().style('fill', function (d, i) {
             return rendering_params.colorsByFeature[i];
           });
@@ -11960,18 +12076,17 @@ function createStyleBox_ProbSymbol(layer_name) {
       selection = map.select(g_lyr_name).selectAll(type_symbol),
       old_size = [current_layers[layer_name].size[0], current_layers[layer_name].size[1]];
   var rendering_params = void 0;
-  var stroke_prev = selection.style('stroke'),
-      opacity = selection.style('fill-opacity'),
-      border_opacity = selection.style('stroke-opacity'),
-      stroke_width = selection.style('stroke-width');
+  var stroke_prev = selection.style('stroke');
+  var stroke_width = selection.style('stroke-width');
 
-  var fill_prev = cloneObj(current_layers[layer_name].fill_color),
-      prev_col_breaks;
+  var opacity = selection.style('fill-opacity'),
+      border_opacity = selection.style('stroke-opacity');
 
+  var fill_prev = cloneObj(current_layers[layer_name].fill_color);
   var d_values = result_data[layer_name].map(function (v) {
     return +v[field_used];
   });
-
+  var prev_col_breaks = void 0;
   var redraw_prop_val = function redraw_prop_val(prop_values) {
     var selec = selection._groups[0];
 
@@ -12251,6 +12366,37 @@ function createStyleBox_ProbSymbol(layer_name) {
     current_layers[layer_name].size[0] = f_val;
   });
 
+  var allow_move_section = popup.append('p');
+  var chkbx = allow_move_section.insert('input').style('margin', '0').attrs({
+    type: 'checkbox',
+    id: 'checkbox_move_symbol',
+    checked: current_layers[layer_name].draggable ? true : null });
+  allow_move_section.insert('label').attr('for', 'checkbox_move_symbol').html(i18next.t('app_page.layer_style_popup.let_draggable'));
+  chkbx.on('change', function () {
+    if (this.checked) {
+      current_layers[layer_name].draggable = true;
+    } else {
+      current_layers[layer_name].draggable = false;
+    }
+  });
+
+  popup.append('p').style('text-align', 'center').insert('button').attrs({ id: 'reset_symb_loc', class: 'button_st4' }).text(i18next.t('app_page.layer_style_popup.reset_symbols_location')).on('click', function () {
+    selection.transition().attrs(function (d) {
+      var centroid = path.centroid(d.geometry);
+      if (type_symbol === 'circle') {
+        return {
+          cx: centroid[0],
+          cy: centroid[1]
+        };
+      } else {
+        return {
+          x: centroid[0] - +d.properties.prop_value / 2,
+          y: centroid[1] - +d.properties.prop_value / 2
+        };
+      }
+    });
+  });
+
   make_generate_labels_section(popup, layer_name);
 }
 
@@ -12278,9 +12424,6 @@ function make_style_box_indiv_label(label_node) {
         change_layer_name(layer_name, check_layer_name(new_layer_name.trim()));
       }
     }
-    // else {
-    //     label_node.__data__.properties.label = label_node.textContent;
-    // }
   });
   var box_content = d3.select('.styleTextAnnotation').select('.modal-content').style('width', '300px').select('.modal-body').insert('div');
   var a = box_content.append('p').attr('class', 'line_elem');
@@ -12290,7 +12433,7 @@ function make_style_box_indiv_label(label_node) {
   });
   var b = box_content.append('p').attr('class', 'line_elem');
   b.insert('span').html(i18next.t('app_page.func_options.label.content'));
-  b.append('input').attrs({ value: label_node.textContent, id: 'label_content' }).styles({ 'width': '70px', float: 'right' }).on('keyup', function () {
+  b.append('input').attrs({ value: label_node.textContent, id: 'label_content' }).styles({ width: '70px', float: 'right' }).on('keyup', function () {
     label_node.textContent = this.value;
   });
   var c = box_content.append('p').attr('class', 'line_elem');
@@ -15383,6 +15526,27 @@ var get_max_nb_left_sep = function get_max_nb_left_sep(layer_name) {
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function get_map_template() {
+  var getPropSymbolCurrentPos = function getPropSymbolCurrentPos(selection, type_symbol) {
+    var result = [];
+    var nbFt = selection.length;
+    if (type_symbol === 'circle') {
+      for (var i = 0; i < nbFt; i++) {
+        result.push({
+          cx: selection[i].getAttribute('cx'),
+          cy: selection[i].getAttribute('cy')
+        });
+      }
+    } else {
+      for (var _i = 0; _i < nbFt; _i++) {
+        result.push({
+          x: selection[_i].getAttribute('x'),
+          y: selection[_i].getAttribute('y')
+        });
+      }
+    }
+
+    return result;
+  };
   var get_legend_info = function get_legend_info(lgd_node) {
     var type_lgd = lgd_node.id;
     var rect_fill_value = lgd_node.getAttribute('visible_rect') === 'true' ? { color: lgd_node.querySelector('#under_rect').style.fill,
@@ -15538,10 +15702,10 @@ function get_map_template() {
       }
     }
   }
-  for (var _i = map_config.n_layers - 1; _i > -1; --_i) {
-    layers_style[_i] = {};
-    var layer_style_i = layers_style[_i],
-        layer_id = layers._groups[0][_i].id,
+  for (var _i2 = map_config.n_layers - 1; _i2 > -1; --_i2) {
+    layers_style[_i2] = {};
+    var layer_style_i = layers_style[_i2],
+        layer_id = layers._groups[0][_i2].id,
         layer_name = _app.id_to_layer.get(layer_id),
         current_layer_prop = current_layers[layer_name],
         layer_type = current_layer_prop.sphere ? 'sphere' : current_layer_prop.graticule ? 'graticule' : 'layer',
@@ -15551,7 +15715,7 @@ function get_map_template() {
     layer_style_i.layer_name = layer_name;
     layer_style_i.layer_type = layer_type;
     layer_style_i.n_features = nb_ft;
-    layer_style_i.visible = layers._groups[0][_i].style.visibility !== 'hidden' ? '' : 'hidden';
+    layer_style_i.visible = layers._groups[0][_i2].style.visibility !== 'hidden' ? '' : 'hidden';
     var lgd = document.getElementsByClassName('lgdf_' + layer_id);
     if (lgd.length === 0) {
       layer_style_i.legend = undefined;
@@ -15611,6 +15775,7 @@ function get_map_template() {
       if (current_layer_prop.rendered_field2) {
         layer_style_i.rendered_field2 = current_layer_prop.rendered_field2;
       }
+      layer_style_i.current_position = getPropSymbolCurrentPos(selection._groups[0], type_symbol);
       layer_style_i.renderer = current_layer_prop.renderer;
       layer_style_i.size = current_layer_prop.size;
       layer_style_i.fill_color = current_layer_prop.fill_color;
@@ -15704,8 +15869,8 @@ function get_map_template() {
 
       var state_to_save = [];
       var selec = selection._groups[0];
-      for (var _i2 = 0; _i2 < selec.length; _i2++) {
-        var _ft = selec[_i2];
+      for (var _i3 = 0; _i3 < selec.length; _i3++) {
+        var _ft = selec[_i3];
         state_to_save.push({
           display: _ft.style.display,
           data: _ft.__data__,
@@ -15742,9 +15907,9 @@ function get_map_template() {
   return Promise.all(layers_style.map(function (obj) {
     return obj.topo_geom ? serialize_layer_to_topojson(obj.layer_name) : null;
   })).then(function (result) {
-    for (var _i3 = 0; _i3 < layers_style.length; _i3++) {
-      if (result[_i3]) {
-        layers_style[_i3].topo_geom = result[_i3];
+    for (var _i4 = 0; _i4 < layers_style.length; _i4++) {
+      if (result[_i4]) {
+        layers_style[_i4].topo_geom = result[_i4];
       }
     }
     // console.log(JSON.stringify({"map_config": map_config, "layers": layers_style}))
@@ -15839,14 +16004,14 @@ function apply_user_preferences(json_pref) {
     // Make sure there is no layers and legend/layout features on the map :
     _l = svg_map.childNodes;
     _ll = _l.length;
-    for (var _i4 = _ll - 1; _i4 > -1; _i4--) {
-      _l[_i4].remove();
+    for (var _i5 = _ll - 1; _i5 > -1; _i5--) {
+      _l[_i5].remove();
     }
     // And in the layer manager :
     _l = layer_list.node().childNodes;
     _ll = _l.length;
-    for (var _i5 = _ll - 1; _i5 > -1; _i5--) {
-      _l[_i5].remove();
+    for (var _i6 = _ll - 1; _i6 > -1; _i6--) {
+      _l[_i6].remove();
     }
     // Get a new object for where we are storing the main properties :
     current_layers = {};
@@ -15855,6 +16020,25 @@ function apply_user_preferences(json_pref) {
   var a = document.getElementById('overlay');
   a.style.display = '';
   a.querySelector('button').style.display = 'none';
+
+  var restorePreviousPos = function restorePreviousPos(layer_id, current_position, type_symbol) {
+    var selection = map.select('#' + layer_id).selectAll(type_symbol);
+    if (type_symbol === 'circle') {
+      selection.attrs(function (d, i) {
+        return {
+          cx: current_position[i].cx,
+          cy: current_position[i].cy
+        };
+      });
+    } else {
+      selection.attrs(function (d, i) {
+        return {
+          x: current_position[i].x,
+          y: current_position[i].y
+        };
+      });
+    }
+  };
 
   var set_final_param = function set_final_param() {
     setTimeout(function () {
@@ -15898,7 +16082,10 @@ function apply_user_preferences(json_pref) {
       a.querySelector('button').style.display = '';
       var targeted_layer = Object.getOwnPropertyNames(user_data)[0];
       if (targeted_layer) getAvailablesFunctionnalities(targeted_layer);
-    }, 200);
+      for (var ii = 0; ii < at_end.length; ii++) {
+        at_end[ii][0](at_end[ii][1], at_end[ii][2], at_end[ii][3]);
+      }
+    }, 150);
   };
 
   function apply_layout_lgd_elem() {
@@ -15946,14 +16133,14 @@ function apply_user_preferences(json_pref) {
         northArrow.displayed = map_config.layout_features.north_arrow.displayed;
       }
       if (map_config.layout_features.arrow) {
-        for (var _i6 = 0; _i6 < map_config.layout_features.arrow.length; _i6++) {
-          var ft = map_config.layout_features.arrow[_i6];
+        for (var _i7 = 0; _i7 < map_config.layout_features.arrow.length; _i7++) {
+          var ft = map_config.layout_features.arrow[_i7];
           new UserArrow(ft.id, ft.pt1, ft.pt2, svg_map, true);
         }
       }
       if (map_config.layout_features.user_ellipse) {
-        for (var _i7 = 0; _i7 < map_config.layout_features.user_ellipse.length; _i7++) {
-          var _ft2 = map_config.layout_features.user_ellipse[_i7];
+        for (var _i8 = 0; _i8 < map_config.layout_features.user_ellipse.length; _i8++) {
+          var _ft2 = map_config.layout_features.user_ellipse[_i8];
           var ellps = new UserEllipse(_ft2.id, [_ft2.cx, _ft2.cy], svg_map, true);
           var ellps_node = ellps.ellipse.node().querySelector('ellipse');
           ellps_node.setAttribute('rx', _ft2.rx);
@@ -15963,8 +16150,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.user_rectangle) {
-        for (var _i8 = 0; _i8 < map_config.layout_features.user_rectangle.length; _i8++) {
-          var _ft3 = map_config.layout_features.user_rectangle[_i8],
+        for (var _i9 = 0; _i9 < map_config.layout_features.user_rectangle.length; _i9++) {
+          var _ft3 = map_config.layout_features.user_rectangle[_i9],
               rect = new UserRectangle(_ft3.id, [_ft3.x, _ft3.y], svg_map, true),
               rect_node = rect.rectangle.node().querySelector('rect');
           rect_node.setAttribute('height', _ft3.height);
@@ -15973,8 +16160,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.text_annot) {
-        for (var _i9 = 0; _i9 < map_config.layout_features.text_annot.length; _i9++) {
-          var _ft4 = map_config.layout_features.text_annot[_i9];
+        for (var _i10 = 0; _i10 < map_config.layout_features.text_annot.length; _i10++) {
+          var _ft4 = map_config.layout_features.text_annot[_i10];
           var new_txt_box = new Textbox(svg_map, _ft4.id, [_ft4.position_x, _ft4.position_y]);
           new_txt_box.textAnnot.node().setAttribute('style', _ft4.style);
           new_txt_box.textAnnot.attrs({
@@ -15991,8 +16178,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.single_symbol) {
-        for (var _i10 = 0; _i10 < map_config.layout_features.single_symbol.length; _i10++) {
-          var _ft5 = map_config.layout_features.single_symbol[_i10];
+        for (var _i11 = 0; _i11 < map_config.layout_features.single_symbol.length; _i11++) {
+          var _ft5 = map_config.layout_features.single_symbol[_i11];
           var symb = add_single_symbol(_ft5.href, _ft5.x, _ft5.y, _ft5.width, _ft5.height, _ft5.id);
           if (_ft5.scalable) {
             var parent_symb = symb.node().parentElement;
@@ -16003,7 +16190,7 @@ function apply_user_preferences(json_pref) {
       }
     }
   }
-
+  var at_end = [];
   var done = 0;
   var func_name_corresp = new Map([['Links', 'flow'], ['Carto_doug', 'cartogram'], ['OlsonCarto', 'cartogram'], ['Stewart', 'smooth'], ['Gridded', 'grid'], ['DiscLayer', 'discont'], ['Choropleth', 'choro'], ['Categorical', 'typo']]);
 
@@ -16047,8 +16234,8 @@ function apply_user_preferences(json_pref) {
 
   // Add each layer :
 
-  var _loop = function _loop(_i11) {
-    var _layer = layers[_i11];
+  var _loop = function _loop(_i12) {
+    var _layer = layers[_i12];
     var layer_name = _layer.layer_name,
         layer_type = _layer.layer_type,
         layer_id = void 0,
@@ -16253,15 +16440,19 @@ function apply_user_preferences(json_pref) {
         }
         current_layers[layer_name]['stroke-width-const'] = _layer['stroke-width-const'];
         layer_id = _app.layer_to_id.get(layer_name);
-        map.select('#' + layer_id).selectAll(_layer.symbol).styles({
+        var _layer_selec = map.select('#' + layer_id).selectAll(_layer.symbol);
+        _layer_selec.styles({
           'stroke-width': _layer['stroke-width-const'] + 'px',
           'fill-opacity': fill_opacity,
           'stroke-opacity': stroke_opacity
         });
         if (_layer.fill_color.random) {
-          map.select('#' + layer_id).selectAll(_layer.symbol).style('fill', function (_) {
+          _layer_selec.style('fill', function (_) {
             return Colors.names[Colors.random()];
           });
+        }
+        if (_layer.current_position) {
+          at_end.push([restorePreviousPos, layer_id, _layer.current_position, _layer.symbol]);
         }
         // ... or this is a layer of labels :
       } else if (_layer.renderer && _layer.renderer.startsWith('Label')) {
@@ -16272,6 +16463,7 @@ function apply_user_preferences(json_pref) {
           ref_font_size: _layer.default_size,
           font: _layer.default_font
         };
+        // TODO : apply the same thing as with PropSymbol for setting label at their original positions :
         render_label(null, _rendering_params, { data: _layer.data_labels, current_position: _layer.current_position });
         layer_id = _app.layer_to_id.get(layer_name);
       } else if (_layer.renderer && _layer.renderer.startsWith('TypoSymbol')) {
@@ -16348,8 +16540,8 @@ function apply_user_preferences(json_pref) {
     }
   };
 
-  for (var _i11 = map_config.n_layers - 1; _i11 > -1; --_i11) {
-    _loop(_i11);
+  for (var _i12 = map_config.n_layers - 1; _i12 > -1; --_i12) {
+    _loop(_i12);
   }
 }
 
@@ -16762,9 +16954,9 @@ var createBoxProj4 = function createBoxProj4() {
         allowOutsideClick: false,
         allowEscapeKey: false
       }).then(function () {
-        null;
+        return null;
       }, function () {
-        null;
+        return null;
       });
       return;
     }
@@ -16781,9 +16973,9 @@ var createBoxProj4 = function createBoxProj4() {
         allowOutsideClick: false,
         allowEscapeKey: false
       }).then(function () {
-        null;
+        return null;
       }, function () {
-        null;
+        return null;
       });
     }
   };
@@ -16800,7 +16992,7 @@ var displayTooltipProj4 = function displayTooltipProj4(ev) {
     return;
   }
   var title = target.tooltip;
-  var tooltipWrap = document.createElement("div");
+  var tooltipWrap = document.createElement('div');
   tooltipWrap.className = 'custom_tooltip';
   tooltipWrap.appendChild(document.createTextNode(title));
 
@@ -16919,13 +17111,13 @@ var createBoxCustomProjection = function createBoxCustomProjection() {
     var filter1_val = Array.prototype.filter.call(document.querySelector('.switch-field.f1').querySelectorAll('input'), function (f) {
       return f.checked;
     })[0];
-    filter1_val = filter1_val == undefined ? undefined : filter1_val.value;
-    if (filter1_val == 'any') filter1_val = undefined;
+    filter1_val = filter1_val === undefined ? undefined : filter1_val.value;
+    if (filter1_val === 'any') filter1_val = undefined;
     var filter2_val = Array.prototype.filter.call(document.querySelector('.switch-field.f2').querySelectorAll('input'), function (f) {
       return f.checked;
     })[0];
-    filter2_val = filter2_val == undefined ? undefined : filter2_val.value;
-    if (filter2_val == 'any') filter2_val = undefined;
+    filter2_val = filter2_val === undefined ? undefined : filter2_val.value;
+    if (filter2_val === 'any') filter2_val = undefined;
     updateSelect(filter1_val, filter2_val);
   }
   function updateProjOptions() {
@@ -17118,12 +17310,11 @@ var createBoxCustomProjection = function createBoxCustomProjection() {
 function handle_proj_center_button(param) {
   // Fetch the current rotation params :
   var current_rotation = proj.rotate();
-  // Reuse it for the missing value passed in arguments :
-  param = param.map(function (val, i) {
-    return val !== null ? val : current_rotation[i];
-  });
-  // Do the rotation :
-  proj.rotate(param);
+  // Reuse it for the missing value passed in arguments and do the rotation:
+  // proj.rotate(param.map((val, i) => val !== null ? val : current_rotation[i]));
+  proj.rotate(param.map(function (val, i) {
+    return val || current_rotation[i];
+  }));
   // Redraw the path and move the symbols :
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
@@ -17131,10 +17322,9 @@ function handle_proj_center_button(param) {
 
 function handle_parallels_change(parallels) {
   var current_values = proj.parallels();
-  parallels = parallels.map(function (val, i) {
+  proj.parallels(parallels.map(function (val, i) {
     return val || current_values[i];
-  });
-  proj.parallels(parallels);
+  }));
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
 }
