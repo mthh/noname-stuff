@@ -1089,6 +1089,12 @@ async def get_extrabasemaps(request):
     else:
         return web.Response(text=list_url.decode())
 
+        
+def list_file_to_json():
+    # names = [f for f in os.listdir('static/data_sample') if 'geojson' in f]
+    names = {f.replace('.geojson', ''): '/static/data_user/{}'.format(f) for f in os.listdir('static/data_user') if 'geojson' in f}
+    with open('static/json/user_layers.json', 'w') as f:
+        f.write(json.dumps(names))
 
 def prepare_list_svg_symbols():
     symbols = [i for i in os.listdir("static/img/svg_symbols/") if '.png' in i]
@@ -1163,8 +1169,11 @@ async def init(loop, port=None, watch_change=False):
     app['app_users'] = set()
     app['logger'] = logger
     app['version'] = get_version()
+    list_file_to_json()
     with open('static/json/sample_layers.json', 'r') as f:
         app['db_layers'] = json.loads(f.read().replace('/static', 'static'))[0]
+    with open('static/json/user_layers.json', 'r') as f:
+        app['db_layers'].update(json.loads(f.read().replace('\\/static', 'static')))
     app['ThreadPool'] = ThreadPoolExecutor(4)
     app['ProcessPool'] = ProcessPoolExecutor(4)
     app['app_name'] = "Magrit"

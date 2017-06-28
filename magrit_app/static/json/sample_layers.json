@@ -1,17 +1,5 @@
 [
  {
- "brazil": "/static/data_sample/brazil.geojson",
- "GrandParisMunicipalities": "/static/data_sample/GrandParisMunicipalities.geojson",
- "nuts0": "/static/data_sample/nuts0.geojson",
- "nuts1": "/static/data_sample/nuts1.geojson",
- "nuts2": "/static/data_sample/nuts2.geojson",
- "nuts2-2013-data": "/static/data_sample/nuts2-2013-data.geojson",
- "martinique": "/static/data_sample/martinique.geojson",
- "twincities": "/static/data_sample/twincities.csv",
- "paris_quartiers": "/static/data_sample/quartier_paris.geojson",
- "tissot": "/static/data_sample/tissot.geojson",
- "world_countries_data": "/static/data_sample/country.geojson",
- "world_country": "/static/data_sample/World.geojson",
- "world_cities": "/static/data_sample/world_cities_extract5000.geojson"
+ "GrandParisMunicipalities": "/static/data_sample/GrandParisMunicipalities.geojson"
  }
 ]
