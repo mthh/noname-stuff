@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y software-properties-common && add-apt-r
 		&& apt-get install -y gcc libpython3.6-dev libopenblas-dev libopenblas-base \
         python3.6 python3.6-dev libgeos-dev \
         libfreetype6-dev libfreetype6 libproj-dev libspatialindex-dev libv8-3.14-dev libffi-dev \
-        nodejs nodejs-dev node-gyp npm redis-server libuv1-dev unzip wget \
+        nodejs nodejs-dev node-gyp npm redis-server libuv1-dev unzip wget git \
         libxslt1-dev libxml2 libxml2-dev libkml-dev \
     && npm -g install topojson \
     && rm -rf /var/lib/apt/lists/* \
@@ -42,7 +42,7 @@ ENV LD_LIBRARY_PATH="${GDALINST}/gdal-2.1.3/lib:${LD_LIBRARY_PATH}"
 
 ARG CACHEBUST=1
 
-RUN rm -rf $GDALBUILD && mkdir /home/app && cd /home/app && wget https://github.com/riatelab/magrit/archive/master.zip && unzip master.zip && mv magrit-master magrit
+RUN rm -rf $GDALBUILD && mkdir /home/app && cd /home/app && git clone https://github.com/mthh/magrit && cd magrit && git checkout for_galaxy && cd ..
 
 RUN wget https://bootstrap.pypa.io/get-pip.py && python3.6 get-pip.py
 
