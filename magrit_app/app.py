@@ -7,12 +7,14 @@ Usage:
   magrit
   magrit [--port <port_nb> --name-app <name> --dev]
   magrit [-p <port_nb> -n <name> -d]
+  magrit --no-redis
   magrit --version
   magrit --help
 
 Options:
   -h, --help                        Show this screen.
   --version                         Show version.
+  --no-redis                        Don't use redis (for standalone use).
   -p <port>, --port <port>          Port number to use (exit if not available) [default: 9999]
   -d, --dev                         Watch for changes in js/css files and update the transpiled/minified versions
   -n <name>, --name-app <name>      Name of the application [default: Magrit]
@@ -30,11 +32,14 @@ import uvloop
 import pandas as pd
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
-from base64 import b64encode
+from base64 import b64encode, urlsafe_b64decode
 from contextlib import closing
 from zipfile import ZipFile
 from datetime import datetime
 from io import StringIO, BytesIO
+
+from threading import RLock, Timer
+from cryptography import fernet
 
 from subprocess import Popen, PIPE
 from socket import socket, AF_INET, SOCK_STREAM
@@ -48,7 +53,10 @@ import jinja2
 import aiohttp_jinja2
 from aioredis import create_pool, create_reconnecting_redis
 from aiohttp import web, ClientSession
-from aiohttp_session import get_session, session_middleware, redis_storage
+from aiohttp_session import (
+    get_session, session_middleware, redis_storage,
+    setup as aiohttp_session_setup, cookie_storage
+    )
 from multidict import MultiDict
 try:
     from helpers.watch_change import JsFileWatcher
@@ -83,14 +91,14 @@ pp = '(aiohttp_app) '
 
 @aiohttp_jinja2.template('index.html')
 async def index_handler(request):
-    asyncio.ensure_future(
-        request.app['redis_conn'].incr('view_onepage'),
-        loop=request.app.loop)
+    # asyncio.ensure_future(
+    #     request.app['redis_conn'].incr('view_onepage'),
+    #     loop=request.app.loop)
     session = await get_session(request)
-    if 'already_seen' not in session:
-        asyncio.ensure_future(
-            request.app['redis_conn'].incr('single_view_onepage'),
-            loop=request.app.loop)
+    # if 'already_seen' not in session:
+    #     asyncio.ensure_future(
+    #         request.app['redis_conn'].incr('single_view_onepage'),
+    #         loop=request.app.loop)
     session['already_seen'] = True
     return {'app_name': request.app['app_name'],
             'version': request.app['version']}
@@ -136,8 +144,8 @@ async def get_sample_layer(request):
     hash_val = str(mmh3_hash(path))
     f_name = '_'.join([user_id, hash_val])
 
-    asyncio.ensure_future(
-        request.app['redis_conn'].incr('sample_layers'))
+    # asyncio.ensure_future(
+    #     request.app['redis_conn'].incr('sample_layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -182,8 +190,8 @@ async def convert_topo(request):
     hash_val = str(mmh3_hash(data))
     f_name = '_'.join([user_id, hash_val])
 
-    asyncio.ensure_future(
-        request.app['redis_conn'].incr('layers'))
+    # asyncio.ensure_future(
+    #     request.app['redis_conn'].incr('layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -211,10 +219,10 @@ def get_user_id(session_redis, app_users, app=None):
     and for retrieving the layers decribed in a "preference file" of an user)
     """
     if 'app_user' not in session_redis:
-        if app:
-            asyncio.ensure_future(
-                app['redis_conn'].incr('single_view_modulepage'),
-                loop=app.loop)
+        # if app:
+            # asyncio.ensure_future(
+            #     app['redis_conn'].incr('single_view_modulepage'),
+            #     loop=app.loop)
         user_id = get_key(app_users)
         app_users.add(user_id)
         session_redis['app_user'] = user_id
@@ -272,8 +280,8 @@ async def convert(request):
 
     f_name = '_'.join([user_id, str(hashed_input)])
 
-    asyncio.ensure_future(
-        request.app['redis_conn'].incr('layers'))
+    # asyncio.ensure_future(
+    #     request.app['redis_conn'].incr('layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -416,8 +424,8 @@ async def convert_extrabasemap(request):
             hashed_input = mmh3_hash(data)
             f_name = '_'.join([user_id, str(hashed_input)])
 
-            asyncio.ensure_future(
-                request.app['redis_conn'].incr('layers'))
+            # asyncio.ensure_future(
+            #     request.app['redis_conn'].incr('layers'))
 
             result = await request.app['redis_conn'].get(f_name)
             if result:
@@ -507,8 +515,8 @@ async def carto_doug(posted_data, user_id, app):
     asyncio.ensure_future(
         app['redis_conn'].set('_'.join([
             user_id, str(hash_val)]), res, pexpire=86400000))
-    asyncio.ensure_future(
-        app['redis_conn'].lpush('dougenik_time', time.time()-st))
+    # asyncio.ensure_future(
+    #     app['redis_conn'].lpush('dougenik_time', time.time()-st))
     app['logger'].info(
         '{} - timing : carto_doug : {:.4f}s'
         .format(user_id, time.time()-st))
@@ -1120,19 +1128,93 @@ async def on_shutdown(app):
         elif "Application.shutdown()" not in info[1]:
             task.cancel()
 
-async def init(loop, port=None, watch_change=False):
+class ExpDict:
+    def __init__(self, max_age_seconds):
+        assert max_age_seconds >= 0
+
+        self.store = {}
+        self.max_age = max_age_seconds
+        self.lock = RLock()
+        self.clean_keys()
+
+    def __setitem__(self, key, value):
+        with self.lock:
+            self.store[key] = (value, time.time())
+
+    def __getitem__(self, key, restart_delay=None):
+        with self.lock:
+            item = self.store.get(key, None)
+            if not item:
+                return None
+            if restart_delay:
+                self.store[key] = (item[0], time.time())
+            return item[0]
+
+    async def set(self, key, value, **kwargs):
+        self.__setitem__(key, str(value).encode())
+
+    async def get(self, key, restart_delay=None):
+        return self.__getitem__(key, restart_delay)
+
+    async def delete(self, key, default=None):
+        with self.lock:
+            item = self.store.get(key, None)
+            if not item:
+                return None
+            del self.store[key]
+            return item[0]
+
+    async def lpush(self, key, value):
+        li = self.store.get(key, None)
+        if not li:
+            self.store[key] = [value]
+        else:
+            li.append(value)
+            self.store[key] = li
+        return
+
+    async def lrange(self, key, start, end):
+        li = self.store.get(key, None)
+        if not li:
+            return []
+        if start == 0 and end == -1:
+            return li
+        return li[start, end]
+
+    async def quit(self):
+        return
+
+    def clean_keys(self):
+        for k in list(self.store.keys()):
+            with self.lock:
+                item = self.store[k]
+                if time.time() - item[1] > self.max_age:
+                    del self.store[k]
+        Timer(self.max_age / 2, self.clean_keys).start()
+
+
+async def init(loop, port=None, watch_change=False, use_redis=True):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("magrit_app.main")
-    redis_cookie = await create_pool(
-        ('0.0.0.0', 6379), db=0, maxsize=50, loop=loop)
-    redis_conn = await create_reconnecting_redis(
-        ('0.0.0.0', 6379), db=1, loop=loop)
-    app = web.Application(
-        loop=loop,
-        client_max_size=16384**2,
-        middlewares=[
-            error_middleware,
-            session_middleware(redis_storage.RedisStorage(redis_cookie))])
+    if use_redis:
+        redis_cookie = await create_pool(
+            ('0.0.0.0', 6379), db=0, maxsize=50, loop=loop)
+        redis_conn = await create_reconnecting_redis(
+            ('0.0.0.0', 6379), db=1, loop=loop)
+        app = web.Application(
+            loop=loop,
+            client_max_size=16384**2,
+            middlewares=[
+                error_middleware,
+                session_middleware(redis_storage.RedisStorage(redis_cookie))])
+    else:
+        fernet_key = fernet.Fernet.generate_key()
+        secret_key = urlsafe_b64decode(fernet_key)
+        app = web.Application(
+            loop=loop,
+            client_max_size=16384**2,
+            middlewares=[error_middleware])
+        aiohttp_session_setup(app, cookie_storage.EncryptedCookieStorage(secret_key))
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('templates'))
     add_route = app.router.add_route
     add_route('GET', '/', index_handler)
@@ -1159,7 +1241,7 @@ async def init(loop, port=None, watch_change=False):
     # add_route('POST', '/cache_topojson/{params}', cache_input_topojson)
     add_route('POST', '/helpers/calc', calc_helper)
     app.router.add_static('/static/', path='static', name='static')
-    app['redis_conn'] = redis_conn
+    app['redis_conn'] = redis_conn if use_redis else ExpDict(max_age_seconds=3600)
     app['app_users'] = set()
     app['logger'] = logger
     app['version'] = get_version()
@@ -1233,11 +1315,11 @@ def main():
         sys.exit("Error : Selected port is already in use")
 
     watch_change = True if arguments['--dev'] else False
-
+    use_redis = False if arguments['--no-redis'] else True
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     loop = asyncio.get_event_loop()
     asyncio.set_event_loop(loop)
-    srv, app, handler = loop.run_until_complete(init(loop, port, watch_change))
+    srv, app, handler = loop.run_until_complete(init(loop, port, watch_change, use_redis))
     app['app_name'] = arguments["--name-app"]
     app['logger'].info('serving on' + str(srv.sockets[0].getsockname()))
     try:
