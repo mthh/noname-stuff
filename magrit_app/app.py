@@ -28,7 +28,6 @@ import docopt
 import logging
 
 import asyncio
-import uvloop
 import pandas as pd
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
@@ -51,40 +50,17 @@ from pyexcel import get_book
 # Web related stuff :
 import jinja2
 import aiohttp_jinja2
-from aioredis import create_pool, create_reconnecting_redis
+try:
+    from aioredis import create_pool, create_reconnecting_redis
+except:
+    pass
 from aiohttp import web, ClientSession
 from aiohttp_session import (
     get_session, session_middleware, redis_storage,
     setup as aiohttp_session_setup, cookie_storage
     )
 from multidict import MultiDict
-try:
-    from helpers.watch_change import JsFileWatcher
-    from helpers.misc import (
-        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
-    from helpers.cy_misc import get_name, join_field_topojson
-    from helpers.topo_to_geo import convert_from_topo
-    from helpers.geo import (
-        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
-        check_projection, olson_transform, get_proj4_string,
-        make_geojson_links, TopologicalError, ogr_to_geojson)
-    from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
-    from helpers.grid_layer import get_grid_layer
-    from helpers.error_middleware404 import error_middleware
 
-except:
-    from .helpers.watch_change import JsFileWatcher
-    from .helpers.misc import (
-        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
-    from .helpers.cy_misc import get_name, join_field_topojson
-    from .helpers.topo_to_geo import convert_from_topo
-    from .helpers.geo import (
-        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
-        check_projection, olson_transform, get_proj4_string,
-        make_geojson_links, TopologicalError, ogr_to_geojson)
-    from .helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
-    from .helpers.grid_layer import get_grid_layer
-    from .helpers.error_middleware404 import error_middleware
 
 pp = '(aiohttp_app) '
 
@@ -107,12 +83,21 @@ async def index_handler(request):
 async def geojson_to_topojson2(data, layer_name):
     # Todo : Rewrite using asyncio.subprocess methods
     # Todo : Use topojson python port if possible to avoid writing a temp. file
-    process = Popen(["geo2topo", "{}=-".format(layer_name), "--bbox"],
+    process = Popen(["\\Users\\RIATE\\node_modules\\.bin\\geo2topo", "{}=-".format(layer_name), "--bbox"], shell=True,
                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
     stdout, _ = process.communicate(input=data)
     stdout = stdout.decode()
     return stdout
-
+##    # Todo : Rewrite using asyncio.subprocess methods
+##    # Todo : Use topojson python port if possible to avoid writing a temp. file
+##    print('eee')
+##    with open('\\tmp\\{}.geojson'.format(layer_name), 'wb') as f:
+##        f.write(data)
+##    process = Popen(["geo2topo", '\\tmp\\{}.geojson'.format(layer_name), "--bbox", '> result.geojson'])
+##    process.communicate()
+##    with open('\\tmp\\result.geojson'.format(layer_name), 'wb') as f:
+##        stdout = f.read()
+##    return stdout
 
 def topojson_to_geojson(data):
     """
@@ -254,12 +239,12 @@ async def convert(request):
         list_files = []
         for i in range(len(posted_data) - 1):
             field = posted_data.getall('file[{}]'.format(i))[0]
-            file_name = ''.join(['/tmp/', user_id, '_', field[1]])
+            file_name = ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, '_', field[1]])
             list_files.append(file_name)
             savefile(file_name, field[2].read())
         shp_path = [i for i in list_files if 'shp' in i][0]
         layer_name = shp_path.replace(
-            ''.join(['/tmp/', user_id, '_']), '').replace('.shp', '')
+            ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, '_']), '').replace('.shp', '')
         hashed_input = mmh3_file(shp_path)
         name = shp_path.split(os.path.sep)[2]
         datatype = "shp"
@@ -272,7 +257,7 @@ async def convert(request):
             data = field[2].read()
             datatype = field[3]
             hashed_input = mmh3_hash(data)
-            filepath = ''.join(['/tmp/', user_id, "_", name])
+            filepath = ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, "_", name])
         except Exception as err:
             request.app['logger'].info("posted data :\n{}\nerr:\n{}"
                        .format(posted_data, err))
@@ -289,7 +274,7 @@ async def convert(request):
             '{} - Used result from redis'.format(user_id))
         request.app['redis_conn'].pexpire(f_name, 86400000)
         if "shp" in datatype:
-            proj_info_str = read_shp_crs('/tmp/' + name.replace('.shp', '.prj'))
+            proj_info_str = read_shp_crs('{0}tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
 
         return web.Response(text=''.join(
             ['{"key":', str(hashed_input),
@@ -312,11 +297,11 @@ async def convert(request):
 
         asyncio.ensure_future(
             request.app['redis_conn'].set(f_name, result, pexpire=86400000))
-        proj_info_str = read_shp_crs('/tmp/' + name.replace('.shp', '.prj'))
+        proj_info_str = read_shp_crs('{0}tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
         clean_files()
     elif datatype in ('application/x-zip-compressed', 'application/zip'):
         dataZip = BytesIO(data)
-        dir_path = '/tmp/{}{}/'.format(user_id, hashed_input)
+        dir_path = '{}tmp{}{}{}'.format(os.path.sep, user_id, hashed_input, os.path.sep)
 
         with ZipFile(dataZip) as myzip:
             list_files = myzip.namelist()
@@ -494,7 +479,7 @@ async def carto_doug(posted_data, user_id, app):
         join_field_topojson(ref_layer, new_field[n_field_name], n_field_name)
 
     tmp_part = get_name()
-    tmp_path = ''.join(['/tmp/', tmp_part, '.geojson'])
+    tmp_path = ''.join(['{0}tmp{0}'.format(os.path.sep), tmp_part, '.geojson'])
     savefile(tmp_path, topojson_to_geojson(ref_layer).encode())
 
     try:
@@ -612,7 +597,7 @@ async def carto_gridded(posted_data, user_id, app):
         join_field_topojson(ref_layer, new_field[n_field_name], n_field_name)
 
     tmp_part = get_name()
-    filenames = {"src_layer": ''.join(['/tmp/', tmp_part, '.geojson']),
+    filenames = {"src_layer": ''.join(['{0}tmp{0}'.format(os.path.sep), tmp_part, '.geojson']),
                  "result": None}
     savefile(filenames['src_layer'], topojson_to_geojson(ref_layer).encode())
 
@@ -867,7 +852,7 @@ async def handler_exists_layer2(request):
                 return web.Response(text=res_geojson)
             elif "KML" in file_format:
                 tmp_path = prepare_folder()
-                output_path = ''.join([tmp_path, "/", layer_name, ".geojson"])
+                output_path = ''.join([tmp_path, os.path.sep, layer_name, ".geojson"])
                 savefile(output_path, res_geojson.encode())
                 result = reproj_convert_layer_kml(output_path)
                 os.remove(output_path)
@@ -1316,7 +1301,6 @@ def main():
 
     watch_change = True if arguments['--dev'] else False
     use_redis = False if arguments['--no-redis'] else True
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
     loop = asyncio.get_event_loop()
     asyncio.set_event_loop(loop)
     srv, app, handler = loop.run_until_complete(init(loop, port, watch_change, use_redis))
@@ -1336,4 +1320,15 @@ def main():
 
 
 if __name__ == '__main__':
+    from helpers.misc import (
+        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
+    from helpers.cy_misc import get_name, join_field_topojson
+    from helpers.topo_to_geo import convert_from_topo
+    from helpers.geo import (
+        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
+        check_projection, olson_transform, get_proj4_string,
+        make_geojson_links, TopologicalError, ogr_to_geojson)
+    from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
+    from helpers.grid_layer import get_grid_layer
+    from helpers.error_middleware404 import error_middleware
     main()
