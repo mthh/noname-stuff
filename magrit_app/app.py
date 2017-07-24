@@ -109,7 +109,8 @@ async def geojson_to_topojson2(data, layer_name):
     # Todo : Rewrite using asyncio.subprocess methods
     # Todo : Use topojson python port if possible to avoid writing a temp. file
     print(os.getcwd())
-    process = Popen(["geo2topo", "{}=-".format(layer_name), "--bbox"], shell=True,
+    process = Popen(["geo2topo", "{}=-".format(layer_name), "--bbox"],
+                    shell=True if 'win' in os.sys.platform else False,
                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
     stdout, _ = process.communicate(input=data)
     stdout = stdout.decode()
