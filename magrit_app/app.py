@@ -31,6 +31,7 @@ import asyncio
 import pandas as pd
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
+
 from base64 import b64encode, urlsafe_b64decode
 from contextlib import closing
 from zipfile import ZipFile
@@ -61,6 +62,30 @@ from aiohttp_session import (
     )
 from multidict import MultiDict
 
+try:
+    from helpers.misc import (
+        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
+    from helpers.cy_misc import get_name, join_field_topojson
+    from helpers.topo_to_geo import convert_from_topo
+    from helpers.geo import (
+        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
+        check_projection, olson_transform, get_proj4_string,
+        make_geojson_links, TopologicalError, ogr_to_geojson)
+    from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
+    from helpers.grid_layer import get_grid_layer
+    from helpers.error_middleware404 import error_middleware
+except:
+    from .helpers.misc import (
+        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
+    from .helpers.cy_misc import get_name, join_field_topojson
+    from .helpers.topo_to_geo import convert_from_topo
+    from .helpers.geo import (
+        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
+        check_projection, olson_transform, get_proj4_string,
+        make_geojson_links, TopologicalError, ogr_to_geojson)
+    from .helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
+    from .helpers.grid_layer import get_grid_layer
+    from .helpers.error_middleware404 import error_middleware
 
 pp = '(aiohttp_app) '
 
@@ -83,21 +108,13 @@ async def index_handler(request):
 async def geojson_to_topojson2(data, layer_name):
     # Todo : Rewrite using asyncio.subprocess methods
     # Todo : Use topojson python port if possible to avoid writing a temp. file
-    process = Popen(["\\Users\\RIATE\\node_modules\\.bin\\geo2topo", "{}=-".format(layer_name), "--bbox"], shell=True,
+    print(os.getcwd())
+    process = Popen(["geo2topo", "{}=-".format(layer_name), "--bbox"], shell=True,
                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
     stdout, _ = process.communicate(input=data)
     stdout = stdout.decode()
     return stdout
-##    # Todo : Rewrite using asyncio.subprocess methods
-##    # Todo : Use topojson python port if possible to avoid writing a temp. file
-##    print('eee')
-##    with open('\\tmp\\{}.geojson'.format(layer_name), 'wb') as f:
-##        f.write(data)
-##    process = Popen(["geo2topo", '\\tmp\\{}.geojson'.format(layer_name), "--bbox", '> result.geojson'])
-##    process.communicate()
-##    with open('\\tmp\\result.geojson'.format(layer_name), 'wb') as f:
-##        stdout = f.read()
-##    return stdout
+
 
 def topojson_to_geojson(data):
     """
@@ -129,8 +146,8 @@ async def get_sample_layer(request):
     hash_val = str(mmh3_hash(path))
     f_name = '_'.join([user_id, hash_val])
 
-    # asyncio.ensure_future(
-    #     request.app['redis_conn'].incr('sample_layers'))
+    asyncio.ensure_future(
+        request.app['redis_conn'].incr('sample_layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -175,8 +192,8 @@ async def convert_topo(request):
     hash_val = str(mmh3_hash(data))
     f_name = '_'.join([user_id, hash_val])
 
-    # asyncio.ensure_future(
-    #     request.app['redis_conn'].incr('layers'))
+    asyncio.ensure_future(
+        request.app['redis_conn'].incr('layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -204,10 +221,10 @@ def get_user_id(session_redis, app_users, app=None):
     and for retrieving the layers decribed in a "preference file" of an user)
     """
     if 'app_user' not in session_redis:
-        # if app:
-            # asyncio.ensure_future(
-            #     app['redis_conn'].incr('single_view_modulepage'),
-            #     loop=app.loop)
+        if app:
+            asyncio.ensure_future(
+                app['redis_conn'].incr('single_view_modulepage'),
+                loop=app.loop)
         user_id = get_key(app_users)
         app_users.add(user_id)
         session_redis['app_user'] = user_id
@@ -265,8 +282,8 @@ async def convert(request):
 
     f_name = '_'.join([user_id, str(hashed_input)])
 
-    # asyncio.ensure_future(
-    #     request.app['redis_conn'].incr('layers'))
+    asyncio.ensure_future(
+        request.app['redis_conn'].incr('layers'))
 
     result = await request.app['redis_conn'].get(f_name)
     if result:
@@ -409,8 +426,8 @@ async def convert_extrabasemap(request):
             hashed_input = mmh3_hash(data)
             f_name = '_'.join([user_id, str(hashed_input)])
 
-            # asyncio.ensure_future(
-            #     request.app['redis_conn'].incr('layers'))
+            asyncio.ensure_future(
+                request.app['redis_conn'].incr('layers'))
 
             result = await request.app['redis_conn'].get(f_name)
             if result:
@@ -500,8 +517,8 @@ async def carto_doug(posted_data, user_id, app):
     asyncio.ensure_future(
         app['redis_conn'].set('_'.join([
             user_id, str(hash_val)]), res, pexpire=86400000))
-    # asyncio.ensure_future(
-    #     app['redis_conn'].lpush('dougenik_time', time.time()-st))
+    asyncio.ensure_future(
+        app['redis_conn'].lpush('dougenik_time', time.time()-st))
     app['logger'].info(
         '{} - timing : carto_doug : {:.4f}s'
         .format(user_id, time.time()-st))
@@ -1113,70 +1130,6 @@ async def on_shutdown(app):
         elif "Application.shutdown()" not in info[1]:
             task.cancel()
 
-class ExpDict:
-    def __init__(self, max_age_seconds):
-        assert max_age_seconds >= 0
-
-        self.store = {}
-        self.max_age = max_age_seconds
-        self.lock = RLock()
-        self.clean_keys()
-
-    def __setitem__(self, key, value):
-        with self.lock:
-            self.store[key] = (value, time.time())
-
-    def __getitem__(self, key, restart_delay=None):
-        with self.lock:
-            item = self.store.get(key, None)
-            if not item:
-                return None
-            if restart_delay:
-                self.store[key] = (item[0], time.time())
-            return item[0]
-
-    async def set(self, key, value, **kwargs):
-        self.__setitem__(key, str(value).encode())
-
-    async def get(self, key, restart_delay=None):
-        return self.__getitem__(key, restart_delay)
-
-    async def delete(self, key, default=None):
-        with self.lock:
-            item = self.store.get(key, None)
-            if not item:
-                return None
-            del self.store[key]
-            return item[0]
-
-    async def lpush(self, key, value):
-        li = self.store.get(key, None)
-        if not li:
-            self.store[key] = [value]
-        else:
-            li.append(value)
-            self.store[key] = li
-        return
-
-    async def lrange(self, key, start, end):
-        li = self.store.get(key, None)
-        if not li:
-            return []
-        if start == 0 and end == -1:
-            return li
-        return li[start, end]
-
-    async def quit(self):
-        return
-
-    def clean_keys(self):
-        for k in list(self.store.keys()):
-            with self.lock:
-                item = self.store[k]
-                if time.time() - item[1] > self.max_age:
-                    del self.store[k]
-        Timer(self.max_age / 2, self.clean_keys).start()
-
 
 async def init(loop, port=None, watch_change=False, use_redis=True):
     logging.basicConfig(level=logging.INFO)
@@ -1192,7 +1145,9 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
             middlewares=[
                 error_middleware,
                 session_middleware(redis_storage.RedisStorage(redis_cookie))])
+        app['redis_conn'] = redis_conn
     else:
+        from helpers.fakeredis import FakeAioRedisConnection
         fernet_key = fernet.Fernet.generate_key()
         secret_key = urlsafe_b64decode(fernet_key)
         app = web.Application(
@@ -1200,6 +1155,7 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
             client_max_size=16384**2,
             middlewares=[error_middleware])
         aiohttp_session_setup(app, cookie_storage.EncryptedCookieStorage(secret_key))
+        app['redis_conn'] = FakeAioRedisConnection(max_age_seconds=3600)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('templates'))
     add_route = app.router.add_route
     add_route('GET', '/', index_handler)
@@ -1226,7 +1182,6 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
     # add_route('POST', '/cache_topojson/{params}', cache_input_topojson)
     add_route('POST', '/helpers/calc', calc_helper)
     app.router.add_static('/static/', path='static', name='static')
-    app['redis_conn'] = redis_conn if use_redis else ExpDict(max_age_seconds=3600)
     app['app_users'] = set()
     app['logger'] = logger
     app['version'] = get_version()
@@ -1320,15 +1275,4 @@ def main():
 
 
 if __name__ == '__main__':
-    from helpers.misc import (
-        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
-    from helpers.cy_misc import get_name, join_field_topojson
-    from helpers.topo_to_geo import convert_from_topo
-    from helpers.geo import (
-        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
-        check_projection, olson_transform, get_proj4_string,
-        make_geojson_links, TopologicalError, ogr_to_geojson)
-    from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
-    from helpers.grid_layer import get_grid_layer
-    from helpers.error_middleware404 import error_middleware
     main()
