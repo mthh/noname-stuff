@@ -44,7 +44,7 @@ class TimedCall(ContextDecorator):
 def prepare_folder():
     for i in range(10):
         try:
-            tmp_path = "/tmp/" + get_name()
+            tmp_path = "tmp/" + get_name()
             os.mkdir(tmp_path)
             return tmp_path
         except:

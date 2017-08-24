@@ -44,7 +44,7 @@ from cryptography import fernet
 from subprocess import Popen, PIPE
 from socket import socket, AF_INET, SOCK_STREAM
 from mmh3 import hash as mmh3_hash
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor #, ProcessPoolExecutor
 from concurrent.futures._base import CancelledError
 from pyexcel import get_book
 
@@ -62,30 +62,30 @@ from aiohttp_session import (
     )
 from multidict import MultiDict
 
-try:
-    from helpers.misc import (
-        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
-    from helpers.cy_misc import get_name, join_field_topojson
-    from helpers.topo_to_geo import convert_from_topo
-    from helpers.geo import (
-        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
-        check_projection, olson_transform, get_proj4_string,
-        make_geojson_links, TopologicalError, ogr_to_geojson)
-    from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
-    from helpers.grid_layer import get_grid_layer
-    from helpers.error_middleware404 import error_middleware
-except:
-    from .helpers.misc import (
-        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
-    from .helpers.cy_misc import get_name, join_field_topojson
-    from .helpers.topo_to_geo import convert_from_topo
-    from .helpers.geo import (
-        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
-        check_projection, olson_transform, get_proj4_string,
-        make_geojson_links, TopologicalError, ogr_to_geojson)
-    from .helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
-    from .helpers.grid_layer import get_grid_layer
-    from .helpers.error_middleware404 import error_middleware
+#try:
+from helpers.misc import (
+    run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
+from helpers.cy_misc import get_name, join_field_topojson
+from helpers.topo_to_geo import convert_from_topo
+from helpers.geo import (
+    reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
+    check_projection, olson_transform, get_proj4_string,
+    make_geojson_links, TopologicalError, ogr_to_geojson)
+from helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
+from helpers.grid_layer import get_grid_layer
+from helpers.error_middleware404 import error_middleware
+#except:
+#    from .helpers.misc import (
+#        run_calc, savefile, get_key, fetch_zip_clean, prepare_folder, mmh3_file)
+#    from .helpers.cy_misc import get_name, join_field_topojson
+#    from .helpers.topo_to_geo import convert_from_topo
+#    from .helpers.geo import (
+#        reproj_convert_layer_kml, reproj_convert_layer, make_carto_doug,
+#        check_projection, olson_transform, get_proj4_string,
+#        make_geojson_links, TopologicalError, ogr_to_geojson)
+#    from .helpers.stewart_smoomapy import quick_stewart_mod, resume_stewart
+#    from .helpers.grid_layer import get_grid_layer
+#    from .helpers.error_middleware404 import error_middleware
 
 pp = '(aiohttp_app) '
 
@@ -108,8 +108,7 @@ async def index_handler(request):
 async def geojson_to_topojson2(data, layer_name):
     # Todo : Rewrite using asyncio.subprocess methods
     # Todo : Use topojson python port if possible to avoid writing a temp. file
-    print(os.getcwd())
-    process = Popen(["geo2topo", "{}=-".format(layer_name), "--bbox"],
+    process = Popen(["node\\geo2topo", "{}=-".format(layer_name), "--bbox"],
                     shell=True if 'win' in os.sys.platform else False,
                     stdout=PIPE, stderr=PIPE, stdin=PIPE)
     stdout, _ = process.communicate(input=data)
@@ -257,12 +256,12 @@ async def convert(request):
         list_files = []
         for i in range(len(posted_data) - 1):
             field = posted_data.getall('file[{}]'.format(i))[0]
-            file_name = ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, '_', field[1]])
+            file_name = ''.join(['tmp{0}'.format(os.path.sep), user_id, '_', field[1]])
             list_files.append(file_name)
             savefile(file_name, field[2].read())
         shp_path = [i for i in list_files if 'shp' in i][0]
         layer_name = shp_path.replace(
-            ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, '_']), '').replace('.shp', '')
+            ''.join(['tmp{0}'.format(os.path.sep), user_id, '_']), '').replace('.shp', '')
         hashed_input = mmh3_file(shp_path)
         name = shp_path.split(os.path.sep)[2]
         datatype = "shp"
@@ -275,7 +274,7 @@ async def convert(request):
             data = field[2].read()
             datatype = field[3]
             hashed_input = mmh3_hash(data)
-            filepath = ''.join(['{0}tmp{0}'.format(os.path.sep), user_id, "_", name])
+            filepath = ''.join(['tmp{0}'.format(os.path.sep), user_id, "_", name])
         except Exception as err:
             request.app['logger'].info("posted data :\n{}\nerr:\n{}"
                        .format(posted_data, err))
@@ -292,7 +291,7 @@ async def convert(request):
             '{} - Used result from redis'.format(user_id))
         request.app['redis_conn'].pexpire(f_name, 86400000)
         if "shp" in datatype:
-            proj_info_str = read_shp_crs('{0}tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
+            proj_info_str = read_shp_crs('tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
 
         return web.Response(text=''.join(
             ['{"key":', str(hashed_input),
@@ -303,7 +302,7 @@ async def convert(request):
     if "shp" in datatype:
         clean_files = lambda: [os.remove(_file) for _file in list_files]
         res = await request.app.loop.run_in_executor(
-            request.app["ProcessPool"],
+            request.app["ThreadPool"],
             ogr_to_geojson, shp_path)
         if not res:
             clean_files()
@@ -315,11 +314,11 @@ async def convert(request):
 
         asyncio.ensure_future(
             request.app['redis_conn'].set(f_name, result, pexpire=86400000))
-        proj_info_str = read_shp_crs('{0}tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
+        proj_info_str = read_shp_crs('tmp{0}'.format(os.path.sep) + name.replace('.shp', '.prj'))
         clean_files()
     elif datatype in ('application/x-zip-compressed', 'application/zip'):
         dataZip = BytesIO(data)
-        dir_path = '{}tmp{}{}{}'.format(os.path.sep, user_id, hashed_input, os.path.sep)
+        dir_path = 'tmp{}{}{}'.format(user_id, hashed_input, os.path.sep)
 
         with ZipFile(dataZip) as myzip:
             list_files = myzip.namelist()
@@ -352,7 +351,7 @@ async def convert(request):
             myzip.extractall(path=dir_path)
             try:
                 res = await request.app.loop.run_in_executor(
-                    request.app["ProcessPool"],
+                    request.app["ThreadPool"],
                     ogr_to_geojson, slots['shp'])
                 if not res:
                     return convert_error()
@@ -497,7 +496,7 @@ async def carto_doug(posted_data, user_id, app):
         join_field_topojson(ref_layer, new_field[n_field_name], n_field_name)
 
     tmp_part = get_name()
-    tmp_path = ''.join(['{0}tmp{0}'.format(os.path.sep), tmp_part, '.geojson'])
+    tmp_path = ''.join(['tmp{0}'.format(os.path.sep), tmp_part, '.geojson'])
     savefile(tmp_path, topojson_to_geojson(ref_layer).encode())
 
     try:
@@ -615,13 +614,13 @@ async def carto_gridded(posted_data, user_id, app):
         join_field_topojson(ref_layer, new_field[n_field_name], n_field_name)
 
     tmp_part = get_name()
-    filenames = {"src_layer": ''.join(['{0}tmp{0}'.format(os.path.sep), tmp_part, '.geojson']),
+    filenames = {"src_layer": ''.join(['tmp{0}'.format(os.path.sep), tmp_part, '.geojson']),
                  "result": None}
     savefile(filenames['src_layer'], topojson_to_geojson(ref_layer).encode())
 
     try:
         result_geojson = await app.loop.run_in_executor(
-            app["ProcessPool"],
+            app["ThreadPool"],
             get_grid_layer,
             filenames['src_layer'],
             posted_data["cellsize"],
@@ -735,8 +734,8 @@ async def call_stewart(posted_data, user_id, app):
 
     tmp_part = get_name()
     filenames = {
-        'point_layer': ''.join(['/tmp/', tmp_part, '.geojson']),
-        'mask_layer': ''.join(['/tmp/', get_name(), '.geojson'])
+        'point_layer': ''.join(['tmp/', tmp_part, '.geojson']),
+        'mask_layer': ''.join(['tmp/', get_name(), '.geojson'])
                       if posted_data['mask_layer'] != "" else None
         }
     savefile(filenames['point_layer'],
@@ -770,7 +769,7 @@ async def call_stewart(posted_data, user_id, app):
 
         else:
             res, breaks, dump_obj = await app.loop.run_in_executor(
-                app["ProcessPool"],
+                app["ThreadPool"],
                 quick_stewart_mod,
                 filenames['point_layer'],
                 n_field_name1,
@@ -1118,7 +1117,7 @@ def check_port_available(port_nb):
 
 async def on_shutdown(app):
     await app["redis_conn"].quit()
-    app["ProcessPool"].shutdown()
+    # app["ProcessPool"].shutdown()
     app["ThreadPool"].shutdown()
     for task in asyncio.Task.all_tasks():
         await asyncio.sleep(0)
@@ -1189,7 +1188,7 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
     with open('static/json/sample_layers.json', 'r') as f:
         app['db_layers'] = json.loads(f.read().replace('/static', 'static'))[0]
     app['ThreadPool'] = ThreadPoolExecutor(4)
-    app['ProcessPool'] = ProcessPoolExecutor(4)
+#    app['ProcessPool'] = ProcessPoolExecutor(4)
     app['app_name'] = "Magrit"
     app['geo_function'] = {
         "stewart": call_stewart, "gridded": carto_gridded, "links": links_map,
