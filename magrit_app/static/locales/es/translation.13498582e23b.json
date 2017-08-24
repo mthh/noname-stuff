@@ -276,7 +276,8 @@
             "flow": "Generar un mapa de relaciones",
             "discont": "Generar un mapa de discontinuidades",
             "typo": "Generar un mapa cualitativo",
-            "typosymbol": "Generar un mapa cualitativo con pictogramas"
+            "typosymbol": "Generar un mapa cualitativo con pictogramas",
+            "two_stocks": "Generar un mapa de gofres"
         },
         "func_title" : {
             "smooth": "Potenciales (modelo de Stewart)",
@@ -395,10 +396,18 @@
             "unknown": "Desconocido",
             "id": "Identificación"
         },
+        "palette_box": {
+            "button": "Paleta personalizada?",
+            "title": "Paleta personalizada",
+            "error_name_existing": "El nombre del palet ya está en uso",
+            "error_name_invalid": "Nombre de paleta no válido",
+            "new_name": "Nombre de paleta :"
+        },
         "explore_box": {
             "title": "Tabla de atributos",
             "button_add_field": "Añadir un campo...",
             "add_field_box": {
+                "new_name_placeholder": "NuevoCampo",
                 "new_name": "Nombre del campo<br>",
                 "new_content": "Contenido del campo<br>",
                 "between_numerical": "Calcular un valor entre campos numéricos",
@@ -430,7 +439,8 @@
             "additionnal_notes": "Anotaciones adicionales<br>",
             "under_rectangle": "Enmarcar la leyenda",
             "info_tooltip_line_break": "Para hacer un salto de línea insertar el símbolo <i> \\n </i>",
-            "choice_break_symbol": "Personalizar el valor de los símbolos..."
+            "choice_break_symbol": "Personalizar el valor de los símbolos...",
+            "ratio_waffle_txt": "Texto correspondiente a la proporción"
         },
         "legend_symbol_values_box": {
             "reset": "Valores de reseteado",
@@ -481,7 +491,8 @@
             "arrowWeight": "Tamaño de la flecha",
             "arrowColor": "Color de la flecha",
             "arrowAngle": "Ángulo de la flecha",
-            "move_points": "Mover puntos de inicio y llegada de la flecha"
+            "move_points": "Mover puntos de inicio y llegada de la flecha",
+            "arrowHead": "Ocultar la cabeza de la flecha"
         },
         "ellipse_edit_box": {
             "title": "Opciones de la elipse",

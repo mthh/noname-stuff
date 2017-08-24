@@ -21,6 +21,11 @@ def make_index(bounds):
     return rtree.index.Index([z for z in idx_generator_func(bounds)],
                              Interleaved=True)
 
+def to_float(v):
+    try:
+        return float(v)
+    except:
+        return np.NaN
 
 def get_grid_layer(input_file, height, field_name, grid_shape="square"):
     proj_robinson = (
@@ -29,8 +34,9 @@ def get_grid_layer(input_file, height, field_name, grid_shape="square"):
     gdf = GeoDataFrame.from_file(input_file)
 
     if not gdf[field_name].dtype in (int, float):
-        gdf.loc[:, field_name] = gdf[field_name].replace('', np.NaN)
-        gdf.loc[:, field_name] = gdf[field_name].astype(float)
+        # gdf.loc[:, field_name] = gdf[field_name].replace('', np.NaN)
+        # gdf.loc[:, field_name] = gdf[field_name].astype(float)
+        gdf.loc[:, field_name] = gdf[field_name].apply(to_float)
     gdf = gdf[gdf[field_name].notnull()]
     gdf = gdf[gdf.geometry.notnull()]
     gdf.index = range(len(gdf))

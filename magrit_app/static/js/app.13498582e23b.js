@@ -1,4 +1,5 @@
 'use strict';
+
 /*
 * Memoization functions (naive LRU implementation)
 *
@@ -14,17 +15,17 @@ Function.prototype.memoized = function () {
   var cache_value = this._memo.values.get(key);
   if (cache_value !== undefined) {
     return JSON.parse(cache_value);
-  } else {
-    cache_value = this.apply(this, arguments);
-    this._memo.values.set(key, JSON.stringify(cache_value));
-    this._memo.stack.push(key);
-    if (this._memo.stack.length >= this._memo.max_size) {
-      var old_key = this._memo.stack.shift();
-      this._memo.values.delete(old_key);
-    }
-    return cache_value;
   }
+  cache_value = this.apply(this, arguments);
+  this._memo.values.set(key, JSON.stringify(cache_value));
+  this._memo.stack.push(key);
+  if (this._memo.stack.length >= this._memo.max_size) {
+    var old_key = this._memo.stack.shift();
+    this._memo.values.delete(old_key);
+  }
+  return cache_value;
 };
+
 Function.prototype.memoize = function () {
   var fn = this;
   return function () {
@@ -49,7 +50,13 @@ function setUpInterface(reload_project) {
   // in cache as they have more chance to be added again)
   window.addEventListener('unload', function () {
     var layer_names = Object.getOwnPropertyNames(current_layers).filter(function (name) {
-      if (!current_layers[name].hasOwnProperty('key_name')) return 0;else if (current_layers[name].targeted) return 0;else if (current_layers[name].renderer && (current_layers[name].renderer.indexOf('PropSymbols') > -1 || current_layers[name].renderer.indexOf('Dorling') > -1 || current_layers[name].renderer.indexOf('Choropleth') > -1 || current_layers[name].renderer.indexOf('Categorical') > -1)) return 0;
+      if (!current_layers[name].hasOwnProperty('key_name')) {
+        return 0;
+      } else if (current_layers[name].targeted) {
+        return 0;
+      } else if (current_layers[name].renderer && (current_layers[name].renderer.indexOf('PropSymbols') > -1 || current_layers[name].renderer.indexOf('Dorling') > -1 || current_layers[name].renderer.indexOf('Choropleth') > -1 || current_layers[name].renderer.indexOf('Categorical') > -1)) {
+        return 0;
+      }
       return 1;
     });
     if (layer_names.length) {
@@ -63,8 +70,12 @@ function setUpInterface(reload_project) {
   var bg = document.createElement('div');
   bg.id = 'overlay';
   bg.style.display = 'none';
-  bg.style.textAlign = 'center';
-  bg.innerHTML = '<span class="i18n" style="color: white; z-index: 2;margin-top:185px;display: inline-block;" data-i18n="[html]app_page.common.loading_results"></span>' + '<span style="color: white; z-index: 2;">...<br></span>' + '<span class="i18n" style="color: white; z-index: 2;display: inline-block;" data-i18n="[html]app_page.common.long_computation"></span><br>' + '<div class="load-wrapp" style="left: calc(50% - 60px);position: absolute;top: 50px;"><div class="load-1"><div class="line"></div>' + '<div class="line"></div><div class="line"></div></div></div>';
+  // bg.innerHTML = '<span class="i18n" style="color: white; z-index: 2;margin-top:185px;display: inline-block;" data-i18n="[html]app_page.common.loading_results"></span>' +
+  //                '<span style="color: white; z-index: 2;">...<br></span>' +
+  //                '<span class="i18n" style="color: white; z-index: 2;display: inline-block;" data-i18n="[html]app_page.common.long_computation"></span><br>' +
+  //                '<div class="load-wrapp" style="left: calc(50% - 60px);position: absolute;top: 50px;"><div class="load-1"><div class="line"></div>' +
+  //                '<div class="line"></div><div class="line"></div></div></div>';
+  bg.innerHTML = '\n<img src="static/img/logo_magrit.png" alt="Magrit" style="left: 15px;position: absolute;" width="auto" height="26">\n<span class="i18n" style="z-index: 2; margin-top:85px; display: inline-block;" data-i18n="[html]app_page.common.loading_results"></span>\n<span style="z-index: 2;">...<br></span>\n<div class="spinner">\n  <div class="rect1"></div>\n  <div class="rect2"></div>\n  <div class="rect3"></div>\n  <div class="rect4"></div>\n  <div class="rect5"></div>\n</div>\n<span class="i18n" style="z-index: 2;display: inline-block; margin-bottom: 20px;" data-i18n="[html]app_page.common.long_computation"></span><br>';
   var btn = document.createElement('button');
   btn.style.fontSize = '13px';
   btn.style.background = '#4b9cdb';
@@ -178,9 +189,7 @@ function setUpInterface(reload_project) {
     var click_func = function click_func(window_name, target_url) {
       window.open(target_url, window_name, 'toolbar=yes,menubar=yes,resizable=yes,scrollbars=yes,status=yes').focus();
     };
-    var box_content = '<div class="about_content">' + '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', { version: _app.version }) + '</span></p>' + '<p><b>' + i18next.t('app_page.help_box.useful_links') + '</b></p>' +
-    // '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.doc') + '</button></p>' +
-    '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.carnet_hypotheses') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_contact">' + i18next.t('app_page.help_box.contact') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_gh">' + i18next.t('app_page.help_box.gh_link') + '</button></p>' + '<p style="font-size: 0.8em; margin:auto;"><span>' + i18next.t('app_page.help_box.credits') + '</span></p></div>';
+    var box_content = '<div class="about_content">' + '<p style="font-size: 0.8em; margin-bottom:auto;"><span>' + i18next.t('app_page.help_box.version', { version: _app.version }) + '</span></p>' + '<p><b>' + i18next.t('app_page.help_box.useful_links') + '</b></p>' + '<p><button class="swal2-styled swal2_blue btn_doc">' + i18next.t('app_page.help_box.carnet_hypotheses') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_contact">' + i18next.t('app_page.help_box.contact') + '</button></p>' + '<p><button class="swal2-styled swal2_blue btn_gh">' + i18next.t('app_page.help_box.gh_link') + '</button></p>' + '<p style="font-size: 0.8em; margin:auto;"><span>' + i18next.t('app_page.help_box.credits') + '</span></p></div>';
     swal({
       title: i18next.t('app_page.help_box.title'),
       html: box_content,
@@ -214,14 +223,19 @@ function setUpInterface(reload_project) {
     });
   });
 
-  const_options.append('button').attrs({ id: 'current_app_lang', class: 'const_buttons' }).styles({ color: 'white', cursor: 'pointer',
-    'font-size': '14px', 'vertical-align': 'super',
-    background: 'transparent', 'font-weight': 'bold' }).html(i18next.language).on('click', function () {
-    if (document.getElementById('menu_lang')) document.getElementById('menu_lang').remove();else {
+  const_options.append('button').attrs({ id: 'current_app_lang', class: 'const_buttons' }).styles({ color: 'white',
+    cursor: 'pointer',
+    'font-size': '14px',
+    'vertical-align': 'super',
+    background: 'transparent',
+    'font-weight': 'bold' }).html(i18next.language).on('click', function () {
+    if (document.getElementById('menu_lang')) {
+      document.getElementById('menu_lang').remove();
+    } else {
       (function () {
         var current_lang = i18next.language;
         var other_langs = current_lang === 'en' ? ['es', 'fr'] : current_lang === 'fr' ? ['en', 'es'] : ['en', 'fr'];
-        var actions = [{ 'name': current_lang, 'callback': change_lang }, { 'name': other_langs[0], 'callback': change_lang }, { 'name': other_langs[1], 'callback': change_lang }];
+        var actions = [{ name: current_lang, callback: change_lang }, { name: other_langs[0], callback: change_lang }, { name: other_langs[1], callback: change_lang }];
         var menu = document.createElement('div');
         menu.style.top = '40px';
         menu.style.right = '0px';
@@ -275,34 +289,38 @@ function setUpInterface(reload_project) {
   var section1 = accordion1.append('div').attr('id', 'section1').attr('class', 'i18n').attr('data-i18n', '[tooltip-title]app_page.tooltips.section1').attr('data-placement', 'right');
   window.section2_pre = accordion2_pre.append('div').attr('id', 'section2_pre');
   window.section2 = accordion2.append('div').attr('id', 'section2');
-  accordion3.append('div').attrs({ id: 'section3' }), accordion4.append('div').attr('id', 'section4');
+  accordion3.append('div').attrs({ id: 'section3' });
+  accordion4.append('div').attr('id', 'section4');
   accordion5.append('div').attr('id', 'section5');
 
   var dv1 = section1.append('div');
   var dv11 = dv1.append('div').style('width', 'auto');
 
-  dv11.append('img').attrs({ 'id': 'img_in_geom', 'class': 'user_panel', 'src': 'static/img/b/addgeom.png', 'width': '26', 'height': '26', 'alt': 'Geometry layer' }).style('cursor', 'pointer').on('click', click_button_add_layer);
+  dv11.append('img').attrs({ id: 'img_in_geom', class: 'user_panel', src: 'static/img/b/addgeom.png', width: '26', height: '26', alt: 'Geometry layer' }).style('cursor', 'pointer').on('click', click_button_add_layer);
 
   dv11.append('p').attrs({ id: 'input_geom', class: 'user_panel i18n' }).styles({ display: 'inline', cursor: 'pointer', 'margin-left': '5px', 'vertical-align': 'super', 'font-weight': 'bold' }).attr('data-i18n', '[html]app_page.section1.add_geom').on('click', click_button_add_layer);
 
   var dv12 = dv1.append('div');
-  dv12.append('img').attrs({ 'id': 'img_data_ext', 'class': 'user_panel', 'src': 'static/img/b/addtabular.png', 'width': '26', 'height': '26', 'alt': 'Additional dataset' }).style('cursor', 'pointer').on('click', click_button_add_layer);
+  dv12.append('img').attrs({ id: 'img_data_ext', class: 'user_panel', src: 'static/img/b/addtabular.png', width: '26', height: '26', alt: 'Additional dataset' }).style('cursor', 'pointer').on('click', click_button_add_layer);
 
-  dv12.append('p').attrs({ 'id': 'data_ext', 'class': 'user_panel i18n', 'data-i18n': '[html]app_page.section1.add_ext_dataset' }).styles({ display: 'inline', cursor: 'pointer', 'margin-left': '5px', 'vertical-align': 'super', 'font-weight': 'bold' }).on('click', click_button_add_layer);
+  dv12.append('p').attrs({ id: 'data_ext', class: 'user_panel i18n', 'data-i18n': '[html]app_page.section1.add_ext_dataset' }).styles({ display: 'inline', cursor: 'pointer', 'margin-left': '5px', 'vertical-align': 'super', 'font-weight': 'bold' }).on('click', click_button_add_layer);
 
   var div_sample = dv1.append('div').attr('id', 'sample_zone');
-  div_sample.append('img').attrs({ 'id': 'sample_button', 'class': 'user_panel', 'src': 'static/img/b/addsample.png', 'width': '26', 'height': '26', 'alt': 'Sample layers' }).style('cursor', 'pointer').on('click', add_sample_layer);
+  div_sample.append('img').attrs({ id: 'sample_button', class: 'user_panel', src: 'static/img/b/addsample.png', width: '26', height: '26', alt: 'Sample layers' }).style('cursor', 'pointer').on('click', add_sample_layer);
 
-  div_sample.append('span').attrs({ 'id': 'sample_link', 'class': 'user_panel i18n' }).styles({ display: 'inline', cursor: 'pointer', 'margin-left': '5px', 'vertical-align': 'super', 'font-weight': 'bold' }).attr('data-i18n', '[html]app_page.section1.add_sample_data').on('click', add_sample_layer);
+  div_sample.append('span').attrs({ id: 'sample_link', class: 'user_panel i18n' }).styles({ display: 'inline', cursor: 'pointer', 'margin-left': '5px', 'vertical-align': 'super', 'font-weight': 'bold' }).attr('data-i18n', '[html]app_page.section1.add_sample_data').on('click', add_sample_layer);
 
   dv1.append('p').attr('id', 'join_section').styles({ 'text-align': 'center', 'margin-top': '2px' }).html('');
 
-  dv1.append('p').styles({ 'text-align': 'center', margin: '5px' }).insert('button').attrs({ 'id': 'btn_type_fields', 'class': 'i18n',
+  dv1.append('p').styles({ 'text-align': 'center', margin: '5px' }).insert('button').attrs({
+    id: 'btn_type_fields',
+    class: 'i18n',
     'data-i18n': '[html]app_page.box_type_fields.title',
-    'disabled': true }).styles({ cursor: 'pointer',
+    disabled: true }).styles({
+    cursor: 'pointer',
     'border-radius': '4px',
-    'border': '1px solid lightgrey',
-    'padding': '3.5px' }).html(i18next.t('app_page.box_type_fields.title')).on('click', function () {
+    border: '1px solid lightgrey',
+    padding: '3.5px' }).html(i18next.t('app_page.box_type_fields.title')).on('click', function () {
     var layer_name = Object.getOwnPropertyNames(user_data)[0];
     make_box_type_fields(layer_name);
   });
@@ -350,10 +368,13 @@ function setUpInterface(reload_project) {
 
   var dv3 = section3.append('div').style('padding-top', '10px').html('');
 
-  dv3.append('img').attrs({ 'src': 'static/img/b/addsample_t.png', class: 'i18n',
+  dv3.append('img').attrs({ src: 'static/img/b/addsample_t.png',
+    class: 'i18n',
     'data-i18n': '[tooltip-title]app_page.tooltips.section3_add_layout_sample',
     'data-placement': 'right' }).styles({ cursor: 'pointer', margin: '2.5px', float: 'right', 'border-radius': '10%' }).on('click', add_layout_layers);
-  dv3.append('img').attrs({ 'src': 'static/img/b/addgeom_t.png', 'id': 'input_layout_geom', class: 'i18n',
+  dv3.append('img').attrs({ src: 'static/img/b/addgeom_t.png',
+    id: 'input_layout_geom',
+    class: 'i18n',
     'data-i18n': '[tooltip-title]app_page.tooltips.section3_add_layout',
     'data-placement': 'right' }).styles({ cursor: 'pointer', margin: '2.5px', float: 'right', 'border-radius': '10%' }).on('click', click_button_add_layer);
 
@@ -365,31 +386,33 @@ function setUpInterface(reload_project) {
     'margin-top': '0px' });
 
   var e = dv4.append('li').styles({ margin: '1px', padding: '4px', 'text-align': 'center' });
-  e.append('input').attrs({ 'id': 'title', 'class': 'list_elem_section4 i18n',
-    'placeholder': '', 'data-i18n': '[placeholder]app_page.section4.map_title' }).styles({ 'margin': '0px 0px 0px 3px', 'width': '160px' }).on('keyup', function () {
+  e.append('input').attrs({ id: 'title',
+    class: 'list_elem_section4 i18n',
+    placeholder: '',
+    'data-i18n': '[placeholder]app_page.section4.map_title' }).styles({ margin: '0px 0px 0px 3px', width: '160px' }).on('keyup', function () {
     handle_title(this.value);
   });
   e.append('span').styles({ display: 'inline', top: '4px', cursor: 'pointer', 'vertical-align': 'sub' }).html(sys_run_button.replace('submit', 'Title properties')).on('click', handle_title_properties);
 
   var f = dv4.append('li').styles({ margin: '1px', padding: '4px' });
   f.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.background_color');
-  f.append('input').styles({ position: 'absolute', right: '20px', 'width': '60px', 'margin-left': '15px' }).attrs({ type: 'color', id: 'bg_color', value: '#ffffff', 'class': 'list_elem_section4 m_elem_right' }).on('change', function () {
+  f.append('input').styles({ position: 'absolute', right: '20px', width: '60px', 'margin-left': '15px' }).attrs({ type: 'color', id: 'bg_color', value: '#ffffff', class: 'list_elem_section4 m_elem_right' }).on('change', function () {
     handle_bg_color(this.value);
   });
 
   var a1 = dv4.append('li').styles({ margin: '1px', padding: '4px' });
   a1.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_width');
-  a1.append('input').attrs({ id: 'input-width', type: 'number', value: w, 'class': 'list_elem_section4 m_elem_right' }).on('change', function () {
+  a1.append('input').attrs({ id: 'input-width', type: 'number', value: w, class: 'list_elem_section4 m_elem_right' }).on('change', function () {
     var new_width = +this.value;
-    if (new_width == 0 || isNaN(new_width)) {
+    if (new_width === 0 || isNaN(new_width)) {
       this.value = w;
       return;
     }
     var ratio_type = document.getElementById('map_ratio_select').value;
-    if (ratio_type == 'portrait') {
+    if (ratio_type === 'portrait') {
       h = round_value(new_width / 0.70707, 0);
       canvas_mod_size([new_width, h]);
-    } else if (ratio_type == 'landscape') {
+    } else if (ratio_type === 'landscape') {
       h = round_value(new_width * 0.70707, 0);
       canvas_mod_size([new_width, h]);
     } else {
@@ -400,17 +423,17 @@ function setUpInterface(reload_project) {
 
   var a2 = dv4.append('li').styles({ margin: '1px', padding: '4px' });
   a2.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_height');
-  a2.append('input').attrs({ id: 'input-height', type: 'number', 'value': h, class: 'm_elem_right list_elem_section4' }).on('change', function () {
+  a2.append('input').attrs({ id: 'input-height', type: 'number', value: h, class: 'm_elem_right list_elem_section4' }).on('change', function () {
     var new_height = +this.value;
-    if (new_height == 0 || isNaN(new_height)) {
+    if (new_height === 0 || isNaN(new_height)) {
       this.value = h;
       return;
     }
     var ratio_type = document.getElementById('map_ratio_select').value;
-    if (ratio_type == 'portrait') {
+    if (ratio_type === 'portrait') {
       w = round_value(new_height * 0.70707, 0);
       canvas_mod_size([w, new_height]);
-    } else if (ratio_type == 'landscape') {
+    } else if (ratio_type === 'landscape') {
       w = round_value(new_height / 0.70707, 0);
       canvas_mod_size([w, new_height]);
     } else {
@@ -421,10 +444,10 @@ function setUpInterface(reload_project) {
 
   var b = dv4.append('li').styles({ margin: '1px', padding: '4px 0' });
   b.append('p').attr('class', 'list_elem_section4 i18n').style('padding', '4px').attr('data-i18n', '[html]app_page.section4.map_ratio');
-  var ratio_select = b.append('select').attrs({ 'class': 'list_elem_section4 i18n m_elem_right', 'id': 'map_ratio_select' });
+  var ratio_select = b.append('select').attrs({ class: 'list_elem_section4 i18n m_elem_right', id: 'map_ratio_select' });
 
   ratio_select.append('option').text('').attr('data-i18n', '[html]app_page.section4.ratio_user').attr('value', 'ratio_user');
-  ratio_select.append('option').text('').attr('data-i18n', '[html]app_page.section4.ratio_landscape').attr('value', 'landscape');;
+  ratio_select.append('option').text('').attr('data-i18n', '[html]app_page.section4.ratio_landscape').attr('value', 'landscape');
   ratio_select.append('option').text('').attr('data-i18n', '[html]app_page.section4.ratio_portait').attr('value', 'portrait');
   ratio_select.on('change', function () {
     var map_xy = get_map_xy0();
@@ -432,8 +455,8 @@ function setUpInterface(reload_project) {
     var dispo_h = document.innerHeight - map_xy.y - 1;
     var diff_w = dispo_w - w;
     var diff_h = dispo_h - h;
-    if (this.value == 'portrait') {
-      if (round_value(w / h, 1) == 1.4) {
+    if (this.value === 'portrait') {
+      if (round_value(w / h, 1) === 1.4) {
         var tmp = h;
         h = w;
         w = tmp;
@@ -442,8 +465,8 @@ function setUpInterface(reload_project) {
       } else {
         h = round_value(w / 0.70707, 0);
       }
-    } else if (this.value == 'landscape') {
-      if (round_value(h / w, 1) == 1.4) {
+    } else if (this.value === 'landscape') {
+      if (round_value(h / w, 1) === 1.4) {
         var _tmp = h;
         h = w;
         w = _tmp;
@@ -462,7 +485,8 @@ function setUpInterface(reload_project) {
 
   var d2 = dv4.append('li').styles({ margin: '1px', padding: '4px' });
   d2.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.resize_fit');
-  d2.append('button').styles({ margin: 0, padding: 0 }).attrs({ id: 'resize_fit',
+  d2.append('button').styles({ margin: 0, padding: 0 }).attrs({
+    id: 'resize_fit',
     class: 'm_elem_right list_elem_section4 button_st4 i18n',
     'data-i18n': '[html]app_page.common.ok' }).on('click', function () {
     document.getElementById('btn_s4').click();
@@ -477,8 +501,8 @@ function setUpInterface(reload_project) {
   c.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_center_menu').style('cursor', 'pointer');
   c.append('span').attr('id', 'map_center_menu_ico').style('display', 'inline-table').style('cursor', 'pointer');
   c.on('click', function () {
-    var sections = document.getElementsByClassName('to_hide'),
-        arg = void 0;
+    var sections = document.getElementsByClassName('to_hide');
+    var arg = void 0;
     if (sections[0].style.display === 'none') {
       arg = '';
       document.getElementById('map_center_menu_ico').classList = 'active';
@@ -494,8 +518,12 @@ function setUpInterface(reload_project) {
 
   var c1 = dv4.append('li').style('display', 'none').attr('class', 'to_hide');
   c1.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_center_x');
-  c1.append('input').style('width', '80px').attrs({ id: 'input-center-x', class: 'm_elem_right',
-    type: 'number', value: round_value(zoom_prop.x, 2), step: 'any' }).on('change', function () {
+  c1.append('input').style('width', '80px').attrs({
+    id: 'input-center-x',
+    class: 'm_elem_right',
+    type: 'number',
+    value: round_value(zoom_prop.x, 2),
+    step: 'any' }).on('change', function () {
     svg_map.__zoom.x = +this.value;
     zoom_without_redraw();
   });
@@ -503,11 +531,14 @@ function setUpInterface(reload_project) {
   var c2 = dv4.append('li').style('display', 'none').attr('class', 'to_hide');
   c2.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_center_y');
 
-  c2.append('input').attrs({ id: 'input-center-y', class: 'list_elem_section4 m_elem_right',
-    type: 'number', 'value': round_value(zoom_prop.y, 2), step: 'any' }).style('width', '80px').on('change', function () {
+  c2.append('input').attrs({ id: 'input-center-y',
+    class: 'list_elem_section4 m_elem_right',
+    type: 'number',
+    value: round_value(zoom_prop.y, 2),
+    step: 'any' }).style('width', '80px').on('change', function () {
     svg_map.__zoom.y = +this.value;
     zoom_without_redraw();
-  });;
+  });
 
   var d = dv4.append('li').style('display', 'none').attr('class', 'to_hide');
   d.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.map_scale_k');
@@ -525,8 +556,13 @@ function setUpInterface(reload_project) {
 
   g.append('span').style('float', 'right').html('°');
 
-  g.append('input').attrs({ id: 'canvas_rotation_value_txt', class: 'without_spinner', type: 'number',
-    value: 0, min: 0, max: 360, step: 'any' }).styles({ width: '30px', 'margin-left': '10px', 'float': 'right', 'font-size': '11.5px' }).on('change', function () {
+  g.append('input').attrs({ id: 'canvas_rotation_value_txt',
+    class: 'without_spinner',
+    type: 'number',
+    value: 0,
+    min: 0,
+    max: 360,
+    step: 'any' }).styles({ width: '30px', 'margin-left': '10px', float: 'right', 'font-size': '11.5px' }).on('change', function () {
     var val = +this.value,
         old_value = document.getElementById('form_rotate').value;
     if (isNaN(val) || val < -361) {
@@ -551,9 +587,10 @@ function setUpInterface(reload_project) {
 
   var g2 = dv4.append('li').styles({ margin: '1px', padding: '4px' });
   g2.append('p').attr('class', 'list_elem_section4 i18n').attr('data-i18n', '[html]app_page.section4.autoalign_features');
-  g2.append('input').styles({ margin: 0, padding: 0 }).attrs({ id: 'autoalign_features', type: 'checkbox',
+  g2.append('input').styles({ margin: 0, padding: 0 }).attrs({ id: 'autoalign_features',
+    type: 'checkbox',
     class: 'm_elem_right list_elem_section4 i18n' }).on('change', function () {
-    _app.autoalign_features = this.checked ? true : false;
+    _app.autoalign_features = this.checked;
   });
 
   var _i = dv4.append('li').styles({ 'text-align': 'center' });
@@ -562,7 +599,6 @@ function setUpInterface(reload_project) {
   p1.insert('span').insert('img').attrs({ id: 'btn_arrow', src: 'static/img/layout_icons/arrow-01.png', class: 'layout_ft_ico i18n', 'data-i18n': '[title]app_page.layout_features_box.arrow' }).on('click', function () {
     return add_layout_feature('arrow');
   });
-  // p1.insert('span').insert('img').attrs({id: 'btn_free_draw', src: 'static/img/layout_icons/draw-01.png', class:'layout_ft_ico i18n', 'data-i18n': '[title]app_page.layout_features_box.free_draw'}).on('click', () => add_layout_feature('free_draw'));
   p1.insert('span').insert('img').attrs({ id: 'btn_text_annot', src: 'static/img/layout_icons/text-01.png', class: 'layout_ft_ico i18n', 'data-i18n': '[title]app_page.layout_features_box.text_annot' }).on('click', function () {
     return add_layout_feature('text_annot');
   });
@@ -675,7 +711,7 @@ function setUpInterface(reload_project) {
   });
 
   var exp_a = export_png_options.append('p');
-  exp_a.append('span').attrs({ 'class': 'i18n', 'data-i18n': '[html]app_page.section5b.width' });
+  exp_a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.section5b.width' });
 
   exp_a.append('input').style('width', '60px').attrs({ id: 'export_png_width', class: 'm_elem_right', type: 'number', step: 0.1, value: w }).on('change', function () {
     var ratio = h / w,
@@ -688,7 +724,7 @@ function setUpInterface(reload_project) {
   var exp_b = export_png_options.append('p');
   exp_b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.section5b.height' });
 
-  exp_b.append('input').style('width', '60px').attrs({ 'id': 'export_png_height', 'class': 'm_elem_right', 'type': 'number', step: 0.1, value: h }).on('change', function () {
+  exp_b.append('input').style('width', '60px').attrs({ id: 'export_png_height', class: 'm_elem_right', type: 'number', step: 0.1, value: h }).on('change', function () {
     var ratio = h / w,
         export_png_width = document.getElementById('export_png_width');
     export_png_width.value = Math.round(+this.value / ratio * 10) / 10;
@@ -699,29 +735,28 @@ function setUpInterface(reload_project) {
   var export_name = dv5b.append('p');
   export_name.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.section5b.filename' });
 
-  export_name.append('input').attrs({ 'id': 'export_filename', 'class': 'm_elem_right', 'type': 'text' });
+  export_name.append('input').attrs({ id: 'export_filename', class: 'm_elem_right', type: 'text' });
 
   var export_geo_options = dv5b.append('p').attr('id', 'export_options_geo').style('display', 'none');
 
   var geo_a = export_geo_options.append('p').style('margin-bottom', '0');
-  geo_a.append('span').attrs({ 'class': 'i18n', 'data-i18n': '[html]app_page.export_box.option_layer' });
+  geo_a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_layer' });
 
-  var selec_layer = export_geo_options.insert('select').styles({ 'position': 'sticky', 'float': 'right' }).attrs({ id: 'layer_to_export', class: 'i18n m_elem_right' });
+  var selec_layer = export_geo_options.insert('select').styles({ position: 'sticky', float: 'right' }).attrs({ id: 'layer_to_export', class: 'i18n m_elem_right' });
 
-  var geo_b = export_geo_options.append('p').styles({ 'clear': 'both' }); // 'margin-top': '35px !important'
-  geo_b.append('span').attrs({ 'class': 'i18n', 'data-i18n': '[html]app_page.export_box.option_datatype' });
+  var geo_b = export_geo_options.append('p').styles({ clear: 'both' }); // 'margin-top': '35px !important'
+  geo_b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_datatype' });
   var selec_type = geo_b.insert('select').attrs({ id: 'datatype_to_use', class: 'i18n m_elem_right' }).style('margin-top', '5px');
 
-  export_geo_options.append('p').style('margin', 'auto').attrs({ 'class': 'i18n', 'data-i18n': '[html]app_page.export_box.option_projection' });
+  export_geo_options.append('p').style('margin', 'auto').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_projection' });
   var geo_c = export_geo_options.append('p').style('margin', 'auto');
   var selec_projection = geo_c.insert('select').styles({ position: 'relative', float: 'right', 'margin-right': '5px', 'font-size': '10.5px' }).attrs({ id: 'projection_to_use', disabled: true, class: 'i18n' });
 
   var proj4_input = export_geo_options.append('p').style('margin', 'auto').insert('input').attrs({ id: 'proj4str' }).styles({ display: 'none', width: '275px', position: 'relative', float: 'right', 'margin-right': '5px', 'font-size': '10.5px' }).on('keyup', function () {
-    ok_button.disabled = this.value.length == 0 ? 'true' : '';
+    ok_button.disabled = this.value.length === 0 ? 'true' : '';
   });
 
   ['GeoJSON', 'TopoJSON', 'ESRI Shapefile', 'GML', 'KML'].forEach(function (name) {
-    // ['GeoJSON', 'TopoJSON', 'ESRI Shapefile', 'GML'].forEach( name => {
     selec_type.append('option').attr('value', name).text(name);
   });
 
@@ -730,7 +765,7 @@ function setUpInterface(reload_project) {
   });
 
   selec_type.on('change', function () {
-    if (this.value == 'TopoJSON' || this.value == 'KML' || this.value == 'GeoJSON') {
+    if (this.value === 'TopoJSON' || this.value === 'KML' || this.value === 'GeoJSON') {
       selec_projection.node().options.selectedIndex = 0;
       selec_projection.attr('disabled', true);
       ok_button.disabled = '';
@@ -740,52 +775,53 @@ function setUpInterface(reload_project) {
   });
 
   selec_projection.on('change', function () {
-    if (this.value == 'proj4string') {
+    if (this.value === 'proj4string') {
       proj4_input.style('display', 'initial');
-      if (proj4_input.node().value == '' || proj4_input.node().value == undefined) ok_button.disabled = 'true';
+      if (proj4_input.node().value === '' || proj4_input.node().value === undefined) {
+        ok_button.disabled = 'true';
+      }
     } else {
       proj4_input.style('display', 'none');
       ok_button.disabled = '';
     }
   });
-  var ok_button = dv5b.append('p').style('float', 'left').append('button').attrs({ 'id': 'export_button_section5b', 'class': 'i18n button_st4', 'data-i18n': '[html]app_page.section5b.export_button' }).on('click', function () {
-    var type_export = document.getElementById('select_export_type').value,
-        export_name = document.getElementById('export_filename').value;
-    if (type_export === 'svg') {
-      export_compo_svg(export_name);
-    } else if (type_export === 'geo') {
+  var ok_button = dv5b.append('p').style('float', 'left').append('button').attrs({ id: 'export_button_section5b', class: 'i18n button_st4', 'data-i18n': '[html]app_page.section5b.export_button' }).on('click', function () {
+    var type_exp = document.getElementById('select_export_type').value,
+        exp_name = document.getElementById('export_filename').value;
+    if (type_exp === 'svg') {
+      export_compo_svg(exp_name);
+    } else if (type_exp === 'geo') {
       var layer_name = document.getElementById('layer_to_export').value,
           type = document.getElementById('datatype_to_use').value,
           _proj2 = document.getElementById('projection_to_use').value,
           proj4value = document.getElementById('proj4str').value;
       export_layer_geo(layer_name, type, _proj2, proj4value);
-      //make_export_layer_box()
-    } else if (type_export === 'png') {
-      var _type_export = document.getElementById('select_png_format').value,
+    } else if (type_exp === 'png') {
+      var exp_type = document.getElementById('select_png_format').value,
           ratio = void 0;
-      if (_type_export === 'web') {
+      if (exp_type === 'web') {
         ratio = +document.getElementById('export_png_height').value / +h;
       } else {
-        _type_export = 'paper';
+        exp_type = 'paper';
         ratio = +document.getElementById('export_png_height').value * 118.11 / +h;
       }
-      _export_compo_png(_type_export, ratio, export_name);
+      _export_compo_png(exp_type, ratio, exp_name);
     }
   });
 
   // Zoom-in, Zoom-out, Info, Hand-Move and RectZoom buttons (on the top of the map) :
   var lm = map_div.append('div').attr('class', 'light-menu').styles({ position: 'absolute', right: '0px', bottom: '0px' });
 
-  var lm_buttons = [{ id: 'zoom_out', 'i18n': '[tooltip-title]app_page.lm_buttons.zoom-', 'tooltip_position': 'left', class: 'zoom_button i18n', html: '-' }, { id: 'zoom_in', 'i18n': '[tooltip-title]app_page.lm_buttons.zoom+', 'tooltip_position': 'left', class: 'zoom_button i18n', html: '+' }, { id: 'info_button', 'i18n': '[tooltip-title]app_page.lm_buttons.i', 'tooltip_position': 'left', class: 'info_button i18n', html: 'i' }, { id: 'brush_zoom_button', class: 'brush_zoom_button', 'i18n': '[tooltip-title]app_page.lm_buttons.zoom_rect', 'tooltip_position': 'left', html: '<img src="static/img/Inkscape_icons_zoom_fit_selection_blank.png" width="18" height="18" alt="Zoom_select"/>' }, { id: 'hand_button', 'i18n': '[tooltip-title]app_page.lm_buttons.hand_button', 'tooltip_position': 'left', class: 'hand_button active i18n', html: '<img src="static/img/Twemoji_1f513.png" width="18" height="18" alt="Hand_closed"/>' }];
+  var lm_buttons = [{ id: 'zoom_out', i18n: '[tooltip-title]app_page.lm_buttons.zoom-', tooltip_position: 'left', class: 'zoom_button i18n', html: '-' }, { id: 'zoom_in', i18n: '[tooltip-title]app_page.lm_buttons.zoom+', tooltip_position: 'left', class: 'zoom_button i18n', html: '+' }, { id: 'info_button', i18n: '[tooltip-title]app_page.lm_buttons.i', tooltip_position: 'left', class: 'info_button i18n', html: 'i' }, { id: 'brush_zoom_button', i18n: '[tooltip-title]app_page.lm_buttons.zoom_rect', tooltip_position: 'left', class: 'brush_zoom_button i18n', html: '<img src="static/img/Inkscape_icons_zoom_fit_selection_blank.png" width="18" height="18" alt="Zoom_select"/>' }, { id: 'hand_button', i18n: '[tooltip-title]app_page.lm_buttons.hand_button', tooltip_position: 'left', class: 'hand_button active i18n', html: '<img src="static/img/Twemoji_1f513.png" width="18" height="18" alt="Hand_closed"/>' }];
 
-  var selec = lm.selectAll('input').data(lm_buttons).enter().append('p').style('margin', 'auto').insert('button').attrs(function (d, i) {
+  var selec = lm.selectAll('input').data(lm_buttons).enter().append('p').style('margin', 'auto').insert('button').attrs(function (elem) {
     return {
-      'data-placement': d.tooltip_position,
-      'class': d.class,
-      'data-i18n': d.i18n,
-      'id': d.id };
-  }).html(function (d) {
-    return d.html;
+      'data-placement': elem.tooltip_position,
+      class: elem.class,
+      'data-i18n': elem.i18n,
+      id: elem.id };
+  }).html(function (elem) {
+    return elem.html;
   });
 
   // Trigger actions when buttons are clicked and set-up the initial view :
@@ -844,8 +880,8 @@ function setUpInterface(reload_project) {
 }
 
 function encodeId(s) {
-  if (s === '') return '_';
-  return s.replace(/[^a-zA-Z0-9_-]/g, function (match) {
+  if (s === '') return 'L_';
+  return 'L_' + s.replace(/[^a-zA-Z0-9_-]/g, function (match) {
     return '_' + match[0].charCodeAt(0).toString(16) + '_';
   });
 }
@@ -867,7 +903,7 @@ function bindTooltips() {
 }
 
 function make_eye_button(state) {
-  if (state == 'open') {
+  if (state === 'open') {
     var eye_open = document.createElement('img');
     eye_open.setAttribute('src', 'static/img/b/eye_open.png');
     eye_open.setAttribute('class', 'active_button i18n');
@@ -876,7 +912,7 @@ function make_eye_button(state) {
     eye_open.setAttribute('height', 17);
     eye_open.setAttribute('alt', 'Visible');
     return eye_open;
-  } else if (state == 'closed') {
+  } else if (state === 'closed') {
     var eye_closed = document.createElement('img');
     eye_closed.setAttribute('src', 'static/img/b/eye_closed.png');
     eye_closed.setAttribute('class', 'active_button i18n');
@@ -890,9 +926,7 @@ function make_eye_button(state) {
 
 function change_lang() {
   var new_lang = this.name;
-  if (new_lang == i18next.language) {
-    return;
-  } else {
+  if (new_lang !== i18next.language) {
     docCookies.setItem('user_lang', new_lang, 31536e3, '/');
     i18next.changeLanguage(new_lang, function () {
       localize('.i18n');
@@ -915,12 +949,11 @@ function make_ico_choice() {
         func_desc = get_menu_option(func_name).desc,
         margin_value = '5px 16px';
     // margin_value = i == 8 ? '5px 16px 5px 55px' : '5px 16px';
-    function_panel.insert('img').styles({ margin: margin_value, cursor: 'pointer', width: '50px', 'float': 'left', 'list-style': 'none' }).attrs({
+    function_panel.insert('img').styles({ margin: margin_value, cursor: 'pointer', width: '50px', float: 'left', 'list-style': 'none' }).attrs({
       class: 'i18n',
       'data-i18n': ['[title]app_page.func_description.', func_name].join(''),
       src: ['static/img/func_icons2/', ico_name].join(''),
       id: 'button_' + func_name }).on('click', function () {
-      var fill_menu = true;
       // Do some clean-up related to the previously displayed options :
       if (window.fields_handler) {
         if (this.classList.contains('active')) {
@@ -940,7 +973,7 @@ function make_ico_choice() {
 
       // Replace the title of the section:
       var selec_title = document.getElementById('btn_s2b');
-      selec_title.innerHTML = '<span class="i18n" data-i18n="app_page.common.representation">' + i18next.t("app_page.common.representation") + '</span><span> : </span><span class="i18n" data-i18n="app_page.func_title.' + _app.current_functionnality.name + '">' + i18next.t("app_page.func_title." + _app.current_functionnality.name) + '</span>';
+      selec_title.innerHTML = '<span class="i18n" data-i18n="app_page.common.representation">' + i18next.t('app_page.common.representation') + '</span><span> : </span><span class="i18n" data-i18n="app_page.func_title.' + _app.current_functionnality.name + '">' + i18next.t('app_page.func_title.' + _app.current_functionnality.name) + '</span>';
       selec_title.style.display = '';
 
       // Don't fill the menu / don't highlight the icon if the type of representation is not authorizhed :
@@ -958,7 +991,7 @@ function make_ico_choice() {
 
         // Specific case for flow/link functionnality as we are also
         // filling the fields with data from the uploaded tabular file if any :
-        if (func_name == 'flow' && joined_dataset) {
+        if (func_name === 'flow' && joined_dataset) {
           fields_handler.fill();
         }
       }
@@ -994,13 +1027,13 @@ var result_data = {};
 var joined_dataset = [];
 var field_join_map = [];
 var current_layers = {};
-var dataset_name = undefined;
-var canvas_rotation_value = undefined;
+var dataset_name = void 0;
+var canvas_rotation_value = void 0;
 var map_div = d3.select('#map');
 var pos_lgds_elem = new Map();
 
 // The 'map' (so actually the `map` variable is a reference to the main `svg` element on which we are drawing)
-var map = map_div.styles({ width: w + 'px', height: h + 'px' }).append('svg').attrs({ 'id': 'svg_map', 'width': w, 'height': h }).style('position', 'absolute').on('contextmenu', function (event) {
+var map = map_div.styles({ width: w + 'px', height: h + 'px' }).append('svg').attrs({ id: 'svg_map', width: w, height: h }).style('background-color', 'rgba(255, 255, 255, 0)').style('position', 'absolute').on('contextmenu', function (event) {
   d3.event.preventDefault();
 }).call(zoom);
 
@@ -1011,10 +1044,11 @@ var _app = {
   to_cancel: undefined,
   targeted_layer_added: false,
   current_functionnality: undefined,
-  layer_to_id: new Map([['World', 'World'], ['Graticule', 'Graticule']]),
-  id_to_layer: new Map([['World', 'World'], ['Graticule', 'Graticule']]),
+  layer_to_id: new Map([['World', encodeId('World')], ['Graticule', encodeId('Graticule')]]),
+  id_to_layer: new Map([[encodeId('World'), 'World'], [encodeId('Graticule'), 'Graticule']]),
   version: document.querySelector('#header').getAttribute('v'),
-  existing_lang: ['en', 'es', 'fr']
+  existing_lang: ['en', 'es', 'fr'],
+  custom_palettes: new Map()
 };
 
 // A bunch of references to the buttons used in the layer manager
@@ -1030,12 +1064,12 @@ var button_result_type = new Map([['flow', '<img src="static/img/type_geom/layer
 var eye_open0 = '<img src="static/img/b/eye_open.png" class="active_button" id="eye_open"  width="17" height="17" alt="Visible"/>';
 
 // Reference to the sys run button already in two requested sizes are they are called many times :
-var sys_run_button = '<img src="static/img/High-contrast-system-run.png" width="22" height="22" style="vertical-align: inherit;" alt="submit"/>',
-    sys_run_button_t2 = '<img src="static/img/High-contrast-system-run.png" class="style_target_layer" width="18" height="18" alt="Layer_rendering" style="float:right;"/>';
+var sys_run_button = '<img src="static/img/High-contrast-system-run.png" width="22" height="22" style="vertical-align: inherit;" alt="submit"/>';
+var sys_run_button_t2 = '<img src="static/img/High-contrast-system-run.png" class="style_target_layer" width="18" height="18" alt="Layer_rendering" style="float:right;"/>';
 
 // Shortcut to the name of the methods offered by geostats library:
 var discretiz_geostats_switch = new Map([['jenks', 'getJenks'], ['equal_interval', 'getEqInterval'],
-//['std_dev', 'getStdDeviation'],
+// ['std_dev', 'getStdDeviation'],
 ['quantiles', 'getQuantile'], ['arithmetic_progression', 'getArithmeticProgression'], ['Q6', 'getBreaksQ6'], ['geometric_progression', 'getGeometricProgression']]);
 
 // Reference to the available fonts that the user could select :
@@ -1072,7 +1106,7 @@ function parseQuery(search) {
   var params = {};
   document.querySelector('noscript').remove();
   window.isIE = function () {
-    return (/MSIE/i.test(navigator.userAgent) || /Trident\/\d./i.test(navigator.userAgent) || /Edge\/\d./i.test(navigator.userAgent) ? true : false
+    return (/MSIE/i.test(navigator.userAgent) || /Trident\/\d./i.test(navigator.userAgent) || /Edge\/\d./i.test(navigator.userAgent)
     );
   }();
   // window.isOldMS_Firefox = (() => (/Firefox/i.test(navigator.userAgent)
@@ -1095,7 +1129,7 @@ function parseQuery(search) {
     lng: lang,
     fallbackLng: _app.existing_lang[0],
     backend: {
-      loadPath: 'static/locales/{{lng}}/translation.fb44dc9c2116.json'
+      loadPath: 'static/locales/{{lng}}/translation.13498582e23b.json'
     }
   }, function (err, tr) {
     if (err) {
@@ -1116,11 +1150,8 @@ function up_legends() {
   }
 }
 
-////////////////
-// To sort:
-////////////////
-
-// To bind the set of small buttons (trash icon, paint icon, active/deactive visibility, info tooltip, etc..)
+// To bind the set of small buttons
+// (trash icon, paint icon, active/deactive visibility, info tooltip, etc..)
 // which are on each feature representing a layer in the layer manager
 // (the function is called each time that a new feature is put in this layer manager)
 function binds_layers_buttons(layer_name) {
@@ -1130,7 +1161,7 @@ function binds_layers_buttons(layer_name) {
     handle_click_layer(layer_name);
   });
   sortable_elem.on('contextmenu', function () {
-    d3.event.preventDefault();return;
+    d3.event.preventDefault();
   });
   sortable_elem.select('#trash_button').on('click', function () {
     remove_layer(layer_name);
@@ -1170,8 +1201,8 @@ function displayInfoOnMove() {
   } else {
     map.select('.brush').remove();
     var layers = svg_map.querySelectorAll('.layer'),
-        nb_layer = layers.length,
-        top_visible_layer = null;
+        nb_layer = layers.length;
+    var top_visible_layer = null;
 
     for (var i = nb_layer - 1; i > -1; i--) {
       if (layers[i].style.visibility !== 'hidden') {
@@ -1208,12 +1239,19 @@ function displayInfoOnMove() {
 }
 
 /**
-*  Function redrawing the prop symbol / img / labels when the projection changes
-*   (also taking care of redrawing point layer with appropriate 'pointRadius')
+* Function redrawing the prop symbol / img / labels / waffles when the projection
+* changes (also taking care of redrawing point layer with appropriate 'pointRadius')
+*
+* @return {void}
 *
 */
 function reproj_symbol_layer() {
-  for (var lyr_name in current_layers) {
+  /* eslint-disable no-loop-func */
+  var layers = Object.keys(current_layers);
+  var n_layers = layers.length;
+  var lyr_name = void 0;
+  for (var ix = 0; ix < n_layers; ix++) {
+    lyr_name = layers[ix];
     if (current_layers[lyr_name].renderer && (current_layers[lyr_name].renderer.indexOf('PropSymbol') > -1 || current_layers[lyr_name].renderer.indexOf('TypoSymbols') > -1 || current_layers[lyr_name].renderer.indexOf('Label') > -1)) {
       var symbol = current_layers[lyr_name].symbol;
 
@@ -1221,14 +1259,14 @@ function reproj_symbol_layer() {
         // Reproject the labels :
         map.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).attrs(function (d) {
           var pt = path.centroid(d.geometry);
-          return { 'x': pt[0], 'y': pt[1] };
+          return { x: pt[0], y: pt[1] };
         });
       } else if (symbol === 'image') {
         // Reproject pictograms :
         map.select('#' + _app.layer_to_id.get(lyr_name)).selectAll(symbol).attrs(function (d, i) {
           var coords = path.centroid(d.geometry),
               size = +this.getAttribute('width').replace('px', '') / 2;
-          return { 'x': coords[0] - size, 'y': coords[1] - size };
+          return { x: coords[0] - size, y: coords[1] - size };
         });
       } else if (symbol === 'circle') {
         // Reproject Prop Symbol :
@@ -1237,9 +1275,9 @@ function reproj_symbol_layer() {
         }).attrs(function (d) {
           var centroid = path.centroid(d);
           return {
-            'r': d.properties.prop_value,
-            'cx': centroid[0],
-            'cy': centroid[1]
+            r: d.properties.prop_value,
+            cx: centroid[0],
+            cy: centroid[1]
           };
         });
       } else if (symbol === 'rect') {
@@ -1250,17 +1288,46 @@ function reproj_symbol_layer() {
           var centroid = path.centroid(d),
               size = d.properties.prop_value;
           return {
-            'height': size,
-            'width': size,
-            'x': centroid[0] - size / 2,
-            'y': centroid[1] - size / 2
+            height: size,
+            width: size,
+            x: centroid[0] - size / 2,
+            y: centroid[1] - size / 2
           };
         });
       }
-    } else if (current_layers[lyr_name].pointRadius != undefined) {
+    } else if (current_layers[lyr_name].pointRadius !== undefined) {
       map.select('#' + _app.layer_to_id.get(lyr_name)).selectAll('path').attr('d', path.pointRadius(current_layers[lyr_name].pointRadius));
+    } else if (current_layers[lyr_name].renderer === 'TwoStocksWaffle') {
+      var selection = svg_map.querySelector('#' + _app.layer_to_id.get(lyr_name)).querySelectorAll('g');
+      var nbFt = selection.length;
+      if (current_layers[lyr_name].symbol === 'circle') {
+        for (var i = 0; i < nbFt; i++) {
+          var centroid = path.centroid({
+            type: 'Point',
+            coordinates: selection[i].__data__.properties.centroid
+          });
+          var symbols = selection[i].querySelectorAll('circle');
+          for (var j = 0, nb_symbol = symbols.length; j < nb_symbol; j++) {
+            symbols[j].setAttribute('cx', centroid[0]);
+            symbols[j].setAttribute('cy', centroid[1]);
+          }
+        }
+      } else {
+        for (var _i5 = 0; _i5 < nbFt; _i5++) {
+          var _centroid = path.centroid({
+            type: 'Point',
+            coordinates: selection[_i5].__data__.properties.centroid
+          });
+          var _symbols = selection[_i5].querySelectorAll('rect');
+          for (var _j = 0, _nb_symbol = _symbols.length; _j < _nb_symbol; _j++) {
+            _symbols[_j].setAttribute('x', _centroid[0]);
+            _symbols[_j].setAttribute('y', _centroid[1]);
+          }
+        }
+      }
     }
   }
+  /* eslint-enable no-loop-func */
 }
 
 function make_dialog_container(id_box, title, class_box) {
@@ -1269,14 +1336,14 @@ function make_dialog_container(id_box, title, class_box) {
   var _class_box = class_box || 'dialog';
   var container = document.createElement('div');
   container.setAttribute('id', id_box);
-  container.setAttribute('class', 'twbs modal fade' + ' ' + _class_box);
+  container.setAttribute('class', 'twbs modal fade ' + _class_box);
   container.setAttribute('tabindex', '-1');
   container.setAttribute('role', 'dialog');
   container.setAttribute('aria-labelledby', 'myModalLabel');
   container.setAttribute('aria-hidden', 'true');
   container.innerHTML = '<div class="modal-dialog"><div class="modal-content"></div></div>';
   document.getElementById('twbs').appendChild(container);
-  var html_content = '<div class="modal-header">\n    <button type="button" id="xclose" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">\xD7</span></button>\n    <h4 class="modal-title" id="gridModalLabel">' + _title + '</h4>\n    </div>\n    <div class="modal-body"> </div>\n    <div class="modal-footer">\n    <button type="button" class="btn btn-primary btn_ok" data-dismiss="modal">' + i18next.t("app_page.common.confirm") + '</button>\n    <button type="button" class="btn btn-default btn_cancel">' + i18next.t("app_page.common.cancel") + '</button>\n    </div>';
+  var html_content = '<div class="modal-header">\n    <button type="button" id="xclose" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">\xD7</span></button>\n    <h4 class="modal-title" id="gridModalLabel">' + _title + '</h4>\n    </div>\n    <div class="modal-body"> </div>\n    <div class="modal-footer">\n    <button type="button" class="btn btn-primary btn_ok" data-dismiss="modal">' + i18next.t('app_page.common.confirm') + '</button>\n    <button type="button" class="btn btn-default btn_cancel">' + i18next.t('app_page.common.cancel') + '</button>\n    </div>';
   var modal_box = new Modal(document.getElementById(_id_box), { content: html_content });
   modal_box.show();
   return modal_box;
@@ -1371,6 +1438,7 @@ var make_confirm_dialog2 = function (class_box, title, options) {
 
 // Wrapper to obtain confirmation before actually removing a layer :
 function remove_layer(name) {
+  // eslint-disable-next-line no-param-reassign
   name = name || this.parentElement.parentElement.getAttribute('layer_name');
   swal({
     title: '',
@@ -1385,8 +1453,9 @@ function remove_layer(name) {
   }).then(function () {
     remove_layer_cleanup(name);
   }, function () {
-    null;
-  }); // ^^^^^^^^^^^^ Do nothing on cancel, but this avoid having an "uncaught exeption (cancel)" comming in the console if nothing is set here
+    return null;
+  });
+  // ^^^^^^^^^^^^ Do nothing on cancel, but this avoid having an "uncaught exeption (cancel)" comming in the console if nothing is set here
   //  ^^^^^^^^^^^^^^^^^^^^^^^ Not sure anymore :/
 }
 
@@ -1403,13 +1472,13 @@ function remove_ext_dataset() {
   }).then(function () {
     remove_ext_dataset_cleanup();
   }, function () {
-    null;
+    return null;
   });
 }
 
 function remove_ext_dataset_cleanup() {
-  field_join_map = new Array();
-  joined_dataset = new Array();
+  field_join_map = [];
+  joined_dataset = [];
   dataset_name = undefined;
   var ext_dataset_img = document.getElementById('img_data_ext');
   ext_dataset_img.setAttribute('src', 'static/img/b/addtabular.png');
@@ -1422,6 +1491,7 @@ function remove_ext_dataset_cleanup() {
   data_ext_txt.classList.add('i18n');
   data_ext_txt.setAttribute('data-i18n', '[html]app_page.section1.add_ext_dataset');
   document.getElementById('remove_dataset').remove();
+  document.getElementById('table_dataset_s1').remove();
   document.getElementById('join_section').innerHTML = '';
 }
 
@@ -1456,16 +1526,18 @@ function remove_layer_cleanup(name) {
   if (a) a.remove();
 
   // Remove the layer from the "mask" section if the "smoothed map" menu is open :
-  if (_app.current_functionnality && _app.current_functionnality.name == 'smooth') {
-    var _a = document.getElementById('stewart_mask').querySelector('option[value="' + name + '"]');
-    if (_a) _a.remove();
-    //Array.prototype.forEach.call(document.getElementById('stewart_mask').options, el => { if(el.value == name) el.remove(); });
+  if (_app.current_functionnality && _app.current_functionnality.name === 'smooth') {
+    var aa = document.getElementById('stewart_mask').querySelector('option[value="' + name + '"]');
+    if (aa) aa.remove();
+    // Array.prototype.forEach.call(
+    //   document.getElementById('stewart_mask').options, el => {
+    //      if (el.value == name) el.remove(); });
   }
 
   // Reset the panel displaying info on the targeted layer if she"s the one to be removed :
   if (current_layers[name].targeted) {
     // Updating the top of the menu (section 1) :
-    //$("#input_geom").qtip("destroy");
+    document.getElementById('table_layer_s1').remove();
     document.getElementById('remove_target').remove();
     d3.select('#img_in_geom').attrs({ id: 'img_in_geom',
       class: 'user_panel',
@@ -1481,7 +1553,7 @@ function remove_layer_cleanup(name) {
 
     // Update some global variables :
     field_join_map = [];
-    user_data = new Object();
+    user_data = {};
     _app.targeted_layer_added = false;
 
     // Redisplay the bottom of the section 1 in the menu allowing user to select a sample layer :
@@ -1508,15 +1580,17 @@ function remove_layer_cleanup(name) {
   delete current_layers[name];
 }
 
-// Change color of the background (ie the parent "svg" element on the top of which group of elements have been added)
+// Change color of the background
+// (ie the parent "svg" element on the top of which group of elements have been added)
 function handle_bg_color(color) {
   map.style('background-color', color);
 }
 
 function handle_click_hand(behavior) {
   var hb = d3.select('.hand_button');
-  behavior = behavior && (typeof behavior === 'undefined' ? 'undefined' : _typeof(behavior)) !== 'object' ? behavior : !hb.classed('locked') ? 'lock' : 'unlock';
-  if (behavior == 'lock') {
+  // eslint-disable-next-line no-param-reassign
+  var b = (behavior && (typeof behavior === 'undefined' ? 'undefined' : _typeof(behavior)) !== 'object' ? behavior : false) || !hb.classed('locked') ? 'lock' : 'unlock';
+  if (b === 'lock') {
     hb.classed('locked', true);
     hb.html('<img src="static/img/Twemoji_1f512.png" width="18" height="18" alt="locked"/>');
     map.select('.brush').remove();
@@ -1539,13 +1613,10 @@ function handle_click_hand(behavior) {
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// Zooming functions (some from http://bl.ocks.org/linssen/7352810)
-//////////////////////////////////////////////////////////////////////////////
-
 function zoom_without_redraw() {
   var rot_val = canvas_rotation_value || '';
-  var transform, t_val;
+  var transform = void 0;
+  var t_val = void 0;
   if (!d3.event || !d3.event.transform || !d3.event.sourceEvent) {
     transform = d3.zoomTransform(svg_map);
     t_val = transform.toString() + rot_val;
@@ -1576,14 +1647,13 @@ function zoom_without_redraw() {
   document.getElementById('input-center-y').value = round_value(zoom_params.y, 2);
   document.getElementById('input-scale-k').value = round_value(proj.scale() * zoom_params.k, 2);
   // let a = document.getElementById('form_projection'),
-  //     disabled_val = (zoom_k_scale > 200) && (window._target_layer_file != undefined || result_data.length > 1)? '' : 'disabled';
+  //   disabled_val = (zoom_k_scale > 200) && (window._target_layer_file != undefined || result_data.length > 1)? '' : 'disabled';
   // a.querySelector('option[value="ConicConformalSec"]').disabled = disabled_val;
   // a.querySelector('option[value="ConicConformalTangent"]').disabled = disabled_val;
-};
+}
 
 function redraw_legends_symbols(targeted_node) {
   var legend_nodes = targeted_node ? [targeted_node] : document.querySelectorAll('#legend_root_symbol');
-
   var hide = svg_map.__zoom.k > 4 || svg_map.__zoom.k < 0.15;
   var hidden = [];
 
@@ -1601,7 +1671,7 @@ function redraw_legends_symbols(targeted_node) {
         lgd_subtitle = legend_nodes[i].querySelector('#legendsubtitle').innerHTML,
         notes = legend_nodes[i].querySelector('#legend_bottom_note').innerHTML;
 
-    var rect_fill_value = legend_nodes[i].getAttribute('visible_rect') == 'true' ? {
+    var rect_fill_value = legend_nodes[i].getAttribute('visible_rect') === 'true' ? {
       color: legend_nodes[i].querySelector('#under_rect').style.fill,
       opacity: legend_nodes[i].querySelector('#under_rect').style.fillOpacity
     } : undefined;
@@ -1619,31 +1689,31 @@ function redraw_legends_symbols(targeted_node) {
       new_lgd.setAttribute('display', 'none');
     }
   }
-  if (hide && !(hidden.length == legend_nodes.length)) {
+  if (hide && !(hidden.length === legend_nodes.length)) {
     alertify.notify(i18next.t('app_page.notification.warning_deactivation_prop_symbol_legend'), 'warning', 5);
   }
 
   if (!targeted_node) {
     var legend_nodes_links_discont = document.querySelectorAll('#legend_root_lines_class');
-    for (var _i5 = 0; _i5 < legend_nodes_links_discont.length; ++_i5) {
-      var _layer_id = legend_nodes_links_discont[_i5].classList[2].split('lgdf_')[1],
+    for (var _i6 = 0; _i6 < legend_nodes_links_discont.length; ++_i6) {
+      var _layer_id = legend_nodes_links_discont[_i6].classList[2].split('lgdf_')[1],
           _layer_name = _app.id_to_layer.get(_layer_id),
           _rendered_field = current_layers[_layer_name].rendered_field,
-          _display_value = legend_nodes_links_discont[_i5].getAttribute('display'),
-          _visible = legend_nodes_links_discont[_i5].style.visibility;
+          _display_value = legend_nodes_links_discont[_i6].getAttribute('display'),
+          _visible = legend_nodes_links_discont[_i6].style.visibility;
 
-      var _transform_param = legend_nodes_links_discont[_i5].getAttribute('transform'),
-          _rounding_precision = legend_nodes_links_discont[_i5].getAttribute('rounding_precision'),
-          _lgd_title = legend_nodes_links_discont[_i5].querySelector('#legendtitle').innerHTML,
-          _lgd_subtitle = legend_nodes_links_discont[_i5].querySelector('#legendsubtitle').innerHTML,
-          _notes = legend_nodes_links_discont[_i5].querySelector('#legend_bottom_note').innerHTML;
+      var _transform_param = legend_nodes_links_discont[_i6].getAttribute('transform'),
+          _rounding_precision = legend_nodes_links_discont[_i6].getAttribute('rounding_precision'),
+          _lgd_title = legend_nodes_links_discont[_i6].querySelector('#legendtitle').innerHTML,
+          _lgd_subtitle = legend_nodes_links_discont[_i6].querySelector('#legendsubtitle').innerHTML,
+          _notes = legend_nodes_links_discont[_i6].querySelector('#legend_bottom_note').innerHTML;
 
-      var _rect_fill_value = legend_nodes_links_discont[_i5].getAttribute('visible_rect') == 'true' ? {
-        color: legend_nodes_links_discont[_i5].querySelector('#under_rect').style.fill,
-        opacity: legend_nodes_links_discont[_i5].querySelector('#under_rect').style.fillOpacity
+      var _rect_fill_value = legend_nodes_links_discont[_i6].getAttribute('visible_rect') === 'true' ? {
+        color: legend_nodes_links_discont[_i6].querySelector('#under_rect').style.fill,
+        opacity: legend_nodes_links_discont[_i6].querySelector('#under_rect').style.fillOpacity
       } : undefined;
 
-      legend_nodes_links_discont[_i5].remove();
+      legend_nodes_links_discont[_i6].remove();
       createLegend_discont_links(_layer_name, _rendered_field, _lgd_title, _lgd_subtitle, _rect_fill_value, _rounding_precision, _notes);
       var _new_lgd = document.querySelector(['#legend_root_lines_class.lgdf_', _layer_id].join(''));
       _new_lgd.style.visibility = _visible;
@@ -1667,9 +1737,9 @@ function interpolateZoom(translate, scale) {
   return d3.transition().duration(225).tween('zoom', function () {
     var iTranslate = d3.interpolate([transform.x, transform.y], translate);
     var iScale = d3.interpolate(transform.k, scale);
-    return function (t) {
-      svg_map.__zoom.k = iScale(t);
-      var _t = iTranslate(t);
+    return function (t_value) {
+      svg_map.__zoom.k = iScale(t_value);
+      var _t = iTranslate(t_value);
       svg_map.__zoom.x = _t[0];
       svg_map.__zoom.y = _t[1];
       zoom_without_redraw();
@@ -1681,14 +1751,13 @@ function zoomClick() {
   if (map_div.select('#hand_button').classed('locked')) return;
   var direction = this.id === 'zoom_in' ? 1 : -1,
       factor = 0.1,
-      target_zoom = 1,
       center = [w / 2, h / 2],
       transform = d3.zoomTransform(svg_map),
       translate = [transform.x, transform.y],
-      translate0 = [],
-      l = [],
       view = { x: translate[0], y: translate[1], k: transform.k };
-
+  var target_zoom = 1,
+      translate0 = [],
+      l = [];
   d3.event.preventDefault();
   target_zoom = transform.k * (1 + factor * direction);
   translate0 = [(center[0] - view.x) / view.k, (center[1] - view.y) / view.k];
@@ -1698,10 +1767,6 @@ function zoomClick() {
   view.y += center[1] - l[1];
   interpolateZoom([view.x, view.y], view.k);
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// Rotation functions :
-//////////////////////////////////////////////////////////////////////////////
 
 function rotate_global(angle) {
   canvas_rotation_value = ['rotate(', angle, ')'].join('');
@@ -1714,12 +1779,9 @@ function rotate_global(angle) {
   if (northArrow.displayed) {
     var current_rotate = !isNaN(+northArrow.svg_node.attr('rotate')) ? +northArrow.svg_node.attr('rotate') : 0;
     northArrow.svg_node.attr('transform', 'rotate(' + (+angle + current_rotate) + ',' + northArrow.x_center + ', ' + northArrow.y_center + ')');
-    // northArrow.svg_node.attr('transform', [
-    //     'rotate(', +angle + current_rotate, ',',northArrow.x_center,',', northArrow.y_center, ')'
-    //     ].join(''));
   }
   zoom_without_redraw();
-};
+}
 
 function isInterrupted(proj_name) {
   return proj_name.indexOf('interrupted') > -1 || proj_name.indexOf('armadillo') > -1 || proj_name.indexOf('healpix') > -1;
@@ -1729,7 +1791,7 @@ function handleClipPath() {
   var proj_name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
   var main_layer = arguments[1];
 
-  proj_name = proj_name.toLowerCase();
+  var proj_name_lower = proj_name.toLowerCase();
   var defs_sphere = defs.node().querySelector('#sphereClipPath');
   var defs_extent = defs.node().querySelector('#extent');
   var defs_clipPath = defs.node().querySelector('clipPath');
@@ -1743,7 +1805,7 @@ function handleClipPath() {
     defs_clipPath.remove();
   }
 
-  if (isInterrupted(proj_name)) {
+  if (isInterrupted(proj_name_lower)) {
     defs.append('path').datum({ type: 'Sphere' }).attr('id', 'sphereClipPath').attr('d', path);
 
     defs.append('clipPath').attr('id', 'clip').append('use').attr('xlink:href', '#sphereClipPath');
@@ -1751,8 +1813,7 @@ function handleClipPath() {
     map.selectAll('.layer:not(.no_clip)').attr('clip-path', 'url(#clip)');
 
     svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
-  } else if (proj_name.indexOf('conicconformal') > -1) {
-
+  } else if (proj_name_lower.indexOf('conicconformal') > -1) {
     var outline = d3.geoGraticule().extentMajor([[-180, -60], [180, 90]]).outline();
 
     // proj.fitSize([w, h], outline);
@@ -1768,7 +1829,7 @@ function handleClipPath() {
     //     .attr('d', path);
     //
     // reproj_symbol_layer();
-    // if(main_layer){
+    // if (main_layer) {
     //   center_map(main_layer);
     //   zoom_without_redraw();
     // }
@@ -1782,11 +1843,12 @@ function change_projection(new_proj_name) {
   map.select('.brush').remove();
 
   // Only keep the first argument of the rotation parameter :
-  var prev_rotate = proj.rotate ? [proj.rotate()[0], 0, 0] : [0, 0, 0],
-      def_proj = available_projections.get(new_proj_name);
+  var prev_rotate = proj.rotate ? [proj.rotate()[0], 0, 0] : [0, 0, 0];
+  var def_proj = available_projections.get(new_proj_name);
 
   // Update global variables:
-  // proj = def_proj.custom ? d3.geoProjection(window[def_proj.name]()).scale(def_proj.scale) : d3[def_proj.name]();
+  // proj = def_proj.custom ? d3.geoProjection(window[def_proj.name]()).scale(def_proj.scale)
+  //      : d3[def_proj.name]();
   proj = d3[def_proj.name]();
   if (def_proj.parallels) proj = proj.parallels(def_proj.parallels);else if (def_proj.parallel) proj = proj.parallel(def_proj.parallel);
   if (def_proj.clipAngle) proj = proj.clipAngle(def_proj.clipAngle);
@@ -1804,9 +1866,9 @@ function change_projection(new_proj_name) {
     scale_to_bbox(def_proj.bounds);
   } else if (!layer_name) {
     var layers_active = Array.prototype.filter.call(svg_map.querySelectorAll('.layer'), function (f) {
-      return f.style.visibility != 'hidden';
+      return f.style.visibility !== 'hidden';
     });
-    layer_name = layers_active.length > 0 ? layers_active[layers_active.length - 1].id : undefined;
+    layer_name = layers_active.length > 0 ? _app.id_to_layer.get(layers_active[layers_active.length - 1].id) : undefined;
   }
   if (layer_name) {
     scale_to_lyr(layer_name);
@@ -1827,17 +1889,6 @@ function change_projection(new_proj_name) {
   handleClipPath(new_proj_name, layer_name);
 }
 
-var getD3ProjFromProj4 = function getD3ProjFromProj4(_proj) {
-  // Create the custom d3 projection using proj 4 forward and inverse functions:
-  var projRaw = function projRaw(lambda, phi) {
-    return _proj.forward([lambda, phi].map(radiansToDegrees));
-  };
-  projRaw.invert = function (x, y) {
-    return _proj.inverse([x, y]).map(degreesToRadians);
-  };
-  return d3.geoProjection(projRaw);
-};
-
 function change_projection_4(_proj) {
   remove_layer_cleanup('Sphere');
   // Disable the zoom by rectangle selection if the user is using it :
@@ -1856,22 +1907,22 @@ function change_projection_4(_proj) {
   var layer_name = Object.getOwnPropertyNames(user_data)[0];
   if (!layer_name) {
     var layers_active = Array.prototype.filter.call(svg_map.querySelectorAll('.layer'), function (f) {
-      return f.style.visibility != 'hidden';
+      return f.style.visibility !== 'hidden';
     });
-    layer_name = layers_active.length > 0 ? layers_active[layers_active.length - 1].id : undefined;
+    layer_name = layers_active.length > 0 ? _app.id_to_layer.get(layers_active[layers_active.length - 1].id) : undefined;
   }
-  if (!layer_name || layer_name == 'World' || layer_name == 'Sphere' || layer_name == 'Graticule') {
+  if (!layer_name || layer_name === 'World' || layer_name === 'Sphere' || layer_name === 'Graticule') {
     scale_to_bbox([-10.6700, 34.5000, 31.5500, 71.0500]);
   } else {
     var rv = fitLayer(layer_name);
     s = rv[0];
     t = rv[1];
-    if (isNaN(s) || s == 0 || isNaN(t[0]) || isNaN(t[1])) {
+    if (isNaN(s) || s === 0 || isNaN(t[0]) || isNaN(t[1])) {
       s = 100;t = [0, 0];
       scale_to_bbox([-10.6700, 34.5000, 31.5500, 71.0500]);
     }
   }
-  if (isNaN(s) || s == 0 || isNaN(t[0]) || isNaN(t[1])) {
+  if (isNaN(s) || s === 0 || isNaN(t[0]) || isNaN(t[1])) {
     s = 100;t = [0, 0];
     console.log('Error');
     return false;
@@ -1888,16 +1939,19 @@ function change_projection_4(_proj) {
 
 // Function to switch the visibility of a layer the open/closed eye button
 function handle_active_layer(name) {
-  var fill_value, parent_div, selec, at_end;
+  var fill_value = void 0,
+      parent_div = void 0,
+      selec = void 0,
+      at_end = void 0;
 
-  if (document.getElementById('info_features').className == 'active') {
+  if (document.getElementById('info_features').className === 'active') {
     displayInfoOnMove();
     at_end = true;
   }
   if (!name) {
     selec = this;
     parent_div = selec.parentElement;
-    name = parent_div.parentElement.getAttribute('layer_name');
+    name = parent_div.parentElement.getAttribute('layer_name'); // eslint-disable-line no-param-reassign
   } else {
     selec = document.querySelector('#sortable .' + _app.layer_to_id.get(name) + ' .active_button');
     parent_div = selec.parentElement;
@@ -1905,7 +1959,7 @@ function handle_active_layer(name) {
   var func = function func() {
     handle_active_layer(name);
   };
-  if (selec.id == 'eye_closed') {
+  if (selec.id === 'eye_closed') {
     fill_value = 1;
     var eye_open = make_eye_button('open');
     eye_open.onclick = func;
@@ -1916,8 +1970,8 @@ function handle_active_layer(name) {
     eye_closed.onclick = func;
     parent_div.replaceChild(eye_closed, selec);
   }
-  map.select('#' + _app.layer_to_id.get(name)).style('visibility', fill_value == 0 ? 'hidden' : 'initial');
-  map.selectAll('.lgdf_' + _app.layer_to_id.get(name)).style('visibility', fill_value == 0 ? 'hidden' : 'initial');
+  map.select('#' + _app.layer_to_id.get(name)).style('visibility', fill_value === 0 ? 'hidden' : 'initial');
+  map.selectAll('.lgdf_' + _app.layer_to_id.get(name)).style('visibility', fill_value === 0 ? 'hidden' : 'initial');
 
   if (at_end) {
     displayInfoOnMove();
@@ -1948,9 +2002,9 @@ function handle_title_properties() {
       allowOutsideClick: true,
       allowEscapeKey: true
     }).then(function () {
-      null;
+      return null;
     }, function () {
-      null;
+      return null;
     });
     return;
   }
@@ -1968,22 +2022,28 @@ function handle_title_properties() {
     stroke: title.style('stroke'),
     stroke_width: title.style('stroke-width')
   };
-  title_props.font_weight = title_props.font_weight == '400' || title_props.font_weight == '' ? '' : 'bold';
+  title_props.font_weight = title_props.font_weight === '400' || title_props.font_weight === '' ? '' : 'bold';
   // Font name don't seems to be formatted in the same way on Firefox and Chrome
   // (a space is inserted after the comma in Chrome so we are removing it)
   title_props.font_family = title_props.font_family ? title_props.font_family.replace(', ', ',') : title_props.font_family;
 
-  // Properties on the title are changed in real-time by the user then it will be rollback to original properties if Cancel is clicked
+  // Properties on the title are changed in real-time by the user
+  // then it will be rollbacked to original properties if Cancel is clicked
   make_confirm_dialog2('mapTitleitleDialogBox', i18next.t('app_page.title_box.title'), { widthFitContent: true }).then(function (confirmed) {
-    if (!confirmed) title.attrs({ x: title_props.position_x, y: title_props.position_y }).styles({
-      'font-size': title_props.size, 'fill': title_props.color,
-      'font-family': title_props.font_family, 'font-style': title_props.font_style,
-      'text-decoration': title_props.text_decoration, 'font-weight': title_props.font_weight,
-      'stroke': title_props.stroke, 'stroke-width': title_props.stroke_width
-    });
+    if (!confirmed) {
+      title.attrs({ x: title_props.position_x, y: title_props.position_y }).styles({
+        fill: title_props.color,
+        stroke: title_props.stroke,
+        'stroke-width': title_props.stroke_width,
+        'font-family': title_props.font_family,
+        'font-size': title_props.size,
+        'font-style': title_props.font_style,
+        'font-weight': title_props.font_weight,
+        'text-decoration': title_props.text_decoration
+      });
+    }
   });
   var box_content = d3.select('.mapTitleitleDialogBox').select('.modal-body').append('div').style('margin', '15x');
-
   box_content.append('p').html(i18next.t('app_page.title_box.font_size')).insert('input').attrs({ type: 'number', min: 2, max: 40, step: 1, value: +title_props.size.split('px')[0] }).style('width', '65px').on('change', function () {
     title.style('font-size', this.value + 'px');
   });
@@ -2004,13 +2064,13 @@ function handle_title_properties() {
     font_select.append('option').text(font[0]).attr('value', font[1]);
   });
   font_select.node().selectedIndex = available_fonts.map(function (d) {
-    return d[1] == title_props.font_family ? '1' : '0';
+    return d[1] === title_props.font_family ? '1' : '0';
   }).indexOf('1');
 
   var options_format = box_content.append('p'),
-      btn_bold = options_format.insert('span').attr('class', title_props.font_weight == 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">'),
-      btn_italic = options_format.insert('span').attr('class', title_props.font_style == 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">'),
-      btn_underline = options_format.insert('span').attr('class', title_props.text_decoration == 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
+      btn_bold = options_format.insert('span').attr('class', title_props.font_weight === 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">'),
+      btn_italic = options_format.insert('span').attr('class', title_props.font_style === 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">'),
+      btn_underline = options_format.insert('span').attr('class', title_props.text_decoration === 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
 
   btn_bold.on('click', function () {
     if (this.classList.contains('active')) {
@@ -2063,11 +2123,9 @@ function handle_title_properties() {
 
   buffer_section2.insert('span').style('float', 'right').html(' px');
 
-  var buffer_width = buffer_section2.insert('input').styles({ 'float': 'right', 'width': '60px' }).attrs({ type: 'number', step: '0.1', value: hasBuffer ? +title_props.stroke_width.replace('px', '') : 1 }).on('change', function () {
+  var buffer_width = buffer_section2.insert('input').styles({ float: 'right', width: '60px' }).attrs({ type: 'number', step: '0.1', value: hasBuffer ? +title_props.stroke_width.replace('px', '') : 1 }).on('change', function () {
     title.style('stroke-width', this.value + 'px');
   });
-
-  return;
 }
 
 /** Function triggered by the change of map/canvas size
@@ -2112,8 +2170,9 @@ function patchSvgForFonts() {
   function getListUsedFonts() {
     var elems = [svg_map.getElementsByTagName('text'), svg_map.getElementsByTagName('p')];
     var needed_definitions = [];
+    // elems.map(d => (d ? d : []));
     elems.map(function (d) {
-      return d ? d : [];
+      return d || [];
     });
     for (var j = 0; j < 2; j++) {
       var _loop3 = function _loop3(i) {
@@ -2133,19 +2192,18 @@ function patchSvgForFonts() {
   }
 
   var needed_definitions = getListUsedFonts();
-  if (needed_definitions.length == 0) {
+  if (needed_definitions.length === 0) {
     return;
-  } else {
-    var fonts_definitions = Array.prototype.filter.call(document.styleSheets, function (i) {
-      return i.href && i.href.indexOf('style-fonts.css') > -1 ? i : null;
-    })[0].cssRules;
-    var fonts_to_add = needed_definitions.map(function (name) {
-      return String(fonts_definitions[customs_fonts.indexOf(name)].cssText);
-    });
-    var style_elem = document.createElement('style');
-    style_elem.innerHTML = fonts_to_add.join(' ');
-    svg_map.querySelector('defs').appendChild(style_elem);
   }
+  var fonts_definitions = Array.prototype.filter.call(document.styleSheets, function (i) {
+    return i.href && i.href.indexOf('style-fonts.css') > -1 ? i : null;
+  })[0].cssRules;
+  var fonts_to_add = needed_definitions.map(function (name) {
+    return String(fonts_definitions[customs_fonts.indexOf(name)].cssText);
+  });
+  var style_elem = document.createElement('style');
+  style_elem.innerHTML = fonts_to_add.join(' ');
+  svg_map.querySelector('defs').appendChild(style_elem);
 }
 
 function unpatchSvgForFonts() {
@@ -2212,14 +2270,28 @@ function unpatchSvgForForeignObj(originals) {
   }
 }
 
+function patchSvgBackground() {
+  var background = document.createElement('rect');
+  background.id = 'background';
+  background.setAttribute('width', '100%');
+  background.setAttribute('height', '100%');
+  background.setAttribute('fill', document.getElementById('bg_color').value);
+  svg_map.insertBefore(background, svg_map.firstChild);
+}
+
+function unpatchSvgBackground() {
+  svg_map.querySelector('rect#background').remove();
+}
+
 function export_compo_svg(output_name) {
-  output_name = check_output_name(output_name, 'svg');
+  output_name = check_output_name(output_name, 'svg'); // eslint-disable-line no-param-reassign
   patchSvgForInkscape();
   patchSvgForFonts();
+  patchSvgBackground();
   var dimensions_foreign_obj = patchSvgForForeignObj();
   var targetSvg = document.getElementById('svg_map'),
-      serializer = new XMLSerializer(),
-      source = serializer.serializeToString(targetSvg);
+      serializer = new XMLSerializer();
+  var source = serializer.serializeToString(targetSvg);
 
   if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
     source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
@@ -2235,6 +2307,7 @@ function export_compo_svg(output_name) {
     unpatchSvgForFonts();
     unpatchSvgForForeignObj(dimensions_foreign_obj);
     unpatchSvgForInkscape();
+    unpatchSvgBackground();
   }).catch(function (err) {
     display_error_during_computation();
     console.log(err);
@@ -2252,24 +2325,27 @@ function _export_compo_png() {
   output_name = check_output_name(output_name, 'png');
   var dimensions_foreign_obj = patchSvgForForeignObj();
   patchSvgForFonts();
-  var targetCanvas = d3.select('body').append('canvas').attrs({ id: 'canvas_map_export', height: h, width: w }).node(),
-      targetSVG = document.querySelector('#svg_map'),
-      mime_type = 'image/png',
-      svg_xml,
-      ctx,
-      img;
+  var targetCanvas = d3.select('body').append('canvas').attrs({ id: 'canvas_map_export', height: h, width: w }).node();
+  var targetSVG = document.querySelector('#svg_map');
+  var mime_type = 'image/png';
+  var svg_xml = void 0,
+      ctx = void 0,
+      img = void 0;
 
   // At this point it might be better to wrap the whole function in a try catch ?
-  // (as it seems it could fail on various points (XMLSerializer()).serializeToString, toDataURL, changeResolution, etc.)
+  // (as it seems it could fail on various points :
+  // XMLSerializer()).serializeToString, toDataURL, changeResolution, etc.)
   try {
-    svg_xml = new XMLSerializer().serializeToString(targetSVG), ctx = targetCanvas.getContext('2d'), img = new Image();
+    svg_xml = new XMLSerializer().serializeToString(targetSVG);
+    ctx = targetCanvas.getContext('2d');
+    img = new Image();
   } catch (err) {
     document.getElementById('overlay').style.display = 'none';
     targetCanvas.remove();
     display_error_during_computation(String(err));
     return;
   }
-  if (scalefactor != 1) {
+  if (scalefactor !== 1) {
     try {
       changeResolution(targetCanvas, scalefactor);
     } catch (err) {
@@ -2279,11 +2355,12 @@ function _export_compo_png() {
       return;
     }
   }
+  var imgUrl = void 0;
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg_xml);
   img.onload = function () {
     ctx.drawImage(img, 0, 0);
     try {
-      var imgUrl = targetCanvas.toDataURL(mime_type);
+      imgUrl = targetCanvas.toDataURL(mime_type);
     } catch (err) {
       document.getElementById('overlay').style.display = 'none';
       targetCanvas.remove();
@@ -2298,7 +2375,7 @@ function _export_compo_png() {
     }).catch(function (err) {
       display_error_during_computation();
       console.log(err);
-    });;
+    });
   };
 }
 
@@ -2307,16 +2384,18 @@ function export_layer_geo(layer, type, projec, proj4str) {
   formToSend.append('layer', layer);
   formToSend.append('layer_name', current_layers[layer].key_name);
   formToSend.append('format', type);
-  if (projec === 'proj4string') formToSend.append('projection', JSON.stringify({ 'proj4string': proj4str }));else formToSend.append('projection', JSON.stringify({ 'name': projec }));
-
+  if (projec === 'proj4string') {
+    formToSend.append('projection', JSON.stringify({ proj4string: proj4str }));
+  } else {
+    formToSend.append('projection', JSON.stringify({ name: projec }));
+  }
   var extensions = new Map([['GeoJSON', 'geojson'], ['TopoJSON', 'topojson'], ['ESRI Shapefile', 'zip'], ['GML', 'zip'], ['KML', 'kml']]);
 
   xhrequest('POST', 'get_layer2', formToSend, true).then(function (data) {
     if (data.indexOf('{"Error"') === 0 || data.length === 0) {
       var error_message = void 0;
       if (data.indexOf('{"Error"') < 5) {
-        data = JSON.parse(data);
-        error_message = i18next.t(data.Error);
+        error_message = i18next.t(JSON.parse(data).Error);
       } else {
         error_message = i18next.t('app_page.common.error_msg');
       }
@@ -2327,15 +2406,15 @@ function export_layer_geo(layer, type, projec, proj4str) {
         allowOutsideClick: false,
         allowEscapeKey: false
       }).then(function () {
-        null;
+        return null;
       }, function () {
-        null;
+        return null;
       });
       return;
     }
     var ext = extensions.get(type),
-        filename = [layer, ext].join('.'),
-        dataStr = void 0;
+        filename = [layer, ext].join('.');
+    var dataStr = void 0;
     if (ext.indexOf('json') > -1) {
       dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(data);
     } else if (ext.indexOf('kml') > -1) {
@@ -2355,11 +2434,11 @@ function export_layer_geo(layer, type, projec, proj4str) {
 */
 function changeResolution(canvas, scaleFactor) {
   // Set up CSS size if it's not set up already
-  if (!canvas.style.width) canvas.style.width = canvas.width + 'px';
-  if (!canvas.style.height) canvas.style.height = canvas.height + 'px';
+  if (!canvas.style.width) canvas.style.width = canvas.width + 'px'; // eslint-disable-line no-param-reassign
+  if (!canvas.style.height) canvas.style.height = canvas.height + 'px'; // eslint-disable-line no-param-reassign
 
-  canvas.width = Math.ceil(canvas.width * scaleFactor);
-  canvas.height = Math.ceil(canvas.height * scaleFactor);
+  canvas.width = Math.ceil(canvas.width * scaleFactor); // eslint-disable-line no-param-reassign
+  canvas.height = Math.ceil(canvas.height * scaleFactor); // eslint-disable-line no-param-reassign
   var ctx = canvas.getContext('2d');
   ctx.scale(scaleFactor, scaleFactor);
 }
@@ -2388,6 +2467,7 @@ var beforeUnloadWindow = function beforeUnloadWindow(event) {
     window.localStorage.removeItem('magrit_project');
     window.localStorage.setItem('magrit_project', jsonParams);
   });
+  // eslint-disable-next-line no-param-reassign
   event.returnValue = _app.targeted_layer_added || Object.getOwnPropertyNames(result_data).length > 0 ? 'Confirm exit' : undefined;
 };
 'use strict';
@@ -2562,7 +2642,9 @@ var Colors = {
 var ColorsSelected = {
   // These colors came from "Pastel1" and "Pastel2" coloramps from ColorBrewer
   colorCodes: ['#b3e2cd', '#fdcdac', '#cbd5e8', '#f4cae4', '#e6f5c9', '#fff2ae', '#f1e2cc', '#cccccc', '#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6', '#ffffcc', '#e5d8bd', '#fddaec', '#f2f2f2'],
-  seen: new Set(), // In order to avoid randomly returning the same color as the last one, at least for the first layers
+  // In order to avoid randomly returning the same color
+  // as the last one, at least for the first layers
+  seen: new Set(),
   random: function random() {
     var to_rgb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
@@ -2591,14 +2673,14 @@ var ColorsSelected = {
 //   itself adapted from http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
 var randomColor = function () {
   var golden_ratio_conjugate = 0.618033988749895;
-  var h = Math.random();
+  var _h = Math.random();
 
   var hslToRgb = function hslToRgb(h, s, l) {
     var r = void 0,
         g = void 0,
         b = void 0;
 
-    if (s == 0) {
+    if (s === 0) {
       r = g = b = l; // achromatic
     } else {
       var hue2rgb = function hue2rgb(p, q, t) {
@@ -2621,11 +2703,15 @@ var randomColor = function () {
   };
 
   return function () {
-    h += golden_ratio_conjugate;
-    h %= 1;
-    return hslToRgb(h, 0.5, 0.60);
+    _h += golden_ratio_conjugate;
+    _h %= 1;
+    return hslToRgb(_h, 0.5, 0.60);
   };
 }();
+
+var addNewCustomPalette = function addNewCustomPalette(palette_name, colors) {
+  _app.custom_palettes.set(palette_name, colors);
+};
 'use strict';
 
 function ContextMenu() {
@@ -2756,7 +2842,7 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 function getBreaks(values, type, n_class) {
   var _values = values.filter(function (v) {
-    return v;
+    return v && !isNaN(+v);
   }),
       no_data = values.length - _values.length,
       nb_class = +n_class || getOptNbClass(_values.length);
@@ -2811,7 +2897,7 @@ var discretize_to_colors = function discretize_to_colors(values, type, nb_class,
       colors_map = [];
 
   for (var j = 0; j < values.length; ++j) {
-    if (values[j] != null && values[j] != '') {
+    if (values[j] != null && values[j] != '' && !isNaN(+values[j])) {
       var idx = serie.getClass(values[j]);
       colors_map.push(color_array[idx]);
     } else {
@@ -2836,6 +2922,7 @@ var display_discretization = function display_discretization(layer_name, field_n
     col_div.selectAll('.central_class').remove();
     col_div.selectAll('.central_color').remove();
     col_div.selectAll('#reverse_pal_btn').remove();
+    document.getElementById('button_palette_box').style.display = '';
     var sequential_color_select = col_div.insert('p').attr('class', 'color_txt').style('margin-left', '10px').html(i18next.t('disc_box.color_palette')).insert('select').attr('class', 'color_params').styles({
       width: '116px',
       'background-image': 'url(/static/img/palettes/Blues.png)' }).on('change', function () {
@@ -2846,6 +2933,14 @@ var display_discretization = function display_discretization(layer_name, field_n
     ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (name) {
       sequential_color_select.append('option').text(name).attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' });
     });
+
+    if (_app.custom_palettes) {
+      var additional_colors = Array.from(_app.custom_palettes.entries());
+
+      for (var ixp = 0; ixp < additional_colors.length; ixp++) {
+        sequential_color_select.append('option').text(additional_colors[ixp][0]).attrs({ value: 'user_' + additional_colors[ixp][0], title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length }).property('disabled', additional_colors[ixp][1].length !== nb_class);
+      }
+    }
 
     var button_reverse = d3.select('.color_txt').insert('p').style('text-align', 'center').insert('button').styles({ 'margin-top': '10px' }).attrs({ class: 'button_st3', id: 'reverse_pal_btn' }).html(i18next.t('disc_box.reverse_palette')).on('click', function () {
       to_reverse = true;
@@ -2859,6 +2954,7 @@ var display_discretization = function display_discretization(layer_name, field_n
     col_div.selectAll('.color_txt').remove();
     col_div.selectAll('.color_txt2').remove();
     col_div.selectAll('#reverse_pal_btn').remove();
+    document.getElementById('button_palette_box').style.display = 'none';
     col_div.insert('p').attr('class', 'central_class').html(i18next.t('disc_box.break_on')).insert('input').style('width', '50px').attrs({
       type: 'number',
       class: 'central_class',
@@ -2883,6 +2979,22 @@ var display_discretization = function display_discretization(layer_name, field_n
       left_color_select.append('option').attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' }).text(name);
       right_color_select.append('option').attrs({ value: name, title: name }).styles({ 'background-image': 'url(/static/img/palettes/' + name + '.png)' }).text(name);
     });
+
+    // if (_app.custom_palettes) {
+    //   const additional_colors = Array.from(
+    //     _app.custom_palettes.entries());
+    //   for (let ixp = 0; ixp < additional_colors.length; ixp++) {
+    //     left_color_select.append('option')
+    //       .text(additional_colors[ixp][0])
+    //       .attrs({ value: `user_${additional_colors[ixp][0]}`, title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length })
+    //       .property('disabled', additional_colors[ixp][1].length !== nb_class);
+    //     right_color_select.append('option')
+    //       .text(additional_colors[ixp][0])
+    //       .attrs({ value: `user_${additional_colors[ixp][0]}`, title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length })
+    //       .property('disabled', additional_colors[ixp][1].length !== nb_class);
+    //   }
+    // }
+
     document.getElementsByClassName('color_params_right')[0].selectedIndex = 14;
 
     var central_color = col_div.insert('p').attr('class', 'central_color');
@@ -2965,6 +3077,26 @@ var display_discretization = function display_discretization(layer_name, field_n
     txt_nb_class.node().value = value;
     document.getElementById('nb_class_range').value = value;
     nb_class = value;
+    var color_select = document.querySelector('.color_params');
+    var selected_index = color_select.selectedIndex;
+    var select_options = color_select.querySelectorAll('option');
+    for (var ixc = 0; ixc < select_options.length; ixc++) {
+      if (select_options[ixc].value.startsWith('user_')) {
+        select_options[ixc].disabled = nb_class !== +select_options[ixc].getAttribute('nb_colors');
+      }
+    }
+    if (select_options[selected_index].value.startsWith('user_') && select_options[selected_index].getAttribute('nb_colors') !== nb_class) {
+      setSelected(color_select, 'Blues');
+    }
+    // const color_select_left = document.querySelectorAll('.color_params_left > option');
+    // const color_select_right = document.querySelectorAll('.color_params_right > option');
+    // for (let ixc = 0; ixc < color_select_left.length; ixc++) {
+    //   if (color_select_left[ixc].value.startsWith('user_')) {
+    //     const is_disabled = (nb_class === +color_select_left[ixc].getAttribute('nb_colors')) ? false : true;
+    //     color_select_left[ixc].disabled = is_disabled;
+    //     color_select_right[ixc].disabled = is_disabled;
+    //   }
+    // }
   };
 
   var update_axis = function update_axis(group) {
@@ -3090,8 +3222,12 @@ var display_discretization = function display_discretization(layer_name, field_n
             to_reverse = false;
           } else {
             var selected_palette = document.querySelector('.color_params').value;
-            color_array = getColorBrewerArray(nb_class, selected_palette);
-            color_array = color_array.slice(0, nb_class);
+            if (selected_palette.startsWith('user_')) {
+              color_array = _app.custom_palettes.get(selected_palette.slice(5));
+            } else {
+              color_array = getColorBrewerArray(nb_class, selected_palette);
+              color_array = color_array.slice(0, nb_class);
+            }
           }
         } else if (col_scheme === 'diverging') {
           var left_palette = document.querySelector('.color_params_left').value,
@@ -3102,12 +3238,26 @@ var display_discretization = function display_discretization(layer_name, field_n
           var class_right = nb_class - ctl_class_value + 1,
               class_left = ctl_class_value - 1,
               max_col_nb = Math.max(class_right, class_left);
-          var right_pal = getColorBrewerArray(max_col_nb, right_palette),
-              left_pal = getColorBrewerArray(max_col_nb, left_palette);
 
-          left_pal = left_pal.slice(0, class_left).reverse();
+          var right_pal = getColorBrewerArray(max_col_nb, right_palette);
+          var left_pal = getColorBrewerArray(max_col_nb, left_palette);
+
+          // Below is for the case if we have displayed the custom palette also
+          // for a diverging scheme:
+          // let right_pal,
+          //   left_pal;
+          // if (right_palette.startsWith('user_')) {
+          //   right_pal = _app.custom_palettes.get(right_palette.slice(5));
+          // } else {
+          //   right_pal = getColorBrewerArray(max_col_nb, right_palette);
+          // }
+          // if (left_palette.startsWith('user_')) {
+          //   left_pal = _app.custom_palettes.get(left_palette.slice(5));
+          // } else {
+          //   left_pal = getColorBrewerArray(max_col_nb, left_palette);
+          // }
           right_pal = right_pal.slice(0, class_right);
-
+          left_pal = left_pal.slice(0, class_left).reverse();
           color_array = [].concat(left_pal, ctl_class_color, right_pal);
         }
       } else {
@@ -3188,7 +3338,8 @@ var display_discretization = function display_discretization(layer_name, field_n
   var type = options.type;
 
   for (var i = 0; i < nb_values; i++) {
-    if (db_data[i][field_name] != null && db_data[i][field_name] != '') {
+    var value = db_data[i][field_name];
+    if (value != null && value !== '' && isFinite(value) && !isNaN(+value)) {
       values.push(+db_data[i][field_name]);
       indexes.push(i);
     }
@@ -3299,8 +3450,9 @@ var display_discretization = function display_discretization(layer_name, field_n
       update_nb_class(nb_class);
       return;
     }
-    nb_class = +this.value;
-    txt_nb_class.node().value = nb_class;
+    // nb_class = +this.value;
+    // txt_nb_class.node().value = nb_class;
+    update_nb_class(+this.value);
     var ret_val = redisplay.compute();
     if (!ret_val) {
       this.value = old_nb_class;
@@ -3380,7 +3532,8 @@ var display_discretization = function display_discretization(layer_name, field_n
 
   var b_accordion_colors = newBox.append('button').attrs({ class: 'accordion_disc active', id: 'btn_acc_disc_color' }).style('padding', '0 6px').html(i18next.t('disc_box.title_color_scheme'));
   var accordion_colors = newBox.append('div').attrs({ class: 'panel show', id: 'accordion_colors' }).style('width', '98%');
-  var color_scheme = d3.select('#accordion_colors').append('div').attr('id', 'color_div').style('text-align', 'center');
+  var color_scheme = accordion_colors // d3.select('#accordion_colors')
+  .append('div').attr('id', 'color_div').style('text-align', 'center');
 
   [[i18next.t('disc_box.sequential'), 'sequential'], [i18next.t('disc_box.diverging'), 'diverging']].forEach(function (el) {
     color_scheme.insert('label').style('margin', '20px').html(el[0]).insert('input').attrs({ type: 'radio', name: 'color_scheme', value: el[1], id: 'button_' + el[1] }).on('change', function () {
@@ -3394,6 +3547,36 @@ var display_discretization = function display_discretization(layer_name, field_n
   });
   var to_reverse = false;
   document.getElementById('button_sequential').checked = true;
+  accordion_colors.append('span').attr('id', 'button_palette_box').styles({
+    margin: '5px',
+    float: 'right',
+    cursor: 'pointer'
+  }).html(i18next.t('app_page.palette_box.button')).on('click', function () {
+    make_box_custom_palette(nb_class).then(function (result) {
+      if (result) {
+        var _result = _slicedToArray(result, 2),
+            colors = _result[0],
+            palette_name = _result[1];
+
+        var select_palette = document.querySelector('.color_params');
+        addNewCustomPalette(palette_name, colors);
+        if (select_palette) {
+          d3.select(select_palette).append('option').text(palette_name).attrs({ value: 'user_' + palette_name, title: palette_name, nb_colors: colors.length });
+          setSelected(select_palette, 'user_' + palette_name);
+        }
+        // else {
+        //   d3.select('.color_params_right')
+        //     .append('option')
+        //     .text(palette_name)
+        //     .attrs({ value: `user_${palette_name}`, title: palette_name, nb_colors: colors.length });
+        //   d3.select('.color_params_left')
+        //     .append('option')
+        //     .text(palette_name)
+        //     .attrs({ value: `user_${palette_name}`, title: palette_name, nb_colors: colors.length });
+        // }
+      }
+    });
+  });
 
   var b_accordion_breaks = newBox.append('button').attrs({ class: 'accordion_disc', id: 'btn_acc_disc_break' }).style('padding', '0 6px').html(i18next.t('disc_box.title_break_values'));
   var accordion_breaks = newBox.append('div').attrs({ class: 'panel', id: 'accordion_breaks_vals' }).style('width', '98%');
@@ -3467,9 +3650,9 @@ var display_discretization = function display_discretization(layer_name, field_n
       no_data_color = document.getElementById('no_data_color').value;
     }
     for (var j = 0; j < db_data.length; ++j) {
-      var value = db_data[j][field_name];
-      if (value !== null && isFinite(value) && value != '') {
-        var idx = serie.getClass(+value);
+      var _value = db_data[j][field_name];
+      if (_value !== null && isFinite(_value) && _value != '' && !isNaN(+_value)) {
+        var idx = serie.getClass(+_value);
         colors_map.push(color_array[idx]);
       } else {
         colors_map.push(no_data_color);
@@ -3725,6 +3908,84 @@ var prepare_ref_histo = function prepare_ref_histo(parent_node, serie, formatCou
     }
   };
 };
+
+function make_box_custom_palette(nb_class, existing_colors) {
+  var is_hex_color = new RegExp(/^#([0-9a-f]{6}|[0-9a-f]{3})$/i);
+  var is_ok_name = new RegExp(/^[a-zA-Z0-9_]*$/);
+  var existing_palette = Array.from(_app.custom_palettes.keys());
+  var pal_name = void 0;
+  var ref_colors = void 0;
+  if (existing_colors && existing_colors.length === nb_class) {
+    ref_colors = existing_colors.slice();
+  } else {
+    ref_colors = [];
+    for (var i = 0; i < nb_class; i++) {
+      ref_colors.push(randomColor());
+    }
+  }
+
+  var verif_palette_name = function verif_palette_name(name) {
+    if (name !== '' && is_ok_name.test(name)) {
+      if (existing_palette.indexOf(name) > -1) {
+        d3.select('#palette_box_error_zone').html(i18next.t('app_page.palette_box.error_name_existing'));
+        document.querySelector('.swal2-confirm').disabled = true;
+        return null;
+      }
+      d3.select('#palette_box_error_zone').html('');
+      document.querySelector('.swal2-confirm').disabled = false;
+      return name;
+    } else {
+      d3.select('#palette_box_error_zone').html(i18next.t('app_page.palette_box.error_name_invalid'));
+      document.querySelector('.swal2-confirm').disabled = true;
+      return null;
+    }
+  };
+
+  return swal({
+    title: i18next.t('app_page.palette_box.title'),
+    html: '<div id="palette_box_content" style="display: inline-flex;"></div><div id="palette_box_name"></div>',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: i18next.t('app_page.common.close'),
+    animation: 'slide-from-top',
+    onOpen: function onOpen() {
+      document.querySelector('.swal2-modal').style.width = nb_class * 85 + 'px';
+      var colors = d3.select('#palette_box_content');
+      var g = colors.selectAll('p').data(ref_colors).enter().append('p');
+
+      g.append('input').attr('id', function (d, i) {
+        return i;
+      }).attr('type', 'color').property('value', function (d) {
+        return d;
+      }).style('width', '60px').on('change', function (d, i) {
+        ref_colors[i] = this.value;
+        this.nextSibling.value = this.value;
+      });
+
+      g.append('input').attr('id', function (d, i) {
+        return i;
+      }).property('value', function (d) {
+        return d;
+      }).style('width', '60px').on('keyup', function (d, i) {
+        if (is_hex_color.test(this.value)) {
+          ref_colors[i] = this.value;
+          this.previousSibling.value = this.value;
+        }
+      });
+      var bottom = d3.select('#palette_box_name');
+      bottom.append('p').attr('id', 'palette_box_error_zone').style('background', '#e3e3e3');
+      bottom.append('span').html(i18next.t('app_page.palette_box.new_name'));
+      bottom.append('input').style('width', '70px').on('keyup', function () {
+        if (verif_palette_name(this.value) !== null) pal_name = this.value;
+      });
+      document.querySelector('.swal2-confirm').disabled = true;
+    }
+  }).then(function (v) {
+    return [ref_colors, pal_name];
+  }, function (dismissValue) {
+    return null;
+  });
+}
 'use strict';
 
 var display_discretization_links_discont = function display_discretization_links_discont(layer_name, field_name, nb_class, type) {
@@ -4127,65 +4388,65 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 var get_menu_option = function () {
   var menu_option = {
-    'smooth': {
-      'name': 'smooth',
-      'menu_factory': 'fillMenu_Stewart',
-      'fields_handler': 'fields_Stewart'
+    smooth: {
+      name: 'smooth',
+      menu_factory: 'fillMenu_Stewart',
+      fields_handler: 'fields_Stewart'
     },
-    'prop': {
-      'name': 'prop',
-      'menu_factory': 'fillMenu_PropSymbol',
-      'fields_handler': 'fields_PropSymbol'
+    prop: {
+      name: 'prop',
+      menu_factory: 'fillMenu_PropSymbol',
+      fields_handler: 'fields_PropSymbol'
     },
-    'choroprop': {
-      'name': 'choroprop',
-      'menu_factory': 'fillMenu_PropSymbolChoro',
-      'fields_handler': 'fields_PropSymbolChoro'
+    choroprop: {
+      name: 'choroprop',
+      menu_factory: 'fillMenu_PropSymbolChoro',
+      fields_handler: 'fields_PropSymbolChoro'
     },
-    'proptypo': {
-      'name': 'proptypo',
-      'menu_factory': 'fillMenu_PropSymbolTypo',
-      'fields_handler': 'fields_PropSymbolTypo'
+    proptypo: {
+      name: 'proptypo',
+      menu_factory: 'fillMenu_PropSymbolTypo',
+      fields_handler: 'fields_PropSymbolTypo'
     },
-    'choro': {
-      'name': 'choro',
-      'menu_factory': 'fillMenu_Choropleth',
-      'fields_handler': 'fields_Choropleth'
+    choro: {
+      name: 'choro',
+      menu_factory: 'fillMenu_Choropleth',
+      fields_handler: 'fields_Choropleth'
     },
-    'cartogram': {
-      'name': 'cartogram',
-      'menu_factory': 'fillMenu_Anamorphose',
-      'fields_handler': 'fields_Anamorphose'
+    cartogram: {
+      name: 'cartogram',
+      menu_factory: 'fillMenu_Anamorphose',
+      fields_handler: 'fields_Anamorphose'
     },
-    'grid': {
-      'name': 'grid',
-      'menu_factory': 'fillMenu_griddedMap',
-      'fields_handler': 'fields_griddedMap'
+    grid: {
+      name: 'grid',
+      menu_factory: 'fillMenu_griddedMap',
+      fields_handler: 'fields_griddedMap'
     },
-    'flow': {
-      'name': 'flow',
-      'menu_factory': 'fillMenu_FlowMap',
-      'fields_handler': 'fields_FlowMap'
+    flow: {
+      name: 'flow',
+      menu_factory: 'fillMenu_FlowMap',
+      fields_handler: 'fields_FlowMap'
     },
-    'discont': {
-      'name': 'discont',
-      'menu_factory': 'fillMenu_Discont',
-      'fields_handler': 'fields_Discont'
+    discont: {
+      name: 'discont',
+      menu_factory: 'fillMenu_Discont',
+      fields_handler: 'fields_Discont'
     },
-    'typo': {
-      'name': 'typo',
-      'menu_factory': 'fillMenu_Typo',
-      'fields_handler': 'fields_Typo'
+    typo: {
+      name: 'typo',
+      menu_factory: 'fillMenu_Typo',
+      fields_handler: 'fields_Typo'
     },
-    'typosymbol': {
-      'name': 'typosymbol',
-      'menu_factory': 'fillMenu_TypoSymbol',
-      'fields_handler': 'fields_TypoSymbol'
+    typosymbol: {
+      name: 'typosymbol',
+      menu_factory: 'fillMenu_TypoSymbol',
+      fields_handler: 'fields_TypoSymbol'
     },
-    'two_stocks': {
-      'name': 'two_stocks',
-      'menu_factory': 'fillMenu_TwoStocks',
-      'fields_handler': 'fields_TwoStocks'
+    two_stocks: {
+      name: 'two_stocks',
+      menu_factory: 'fillMenu_TwoStocks',
+      fields_handler: 'fields_TwoStocks'
     }
   };
   return function (func) {
@@ -4196,6 +4457,7 @@ var get_menu_option = function () {
 /**
 * Remove the div on which we are displaying the options related to each
 * kind of rendering.
+* @return {void}
 *
 */
 function clean_menu_function() {
@@ -4205,7 +4467,9 @@ function clean_menu_function() {
   }
   if (_app.current_functionnality && _app.current_functionnality.name) {
     var previous_button = document.getElementById('button_' + _app.current_functionnality.name);
-    if (previous_button.style.filter !== 'grayscale(100%)') previous_button.style.filter = 'invert(0%) saturate(100%)';
+    if (previous_button.style.filter !== 'grayscale(100%)') {
+      previous_button.style.filter = 'invert(0%) saturate(100%)';
+    }
     previous_button.classList.remove('active');
     _app.current_functionnality = undefined;
   }
@@ -4237,9 +4501,10 @@ function reset_user_values() {
 *
 */
 function unfillSelectInput(select_node) {
-  for (var i = select_node.childElementCount - 1; i > -1; i--) {
-    select_node.removeChild(select_node.children[i]);
-  }
+  select_node.innerHTML = ''; // eslint-disable-line no-param-reassign
+  // for (let i = select_node.childElementCount - 1; i > -1; i--) {
+  //   select_node.removeChild(select_node.children[i]);
+  // }
 }
 
 /** Function trying to avoid layer name collision by adding a suffix
@@ -4252,23 +4517,22 @@ function unfillSelectInput(select_node) {
 *        one to avoid collision or unwanted characters)
 */
 function check_layer_name(name) {
-  var clean_name = name.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  var clean_name = name.replace(/[^a-zA-Z0-9_-]/g, '_');
   if (clean_name.match(/^\d+/)) {
     clean_name = '_' + clean_name;
   }
   if (!current_layers.hasOwnProperty(clean_name) && ['Graticule', 'World'].indexOf(clean_name) < 0) {
     return clean_name;
-  } else {
-    var i = 1;
-    var match = clean_name.match(/_\d+$/);
-    if (match) {
-      i = match[0];
-      clean_name = clean_name.substring(clean_name, clean_name.indexOf(i));
-      return check_layer_name([clean_name, parseInt(i.slice(1, i.length)) + 1].join('_'));
-    } else {
-      return check_layer_name([clean_name, i].join('_'));
-    }
   }
+  //  else {
+  var i = 1;
+  var match = clean_name.match(/_\d+$/);
+  if (!match) {
+    return check_layer_name([clean_name, i].join('_'));
+  }
+  i = match[0];
+  clean_name = clean_name.substring(clean_name, clean_name.indexOf(i));
+  return check_layer_name([clean_name, parseInt(i.slice(1, i.length), 10) + 1].join('_'));
 }
 
 /**
@@ -4281,7 +4545,26 @@ function display_error_num_field() {
     text: i18next.t('app_page.common.error_type_fields'),
     type: 'error'
   });
-};
+}
+
+/**
+* Display a warning message if the target layer contains
+* one or more empty feature(s).
+*
+* @param {Array} features - the empty features
+*
+* @return void
+*/
+function display_warning_empty_geom(features) {
+  swal({ title: '',
+    text: i18next.t('app_page.common.warning_empty_geom', { count: features.length }),
+    type: 'warning',
+    showCancelButton: false,
+    allowOutsideClick: false,
+    confirmButtonColor: '#DD6B55',
+    confirmButtonText: i18next.t('app_page.common.valid') + '!'
+  });
+}
 
 /**
 * Return an approximate value (based on the bbox of the targeted layer)
@@ -4322,7 +4605,7 @@ function test_maxmin_resolution(cell_value) {
   } else if (cell_value > bigger_side / 1.66) {
     return 'lower';
   }
-  return;
+  // return;
 }
 
 /*
@@ -4333,11 +4616,9 @@ var color_disc_icons = function () {
   var types = new Set(['q6', 'equal_interval', 'jenks', 'quantiles']);
   return function (type_disc) {
     if (!type_disc) return;
-    type_disc = type_disc.toLowerCase();
-    if (!types.has(type_disc)) {
-      return;
-    } else {
-      document.getElementById('ico_' + type_disc).style.border = 'solid 1px green';
+    var t_disc = type_disc.toLowerCase();
+    if (types.has(t_disc)) {
+      document.getElementById('ico_' + t_disc).style.border = 'solid 1px green';
     }
   };
 }();
@@ -4352,7 +4633,7 @@ function make_template_functionnality(parent_node) {
 * @param {Object} parent - The parent of the element to be created.
 * @param {String} id - the id of the element to be created.
 * @param {String} margin_top - The margin on the top of the input element (in px).
-* @return void
+* @return {void}
 */
 function make_layer_name_button(parent, id, margin_top) {
   var a = parent.append('p').style('clear', 'both');
@@ -4367,7 +4648,7 @@ function make_discretization_icons(discr_section) {
   subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/q6.png', id: 'ico_q6' });
   subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/jenks.png', id: 'ico_jenks' });
   subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/equal_intervals.png', id: 'ico_equal_interval' });
-  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/quantiles.png', 'id': 'ico_quantiles' });
+  subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/quantiles.png', id: 'ico_quantiles' });
   subsection2.append('img').styles({ margin: '0 7.5px', cursor: 'pointer' }).attrs({ src: '/static/img/discr_icons/others.png', id: 'ico_others' });
   subsection2.append('span').attrs({ id: 'choro_mini_choice_disc' }).styles({ float: 'right', 'margin-top': '5px', 'margin-left': '15px' });
   subsection2.append('img').styles({ width: '15px', position: 'absolute', right: '5px' }).attrs({ id: 'img_choice_disc', src: '/static/img/Red_x.png' });
@@ -4377,20 +4658,22 @@ function make_ok_button(parent, id) {
   var disabled = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
   var a = parent.append('p').styles({ 'text-align': 'right', margin: 'auto' });
-  a.append('button').attrs({ 'id': id, 'class': 'params button_st3 i18n',
+  a.append('button').attrs({ id: id,
+    class: 'params button_st3 i18n',
     'data-i18n': '[html]app_page.func_options.common.render',
-    'disabled': disabled ? true : null }).html(i18next.t('app_page.func_options.common.render'));
+    disabled: disabled ? true : null }).html(i18next.t('app_page.func_options.common.render'));
 }
 
 function make_min_max_tableau(values, nb_class, discontinuity_type, min_size, max_size, id_parent, breaks, callback) {
-  document.getElementById(id_parent).innerHTML = '';
-  if (values && breaks == undefined) {
+  var parent_nd = document.getElementById(id_parent);
+  parent_nd.innerHTML = '';
+
+  if (values && breaks === undefined) {
     var disc_result = discretize_to_size(values, discontinuity_type, nb_class, min_size, max_size);
-    breaks = disc_result[2];
+    breaks = disc_result[2]; // eslint-disable-line no-param-reassign
     if (!breaks) return false;
   }
 
-  var parent_nd = document.getElementById(id_parent);
   parent_nd.style.marginTop = '3px';
   parent_nd.style.marginBottom = '3px';
   // parent_nd.style = "margin-top: 3px; margin-bottom: 3px;"
@@ -4476,9 +4759,8 @@ function make_min_max_tableau(values, nb_class, discontinuity_type, min_size, ma
 }
 
 function fetch_min_max_table_value(parent_id) {
-  var parent_node = parent_id ? document.getElementById(parent_id) : _app.current_functionnality.name === 'flow' ? document.getElementById('FlowMap_discTable') : _app.current_functionnality.name === 'discont' ? document.getElementById('Discont_discTable') : null;
-
-  if (!parent_node) return;
+  var parent_node = void 0;
+  if (parent_id) parent_node = document.getElementById(parent_id);else if (_app.current_functionnality.name === 'flow') document.getElementById('FlowMap_discTable');else if (_app.current_functionnality.name === 'discont') document.getElementById('Discont_discTable');else return;
 
   var mins = Array.prototype.map.call(parent_node.querySelectorAll('.min_class'), function (el) {
     return +el.value;
@@ -4494,21 +4776,29 @@ function fetch_min_max_table_value(parent_id) {
     return a - b;
   };
 
+  var r_mins = [].concat(mins);
+  var r_maxs = [].concat(maxs);
+  var r_sizes = [].concat(sizes);
+  var sorted_min = mins.sort(comp_fun);
+  var sorted_max = maxs.sort(comp_fun);
+  var sorted_sizes = sizes.sort(comp_fun);
   // Some verification regarding the input values provided by the user :
   // - Values are ordered :
-  if (mins !== mins.sort(comp_fun) || maxs !== maxs.sort(comp_fun) || sizes !== sizes.sort(comp_fun)) {
+  if (!(r_mins.every(function (d, i) {
+    return sorted_min[i] === d;
+  }) && r_maxs.every(function (d, i) {
+    return sorted_max[i] === d;
+  }) && r_sizes.every(function (d, i) {
+    return sorted_sizes[i] === d;
+  }))) {
     swal('', i18next.t('app_page.common.error_values_order'), 'error');
     return false;
   }
 
-  return { mins: mins.sort(comp_fun), maxs: maxs.sort(comp_fun), sizes: sizes.sort(comp_fun) };
+  return { mins: sorted_min, maxs: sorted_max, sizes: sorted_sizes };
 }
 
 function fillMenu_TwoStocks(layer) {
-  // square size / circle radius
-  // width row
-  // sybmol : square / circle
-
   var dv2 = make_template_functionnality(section2);
 
   var f1 = dv2.append('p').attr('class', 'params_section2');
@@ -4533,7 +4823,7 @@ function fillMenu_TwoStocks(layer) {
   // Options for waffles :
   var b = dv2.append('p').attr('class', 'params_section2');
   b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.twostocks.symbol_choice' }).html(i18next.t('app_page.func_options.twostocks.symbol_choice'));
-  var symbol_select = b.insert('select').attrs({ class: 'params', id: 'TwoStocks_waffle_symbol' });
+  b.insert('select').attrs({ class: 'params', id: 'TwoStocks_waffle_symbol' });
 
   var c = dv2.append('p').attr('class', 'params_section2');
   c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.twostocks.waffle_size_circle', id: 'TwoStocks_waffle_size_txt' }).html(i18next.t('app_page.func_options.twostocks.waffle_size_circle'));
@@ -4587,14 +4877,16 @@ var fields_TwoStocks = {
     var fields_list = section2.select('#TwoStocks_fields');
     var ok_button = section2.select('#twoStocks_yes');
     var ratio_select = section2.select('#TwoStocks_waffle_ratio');
+    var input_name = section2.select('#TwoStocks_output_name');
     [['app_page.func_options.common.symbol_circle', 'circle'], ['app_page.func_options.common.symbol_square', 'rect']].forEach(function (symb) {
       symbol_choice.append('option').text(i18next.t(symb[0])).attrs({ value: symb[1], 'data-i18n': '[text]' + symb[0] });
     });
+    var nb_display_fields = fields_stock.length <= 4 ? fields_stock.length : 4;
     fields_stock.forEach(function (f) {
       fields_list.append('option').text(f).attr('value', f);
     });
-    fields_list.node().parentElement.style.marginBottom = fields_stock.length * 12 + 5 + 'px';
-    fields_list.attr('size', fields_stock.length);
+    fields_list.node().parentElement.style.marginBottom = nb_display_fields * 16 + 'px';
+    fields_list.attr('size', nb_display_fields);
     symbol_choice.on('change', function () {
       if (this.value === 'circle') {
         section2.select('#TwoStocks_waffle_size_txt').attr('data-i18n', '[html]app_page.func_options.twostocks.waffle_size_circle').text(i18next.t('app_page.func_options.twostocks.waffle_size_circle'));
@@ -4602,15 +4894,17 @@ var fields_TwoStocks = {
         section2.select('#TwoStocks_waffle_size_txt').attr('data-i18n', '[html]app_page.func_options.twostocks.waffle_size_square').text(i18next.t('app_page.func_options.twostocks.waffle_size_square'));
       }
     });
-
+    input_name.node().value = layer + '_Waffle';
     ok_button.on('click', function () {
       var rendering_params = {};
-      var new_layer_name = section2.select('#TwoStocks_output_name').node().value;
+      var new_layer_name = document.getElementById('TwoStocks_output_name').value;
       new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : layer + '_Waffle');
       rendering_params.ratio = +document.getElementById('TwoStocks_waffle_ratio').value;
       rendering_params.fields = Array.prototype.slice.call(fields_list.node().selectedOptions).map(function (elem) {
         return elem.value;
       });
+
+      // Verify that there is 2 or more fields selected :
       if (rendering_params.fields.length < 2) {
         swal({
           title: i18next.t('app_page.common.error') + '!',
@@ -4621,6 +4915,8 @@ var fields_TwoStocks = {
         });
         return;
       }
+
+      // Verify that there isn't too many symbols to draw:
       var t_max = 0;
 
       var _loop = function _loop(i) {
@@ -4633,7 +4929,7 @@ var fields_TwoStocks = {
       for (var i = 0; i < rendering_params.fields.length; i++) {
         _loop(i);
       }
-      console.log(t_max);
+
       if (t_max > 900) {
         swal({
           title: i18next.t('app_page.common.error') + '!',
@@ -4644,6 +4940,8 @@ var fields_TwoStocks = {
         });
         return;
       }
+
+      // Fetch the necessary settings for rendering the waffle map:
       rendering_params.new_name = new_layer_name;
       rendering_params.symbol_type = symbol_choice.node().value;
       rendering_params.size = +document.getElementById('TwoStocks_waffle_size').value;
@@ -4695,23 +4993,31 @@ function render_twostocks_waffle(layer, rendering_params) {
     result_data[layer_to_add] = [];
     var ref_layer_selection = map.select('#' + _app.layer_to_id.get(layer)).selectAll('path');
     var centroids = getCentroids(ref_layer_selection._groups[0]);
+    var empty_geoms = [];
 
     ref_layer_selection.each(function (d, i) {
-      var r = { id: d.id, centroid: centroids[i] };
-      for (var j = 0; j < nbVar; j++) {
-        var _field = fields[j];
-        r[_field] = +user_data[layer][i][_field];
+      if (!centroids[i]) {
+        empty_geoms.push(d);
+      } else {
+        var r = { id: d.id, centroid: centroids[i] };
+        for (var j = 0; j < nbVar; j++) {
+          var _field = fields[j];
+          r[_field] = +user_data[layer][i][_field];
+        }
+        result_data[layer_to_add].push(r);
       }
-      result_data[layer_to_add].push(r);
     });
+    if (empty_geoms.length > 0) {
+      display_warning_empty_geom(empty_geoms);
+    }
   } else {
     ref_colors = rendering_params.ref_colors;
     result_data[layer_to_add] = JSON.parse(rendering_params.result_data);
   }
 
   for (var i = 0, _length = result_data[layer_to_add].length; i < _length; i++) {
-    var sum = 0;
     var c = [];
+    var sum = 0;
     var color = void 0;
     for (var j = 0; j < nbVar; j++) {
       var val = result_data[layer_to_add][i][fields[j]] / ratio;
@@ -4726,12 +5032,15 @@ function render_twostocks_waffle(layer, rendering_params) {
   }
 
   var nb_features = result_data[layer_to_add].length;
-  var new_layer = map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer');
+  var new_layer = map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer no_clip');
 
   if (symbol_type === 'circle') {
     var r = rendering_params.size;
     for (var _j = 0; _j < result_data[layer_to_add].length; _j++) {
-      var centroid = result_data[layer_to_add][_j].centroid;
+      var centroid = path.centroid({
+        type: 'Point',
+        coordinates: result_data[layer_to_add][_j].centroid
+      });
       var group = new_layer.append('g');
       var _sum = sums[_j];
       var _colors = colors[_j];
@@ -4747,14 +5056,17 @@ function render_twostocks_waffle(layer, rendering_params) {
           fill: _colors[_i3]
         });
       }
-      group.node().__data__ = result_data[layer_to_add][_j];
+      group.node().__data__ = { properties: result_data[layer_to_add][_j] };
       group.call(drag_waffle);
     }
   } else if (symbol_type === 'rect') {
     var width = rendering_params.size;
     var offset = width / 5;
     for (var _j2 = 0; _j2 < result_data[layer_to_add].length; _j2++) {
-      var _centroid = result_data[layer_to_add][_j2].centroid;
+      var _centroid = path.centroid({
+        type: 'Point',
+        coordinates: result_data[layer_to_add][_j2].centroid
+      });
       var _group = new_layer.append('g');
       var _sum2 = sums[_j2];
       var _colors2 = colors[_j2];
@@ -4771,7 +5083,7 @@ function render_twostocks_waffle(layer, rendering_params) {
           fill: _colors2[_i4]
         });
       }
-      _group.node().__data__ = result_data[layer_to_add][_j2];
+      _group.node().__data__ = { properties: result_data[layer_to_add][_j2] };
       _group.call(drag_waffle);
     }
   }
@@ -4791,7 +5103,6 @@ function render_twostocks_waffle(layer, rendering_params) {
     draggable: false
   };
   create_li_layer_elem(layer_to_add, nb_features, ['Point', 'waffle'], 'result');
-  return;
 }
 
 function fillMenu_PropSymbolChoro(layer) {
@@ -4832,7 +5143,8 @@ function fillMenu_PropSymbolChoro(layer) {
   make_discretization_icons(discr_section);
   // let f = dv2.insert('p').attr('class', 'params_section2');
   // f.append("button")
-  //     .attrs({id: 'PropSymbolChoro_btn_disc', class: 'params button_disc i18n', 'data-i18n': '[html]app_page.func_options.common.discretization_choice'})
+  //     .attrs({id: 'PropSymbolChoro_btn_disc', class: 'params button_disc i18n',
+  //             'data-i18n': '[html]app_page.func_options.common.discretization_choice'})
   //     .styles({"font-size": "0.8em", "text-align": "center"})
   //     .html(i18next.t("app_page.func_options.common.discretization_choice"));
 
@@ -4902,10 +5214,15 @@ var fields_PropSymbolChoro = {
           no_data_color = _discretize_to_colors2[5];
 
       self.rendering_params[field] = {
-        nb_class: nb_class, type: 'quantiles', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'quantiles',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -4943,8 +5260,8 @@ var fields_PropSymbolChoro = {
     });
 
     field_color.on('change', function () {
-      var field_name = this.value,
-          vals = user_data[layer].map(function (a) {
+      var field_name = this.value;
+      var vals = user_data[layer].map(function (a) {
         return +a[field_name];
       });
       render_mini_chart_serie(vals, document.getElementById('container_sparkline_propsymbolchoro'));
@@ -4952,7 +5269,7 @@ var fields_PropSymbolChoro = {
       if (self.rendering_params[field_name] !== undefined) {
         // ok_button.attr('disabled', null);
         img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ', ' + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
+        choro_mini_choice_disc.html([i18next.t('app_page.common.' + self.rendering_params[field_name].type), ', ', i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class })].join(''));
         uncolor_icons();
         color_disc_icons(self.rendering_params[field_name].type);
         // console.log(section2); console.log(self.rendering_params[field_name].type);
@@ -4983,10 +5300,15 @@ var fields_PropSymbolChoro = {
           no_data_color = _discretize_to_colors4[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'jenks', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-        rendered_field: selected_field, schema: ['BuGn']
+        nb_class: nb_class,
+        type: 'jenks',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field,
+        schema: ['BuGn']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -5012,10 +5334,15 @@ var fields_PropSymbolChoro = {
           no_data_color = _discretize_to_colors6[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'quantiles', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-        rendered_field: selected_field, schema: ['BuGn']
+        nb_class: nb_class,
+        type: 'quantiles',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field,
+        schema: ['BuGn']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -5041,10 +5368,15 @@ var fields_PropSymbolChoro = {
           no_data_color = _discretize_to_colors8[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'equal_interval', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-        rendered_field: selected_field, schema: ['BuGn']
+        nb_class: nb_class,
+        type: 'equal_interval',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field,
+        schema: ['BuGn']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -5069,10 +5401,15 @@ var fields_PropSymbolChoro = {
           no_data_color = _discretize_to_colors10[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'Q6', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'PropSymbolsChoro',
-        rendered_field: selected_field, schema: ['BuGn']
+        nb_class: nb_class,
+        type: 'Q6',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'PropSymbolsChoro',
+        rendered_field: selected_field,
+        schema: ['BuGn']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -5080,9 +5417,9 @@ var fields_PropSymbolChoro = {
     });
 
     ico_disc.on('click', function () {
-      var selected_field = field_color.node().value,
-          opt_nb_class = Math.floor(1 + 3.3 * Math.log10(user_data[layer].length)),
-          conf_disc_box = void 0;
+      var selected_field = field_color.node().value;
+      var opt_nb_class = Math.floor(1 + 3.3 * Math.log10(user_data[layer].length));
+      var conf_disc_box = void 0;
 
       if (self.rendering_params[selected_field]) {
         conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
@@ -5098,7 +5435,7 @@ var fields_PropSymbolChoro = {
       conf_disc_box.then(function (confirmed) {
         if (confirmed) {
           img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-          choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ', ' + i18next.t('app_page.common.class', { count: confirmed[0] }));
+          choro_mini_choice_disc.html([i18next.t('app_page.common.' + confirmed[1]), ', ', i18next.t('app_page.common.class', { count: confirmed[0] })].join(''));
           uncolor_icons();
           color_disc_icons(confirmed[1]);
           self.rendering_params[selected_field] = {
@@ -5112,30 +5449,31 @@ var fields_PropSymbolChoro = {
             renderer: 'PropSymbolsChoro',
             extra_options: confirmed[7]
           };
-        } else return;
+        }
       });
     });
     ok_button.on('click', function () {
       if (!ref_value_field.node().value) return;
       var rendering_params = self.rendering_params;
       if (rendering_params[field_color.node().value]) {
-        var _layer = Object.getOwnPropertyNames(user_data)[0],
-            symbol_to_use = symb_selec.node().value,
-            _nb_features = user_data[_layer].length,
-            rd_params = {},
-            color_field = field_color.node().value,
-            new_layer_name = uo_layer_name.node().value;
+        // const layer = Object.getOwnPropertyNames(user_data)[0];
+        var symbol_to_use = symb_selec.node().value,
 
-        new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : _layer + '_PropSymbolsChoro');
+        // nb_features = user_data[layer].length,
+        rd_params = {},
+            color_field = field_color.node().value;
+        var new_layer_name = uo_layer_name.node().value;
+
+        new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : layer + '_PropSymbolsChoro');
 
         rd_params.field = field_size.node().value;
         rd_params.new_name = new_layer_name;
-        rd_params.nb_features = _nb_features;
-        rd_params.ref_layer_name = _layer;
+        rd_params.nb_features = nb_features;
+        rd_params.ref_layer_name = layer;
         rd_params.symbol = symbol_to_use;
         rd_params.ref_value = +ref_value_field.node().value;
         rd_params.ref_size = +ref_size.node().value;
-        rd_params.fill_color = rendering_params[color_field]['colorsByFeature'];
+        rd_params.fill_color = rendering_params[color_field].colorsByFeature;
         rd_params.color_field = color_field;
 
         if (symbol_to_use === 'line') {
@@ -5144,8 +5482,8 @@ var fields_PropSymbolChoro = {
           make_prop_symbols(rd_params);
         }
         var colors_breaks = [];
-        for (var i = rendering_params[color_field]['breaks'].length - 1; i > 0; --i) {
-          colors_breaks.push([[rendering_params[color_field]['breaks'][i - 1], ' - ', rendering_params[color_field]['breaks'][i]].join(''), rendering_params[color_field]['colors'][i - 1]]);
+        for (var i = rendering_params[color_field].breaks.length - 1; i > 0; --i) {
+          colors_breaks.push([[rendering_params[color_field].breaks[i - 1], ' - ', rendering_params[color_field].breaks[i]].join(''), rendering_params[color_field].colors[i - 1]]);
         }
 
         var options_disc = {
@@ -5192,7 +5530,8 @@ var fillMenu_Typo = function fillMenu_Typo() {
   a.insert('select').attrs({ id: 'Typo_field_1', class: 'params' });
 
   var b = dv2.insert('p').styles({ margin: 'auto', 'text-align': 'center' });
-  b.append('button').attrs({ id: 'Typo_class', class: 'button_disc params i18n',
+  b.append('button').attrs({ id: 'Typo_class',
+    class: 'button_disc params i18n',
     'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typo.color_choice'));
 
   make_layer_name_button(dv2, 'Typo_output_name');
@@ -5222,8 +5561,12 @@ var fields_Typo = {
         return col_map.get(ft[field])[0];
       });
       self.rendering_params[field] = {
-        nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
-        renderer: 'Categorical', rendered_field: field, skip_alert: false
+        nb_class: nb_class,
+        color_map: col_map,
+        colorByFeature: colorByFeature,
+        renderer: 'Categorical',
+        rendered_field: field,
+        skip_alert: false
       };
     };
 
@@ -5246,16 +5589,13 @@ var fields_Typo = {
 
     btn_typo_class.on('click', function () {
       var selected_field = field_selec.node().value,
-          nb_features = current_layers[layer].n_features,
-          col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
-          cats = void 0;
+          nb_features = current_layers[layer].n_features;
+      var col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined;
 
-      var _prepare_categories_a3 = prepare_categories_array(layer, selected_field, col_map);
-
-      var _prepare_categories_a4 = _slicedToArray(_prepare_categories_a3, 2);
-
-      cats = _prepare_categories_a4[0];
-      col_map = _prepare_categories_a4[1];
+      var _prepare_categories_a3 = prepare_categories_array(layer, selected_field, col_map),
+          _prepare_categories_a4 = _slicedToArray(_prepare_categories_a3, 2),
+          cats = _prepare_categories_a4[0],
+          c_map = _prepare_categories_a4[1];
 
       if (cats.length > 15) {
         swal({ title: '',
@@ -5270,20 +5610,28 @@ var fields_Typo = {
           display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
             if (confirmed) {
               self.rendering_params[selected_field] = {
-                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                renderer: 'Categorical', rendered_field: selected_field, skip_alert: true
+                nb_class: confirmed[0],
+                color_map: confirmed[1],
+                colorByFeature: confirmed[2],
+                renderer: 'Categorical',
+                rendered_field: selected_field,
+                skip_alert: true
               };
             }
           });
         }, function (dismiss) {
-          return;
+          return null;
         });
       } else {
         display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
           if (confirmed) {
             self.rendering_params[selected_field] = {
-              nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-              renderer: 'Categorical', rendered_field: selected_field, skip_alert: true
+              nb_class: confirmed[0],
+              color_map: confirmed[1],
+              colorByFeature: confirmed[2],
+              renderer: 'Categorical',
+              rendered_field: selected_field,
+              skip_alert: true
             };
           }
         });
@@ -5292,17 +5640,18 @@ var fields_Typo = {
 
     ok_button.on('click', function () {
       var selected_field = field_selec.node().value;
+      var params = self.rendering_params[selected_field];
       var render = function render() {
-        if (self.rendering_params[selected_field]) {
-          var _layer2 = Object.getOwnPropertyNames(user_data)[0],
-              output_name = uo_layer_name.node().value;
-          self.rendering_params[selected_field].new_name = check_layer_name(output_name.length > 0 ? output_name : ['Typo', selected_field, _layer2].join('_'));
-          render_categorical(_layer2, self.rendering_params[selected_field]);
+        if (params) {
+          var _layer = Object.getOwnPropertyNames(user_data)[0];
+          var output_name = uo_layer_name.node().value;
+          params.new_name = check_layer_name(output_name.length > 0 ? output_name : ['Typo', selected_field, _layer].join('_'));
+          render_categorical(_layer, params);
           switch_accordion_section();
-          handle_legend(self.rendering_params[selected_field].new_name);
+          handle_legend(params.new_name);
         }
       };
-      if (self.rendering_params[selected_field].color_map.size > 15 && !self.rendering_params[selected_field].skip_alert) {
+      if (params.color_map.size > 15 && !params.skip_alert) {
         swal({ title: '',
           text: i18next.t('app_page.common.error_too_many_features_color'),
           type: 'warning',
@@ -5314,7 +5663,7 @@ var fields_Typo = {
         }).then(function () {
           render();
         }, function (dismiss) {
-          return;
+          return null;
         });
       } else {
         render();
@@ -5325,12 +5674,7 @@ var fields_Typo = {
     setSelected(field_selec.node(), fields_name[0]);
   },
   unfill: function unfill() {
-    var field_selec = document.getElementById('Typo_field_1'),
-        nb_fields = field_selec.childElementCount;
-
-    for (var i = nb_fields - 1; i > -1; --i) {
-      field_selec.removeChild(field_selec.children[i]);
-    }
+    unfillSelectInput(document.getElementById('Typo_field_1'));
     section2.selectAll('.params').attr('disabled', true);
   },
   rendering_params: {}
@@ -5398,10 +5742,15 @@ var fields_Choropleth = {
           no_data_color = _discretize_to_colors12[5];
 
       self.rendering_params[field] = {
-        nb_class: nb_class, type: 'quantiles', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'quantiles',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       ok_button.attr('disabled', null);
@@ -5436,7 +5785,8 @@ var fields_Choropleth = {
       if (self.rendering_params[field_name] !== undefined) {
         // ok_button.attr('disabled', null);
         img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-        choro_mini_choice_disc.html(i18next.t('app_page.common.' + self.rendering_params[field_name].type) + ', ' + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
+        var keyi18n = 'app_page.common.' + self.rendering_params[field_name].type;
+        choro_mini_choice_disc.html(i18next.t(keyi18n) + ', ' + i18next.t('app_page.common.class', { count: self.rendering_params[field_name].nb_class }));
         uncolor_icons();
         color_disc_icons(self.rendering_params[field_name].type);
       } else {
@@ -5463,14 +5813,19 @@ var fields_Choropleth = {
           no_data_color = _discretize_to_colors14[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'jenks', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: selected_field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'jenks',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: selected_field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.jenks') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
-      ok_button.attr('disabled', null);
-      mg_valid_disc.attr('src', '/static/img/Light_green_check.png');
+      // ok_button.attr('disabled', null);
+      img_valid_disc.attr('src', '/static/img/Light_green_check.png');
     });
 
     ico_quantiles.on('click', function () {
@@ -5492,10 +5847,15 @@ var fields_Choropleth = {
           no_data_color = _discretize_to_colors16[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'quantiles', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: selected_field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'quantiles',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: selected_field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.quantiles') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       // ok_button.attr("disabled", null);
@@ -5521,10 +5881,15 @@ var fields_Choropleth = {
           no_data_color = _discretize_to_colors18[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'equal_interval', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: selected_field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'equal_interval',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: selected_field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.equal_interval') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       // ok_button.attr("disabled", null);
@@ -5534,8 +5899,8 @@ var fields_Choropleth = {
     ico_q6.on('click', function () {
       uncolor_icons();
       this.style.border = 'solid 1px green';
-      var selected_field = field_selec.node().value,
-          _values = user_data[layer].map(function (v) {
+      var selected_field = field_selec.node().value;
+      var _values = user_data[layer].map(function (v) {
         return v[selected_field];
       });
 
@@ -5549,10 +5914,15 @@ var fields_Choropleth = {
           no_data_color = _discretize_to_colors20[5];
 
       self.rendering_params[selected_field] = {
-        nb_class: nb_class, type: 'Q6', colors: color_array,
-        breaks: breaks, no_data: no_data_color,
-        colorsByFeature: colors_map, renderer: 'Choropleth',
-        rendered_field: selected_field, schema: ['Reds']
+        nb_class: nb_class,
+        type: 'Q6',
+        colors: color_array,
+        breaks: breaks,
+        no_data: no_data_color,
+        colorsByFeature: colors_map,
+        renderer: 'Choropleth',
+        rendered_field: selected_field,
+        schema: ['Reds']
       };
       choro_mini_choice_disc.html(i18next.t('app_page.common.Q6') + ', ' + i18next.t('app_page.common.class', { count: nb_class }));
       // ok_button.attr("disabled", null);
@@ -5561,8 +5931,8 @@ var fields_Choropleth = {
 
     btn_class.on('click', function () {
       var selected_field = field_selec.node().value,
-          opt_nb_class = getOptNbClass(user_data[layer].length),
-          conf_disc_box = void 0;
+          opt_nb_class = getOptNbClass(user_data[layer].length);
+      var conf_disc_box = void 0;
 
       if (self.rendering_params[selected_field]) {
         conf_disc_box = display_discretization(layer, selected_field, self.rendering_params[selected_field].nb_class, { schema: self.rendering_params[selected_field].schema,
@@ -5578,15 +5948,21 @@ var fields_Choropleth = {
         if (confirmed) {
           // ok_button.attr("disabled", null);
           img_valid_disc.attr('src', '/static/img/Light_green_check.png');
-          choro_mini_choice_disc.html(i18next.t('app_page.common.' + confirmed[1]) + ', ' + i18next.t('app_page.common.class', { count: confirmed[0] }));
+          var keyi18n = 'app_page.common.' + confirmed[1];
+          choro_mini_choice_disc.html(i18next.t(keyi18n) + ', ' + i18next.t('app_page.common.class', { count: confirmed[0] }));
           uncolor_icons();
           color_disc_icons(confirmed[1]);
           self.rendering_params[selected_field] = {
-            nb_class: confirmed[0], type: confirmed[1],
-            breaks: confirmed[2], colors: confirmed[3],
-            schema: confirmed[5], no_data: confirmed[6],
-            colorsByFeature: confirmed[4], renderer: 'Choropleth',
-            rendered_field: selected_field, new_name: '',
+            nb_class: confirmed[0],
+            type: confirmed[1],
+            breaks: confirmed[2],
+            colors: confirmed[3],
+            schema: confirmed[5],
+            no_data: confirmed[6],
+            colorsByFeature: confirmed[4],
+            renderer: 'Choropleth',
+            rendered_field: selected_field,
+            new_name: '',
             extra_options: confirmed[7]
           };
         }
@@ -5607,13 +5983,14 @@ var fields_Choropleth = {
   },
 
   unfill: function unfill() {
-    var field_selec = document.getElementById('choro_field1'),
-        nb_fields = field_selec.childElementCount;
-
-    for (var i = nb_fields - 1; i > -1; --i) {
-      //            delete this.rendering_params[field_selec.children[i]];
-      field_selec.removeChild(field_selec.children[i]);
-    }
+    // const field_selec = document.getElementById('choro_field1'),
+    //   nb_fields = field_selec.childElementCount;
+    //
+    // for (let i = nb_fields - 1; i > -1; --i) {
+    //     // delete this.rendering_params[field_selec.children[i]];
+    //   field_selec.removeChild(field_selec.children[i]);
+    // }
+    unfillSelectInput(document.getElementById('choro_field1'));
     d3.selectAll('.params').attr('disabled', true);
   },
   rendering_params: {}
@@ -5622,45 +5999,24 @@ var fields_Choropleth = {
 var fields_Stewart = {
   fill: function fill(layer) {
     var other_layers = get_other_layer_names(),
-        mask_selec = d3.select('#stewart_mask'),
-        default_selected_mask = void 0;
+        mask_selec = d3.select('#stewart_mask');
+    var default_selected_mask = void 0;
 
     unfillSelectInput(mask_selec.node());
     mask_selec.append('option').text('None').attr('value', 'None');
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = other_layers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var lyr_name = _step.value;
-
-        if (current_layers[lyr_name].type === 'Polygon') {
-          mask_selec.append('option').text(lyr_name).attr('value', lyr_name);
-          if (current_layers[lyr_name].targeted) {
-            default_selected_mask = lyr_name;
-          }
-        }
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
+    for (var i = 0, n_layer = other_layers.length, lyr_name; i < n_layer; i++) {
+      lyr_name = other_layers[i];
+      if (current_layers[lyr_name].type === 'Polygon') {
+        mask_selec.append('option').text(lyr_name).attr('value', lyr_name);
+        if (current_layers[lyr_name].targeted) {
+          default_selected_mask = lyr_name;
         }
       }
     }
-
-    if (default_selected_mask) setSelected(mask_selec.node(), default_selected_mask);
-
+    if (default_selected_mask) {
+      setSelected(mask_selec.node(), default_selected_mask);
+    }
     if (layer) {
-      // let fields = type_col(layer, "number"),
       var fields = getFieldsType('stock', layer),
           field_selec = section2.select('#stewart_field'),
           field_selec2 = section2.select('#stewart_field2');
@@ -5680,6 +6036,7 @@ var fields_Stewart = {
       field_selec.on('change', function () {
         document.getElementById('stewart_output_name').value = ['Smoothed', this.value, layer].join('_');
       });
+      document.getElementById('stewart_output_name').value = ['Smoothed', fields[0], layer].join('_');
       section2.select('#stewart_yes').on('click', render_stewart);
     }
     section2.selectAll('.params').attr('disabled', null);
@@ -5701,17 +6058,19 @@ function render_stewart() {
       var1_to_send = {},
       var2_to_send = {},
       layer = Object.getOwnPropertyNames(user_data)[0],
-      bval = doc.getElementById('stewart_breaks').value.trim(),
-      reso = +doc.getElementById('stewart_resolution').value,
       span = +doc.getElementById('stewart_span').value,
       beta = +doc.getElementById('stewart_beta').value,
-      nb_class = doc.getElementById('stewart_nb_class').value,
       func_selec = doc.getElementById('stewart_func').value,
       mask_name = doc.getElementById('stewart_mask').value,
       new_user_layer_name = document.getElementById('stewart_output_name').value;
 
+  var nb_class = doc.getElementById('stewart_nb_class').value,
+      bval = doc.getElementById('stewart_breaks').value.trim(),
+      reso = +doc.getElementById('stewart_resolution').value;
+
   if (nb_class !== (nb_class | 0)) {
-    nb_class = nb_class | 0;
+    // eslint-disable-line
+    nb_class = nb_class | 0; // eslint-disable-line
     doc.getElementById('stewart_nb_class').value = nb_class;
   }
 
@@ -5722,7 +6081,7 @@ function render_stewart() {
       display_error_during_computation(message);
       return;
     }
-    reso = reso * 1000;
+    reso *= 1000;
   } else {
     reso = null;
   }
@@ -5757,26 +6116,28 @@ function render_stewart() {
         raw_topojson = data_split[0],
         options = { result_layer_on_add: true, func_name: 'smooth' };
     if (new_user_layer_name.length > 0) {
-      options['choosed_name'] = new_user_layer_name;
+      options.choosed_name = new_user_layer_name;
     }
     var n_layer_name = add_layer_topojson(raw_topojson, options);
     if (!n_layer_name) return;
     var class_lim = JSON.parse(data_split[1]),
         col_pal = getColorBrewerArray(class_lim.min.length, 'Oranges'),
-        nb_class = class_lim['min'].length,
+        n_class = class_lim.min.length,
         colors_breaks = [];
-    for (var i = 0; i < nb_class; i++) {
-      colors_breaks.push([class_lim['min'][i] + ' - ' + class_lim['max'][i], col_pal[nb_class - 1 - i]]);
+    for (var i = 0; i < n_class; i++) {
+      colors_breaks.push([class_lim.min[i] + ' - ' + class_lim.max[i], col_pal[n_class - 1 - i]]);
     }
 
-    current_layers[n_layer_name].fill_color = { 'class': [] };
+    current_layers[n_layer_name].fill_color = { class: [] };
     current_layers[n_layer_name].renderer = 'Stewart';
     current_layers[n_layer_name].colors_breaks = colors_breaks;
     current_layers[n_layer_name].rendered_field = field1_n;
     current_layers[n_layer_name].color_palette = { name: 'Oranges', reversed: true };
-    current_layers[n_layer_name].options_disc = { breaks: [].concat(class_lim['max'][0], class_lim['min']).reverse() };
+    current_layers[n_layer_name].options_disc = {
+      breaks: [].concat(class_lim.max[0], class_lim.min).reverse()
+    };
     map.select('#' + _app.layer_to_id.get(n_layer_name)).selectAll('path').styles(function (d, i) {
-      return { fill: col_pal[nb_class - 1 - i], 'fill_opacity': 1, 'stroke-opacity': 0 };
+      return { fill: col_pal[n_class - 1 - i], 'fill-opacity': 1, 'stroke-opacity': 0 };
     });
     handle_legend(n_layer_name);
     switch_accordion_section();
@@ -5787,7 +6148,7 @@ function render_stewart() {
   }).catch(function (err) {
     display_error_during_computation();
     console.log(err);
-  });;
+  });
 }
 
 function fillMenu_Stewart() {
@@ -5825,9 +6186,10 @@ function fillMenu_Stewart() {
 
   var bvs = dialog_content.append('p').attr('class', 'params_section2');
   bvs.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.break_values' }).html(i18next.t('app_page.func_options.smooth.break_values'));
-  bvs.insert('textarea').styles({ width: '100%', height: '2.2em', 'font-size': '0.9em' }).attrs({ class: 'params i18n', id: 'stewart_breaks',
+  bvs.insert('textarea').styles({ width: '100%', height: '2.2em', 'font-size': '0.9em' }).attrs({ class: 'params i18n',
+    id: 'stewart_breaks',
     'data-i18n': '[placeholder]app_page.common.expected_class',
-    'placeholder': i18next.t('app_page.common.expected_class') });
+    placeholder: i18next.t('app_page.common.expected_class') });
   var m = dialog_content.append('p').attr('class', 'params_section2').style('margin', 'auto');
   m.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.smooth.mask' }).html(i18next.t('app_page.func_options.smooth.mask'));
 
@@ -5845,7 +6207,6 @@ function fillMenu_Stewart() {
 var fields_Anamorphose = {
   fill: function fill(layer) {
     if (!layer) return;
-    // let fields = type_col(layer, "number"),
     var fields = getFieldsType('stock', layer),
         field_selec = section2.select('#Anamorph_field'),
         algo_selec = section2.select('#Anamorph_algo'),
@@ -5891,14 +6252,8 @@ var fields_Anamorphose = {
           new_user_layer_name = document.getElementById('Anamorph_output_name').value;
 
       if (algo === 'olson') {
-        // let ref_size = document.getElementById("Anamorph_olson_scale_kind").value,
-        // let opt_scale_max = document.getElementById("Anamorph_opt2");
-        // if (opt_scale_max.value > 100) {
-        //     opt_scale_max.value = 100;
-        // }
-        // let scale_max = +document.getElementById("Anamorph_opt2").value / 100,
-        var nb_ft = current_layers[layer].n_features,
-            dataset = user_data[layer];
+        var nb_ft = current_layers[layer].n_features;
+        var dataset = user_data[layer];
 
         // if (contains_empty_val(dataset.map(a => a[field_name]))) {
         //   discard_rendering_empty_val();
@@ -5937,11 +6292,12 @@ var fields_Anamorphose = {
           scale_values: d_val.map(function (ft) {
             return ft[3];
           }),
-          field_name: field_name }));
+          field_name: field_name
+        }));
         xhrequest('POST', 'compute/olson', formToSend, true).then(function (result) {
           var options = { result_layer_on_add: true, func_name: 'cartogram' };
           if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-            options['choosed_name'] = new_user_layer_name;
+            options.choosed_name = new_user_layer_name;
           }
           var n_layer_name = add_layer_topojson(result, options);
           current_layers[n_layer_name].renderer = 'OlsonCarto';
@@ -5977,7 +6333,7 @@ var fields_Anamorphose = {
         xhrequest('POST', 'compute/carto_doug', _formToSend, true).then(function (data) {
           var options = { result_layer_on_add: true, func_name: 'cartogram' };
           if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-            options['choosed_name'] = new_user_layer_name;
+            options.choosed_name = new_user_layer_name;
           }
           var n_layer_name = add_layer_topojson(data, options);
           current_layers[n_layer_name].fill_color = { random: true };
@@ -6014,7 +6370,7 @@ function fillMenu_Anamorphose() {
 
   var field_choice = dialog_content.append('p').attr('class', 'params_section2');
   field_choice.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.cartogram.field' }).html(i18next.t('app_page.func_options.cartogram.field'));
-  var field_selec = field_choice.insert('select').attrs({ class: 'params', id: 'Anamorph_field' });
+  field_choice.insert('select').attrs({ class: 'params', id: 'Anamorph_field' });
 
   // Options for Dougenik mode :
   var doug1 = dialog_content.append('p').attr('class', 'params_section2 opt_dougenik');
@@ -6038,8 +6394,10 @@ function getCentroids(ref_layer_selection) {
   var centroids = [];
   for (var i = 0, nb_features = ref_layer_selection.length; i < nb_features; ++i) {
     var geom = ref_layer_selection[i].__data__.geometry;
-    if (geom.type.indexOf('Multi') < 0) {
-      centroids.push(path.centroid(geom));
+    if (!geom) {
+      centroids.push(null);
+    } else if (geom.type.indexOf('Multi') < 0) {
+      centroids.push(d3.geoCentroid(geom));
     } else {
       var areas = [];
       for (var j = 0; j < geom.coordinates.length; j++) {
@@ -6048,10 +6406,10 @@ function getCentroids(ref_layer_selection) {
           coordinates: [geom.coordinates[j]]
         }));
       }
-      var ix_max = areas.indexOf(max_fast(areas));
-      centroids.push(path.centroid({
+      // const ix_max = areas.indexOf(max_fast(areas));
+      centroids.push(d3.geoCentroid({
         type: geom.type,
-        coordinates: [geom.coordinates[ix_max]]
+        coordinates: [geom.coordinates[areas.indexOf(max_fast(areas))]]
       }));
     }
   }
@@ -6074,12 +6432,13 @@ function make_prop_line(rendering_params, geojson_line_layer) {
 
   if (!geojson_line_layer) {
     var make_geojson_line_layer = function make_geojson_line_layer() {
-      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path'),
-          result = [];
-      for (var i = 0, _nb_features2 = ref_layer_selection.length; i < _nb_features2; ++i) {
+      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path');
+      var result = [];
+
+      for (var i = 0, n_features = ref_layer_selection.length; i < n_features; ++i) {
         var ft = ref_layer_selection[i].__data__,
-            value = +ft.properties[field],
-            new_obj = {
+            value = +ft.properties[field];
+        var new_obj = {
           id: i,
           type: 'Feature',
           properties: {},
@@ -6092,7 +6451,7 @@ function make_prop_line(rendering_params, geojson_line_layer) {
         }
         new_obj.properties[field] = value;
         new_obj.properties[t_field_name] = propSize.scale(value);
-        new_obj.properties['color'] = get_color(value, i);
+        new_obj.properties.color = get_color(value, i);
         if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
         result.push([value, new_obj]);
       }
@@ -6107,14 +6466,14 @@ function make_prop_line(rendering_params, geojson_line_layer) {
       };
     };
 
+    var fields_id = getFieldsType('id', layer).concat(getFieldsType('category', layer));
+    var f_ix_len = fields_id ? fields_id.length : 0;
     var get_color = void 0,
         col1 = void 0,
-        col2 = void 0,
-        fields_id = getFieldsType('id', layer),
-        f_ix_len = fields_id ? fields_id.length : 0;
-
-    if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
-      col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
+        col2 = void 0;
+    if (rendering_params.break_val !== undefined && rendering_params.fill_color.two) {
+      col1 = rendering_params.fill_color.two[0];
+      col2 = rendering_params.fill_color.two[1];
       get_color = function get_color(val, ix) {
         return val > rendering_params.break_val ? col2 : col1;
       };
@@ -6130,12 +6489,12 @@ function make_prop_line(rendering_params, geojson_line_layer) {
 
     geojson_line_layer = make_geojson_line_layer();
   }
-
+  var require_clip_path = isInterrupted(current_proj_name.toLowerCase()) || current_proj_name.toLowerCase().indexOf('conicconformal') > -1 ? 'url(#clip)' : null;
   var layer_id = encodeId(layer_to_add);
   _app.layer_to_id.set(layer_to_add, layer_id);
   _app.id_to_layer.set(layer_id, layer_to_add);
   result_data[layer_to_add] = [];
-  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer' }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
+  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer', 'clip-path': require_clip_path }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).selectAll('path').data(geojson_line_layer.features).enter().append('path').attr('d', path).styles(function (d) {
     result_data[layer_to_add].push(d.properties);
     return {
       fill: 'transparent', stroke: d.properties.color, 'stroke-width': d.properties[t_field_name] };
@@ -6153,23 +6512,24 @@ function make_prop_line(rendering_params, geojson_line_layer) {
     type: 'Line'
   };
 
-  if (rendering_params.fill_color.two != undefined) {
-    current_layers[layer_to_add]['fill_color'] = cloneObj(rendering_params.fill_color);
+  if (rendering_params.fill_color.two !== undefined) {
+    current_layers[layer_to_add].fill_color = cloneObj(rendering_params.fill_color);
   } else if (rendering_params.fill_color instanceof Array) {
-    current_layers[layer_to_add]['fill_color'] = { 'class': geojson_line_layer.features.map(function (v) {
+    current_layers[layer_to_add].fill_color = {
+      class: geojson_line_layer.features.map(function (v) {
         return v.properties.color;
-      }) };
+      })
+    };
   } else {
-    current_layers[layer_to_add]['fill_color'] = { 'single': rendering_params.fill_color };
+    current_layers[layer_to_add].fill_color = { single: rendering_params.fill_color };
   }
-  if (rendering_params.break_val != undefined) {
-    current_layers[layer_to_add]['break_val'] = rendering_params.break_val;
+  if (rendering_params.break_val !== undefined) {
+    current_layers[layer_to_add].break_val = rendering_params.break_val;
   }
   create_li_layer_elem(layer_to_add, nb_features, ['Line', 'prop'], 'result');
-  return;
 }
 
-function make_prop_symbols(rendering_params, geojson_pt_layer) {
+function make_prop_symbols(rendering_params, _pt_layer) {
   var layer = rendering_params.ref_layer_name,
       field = rendering_params.field,
       color_field = rendering_params.color_field,
@@ -6183,15 +6543,16 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
       zs = d3.zoomTransform(svg_map).k,
       propSize = new PropSizer(ref_value, ref_size, symbol_type),
       warn_empty_features = [];
+  var geojson_pt_layer = void 0;
 
-  if (!geojson_pt_layer) {
+  if (!_pt_layer) {
     var make_geojson_pt_layer = function make_geojson_pt_layer() {
-      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path'),
-          result = [];
-      for (var i = 0, _nb_features3 = ref_layer_selection.length; i < _nb_features3; ++i) {
-        var ft = ref_layer_selection[i].__data__,
-            value = +ft.properties[field],
-            new_obj = {
+      var ref_layer_selection = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path');
+      var result = [];
+      for (var i = 0, n_features = ref_layer_selection.length; i < n_features; ++i) {
+        var ft = ref_layer_selection[i].__data__;
+        var value = +ft.properties[field];
+        var new_obj = {
           id: i,
           type: 'Feature',
           properties: {},
@@ -6207,8 +6568,8 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
           }
           new_obj.properties[field] = value;
           new_obj.properties[t_field_name] = propSize.scale(value);
-          new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
-          new_obj.properties['color'] = get_color(value, i);
+          new_obj.geometry.coordinates = d3.geoCentroid(ft.geometry);
+          new_obj.properties.color = get_color(value, i);
           if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
           result.push([value, new_obj]);
         } else {
@@ -6227,8 +6588,9 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
           }
           new_obj.properties[field] = value;
           new_obj.properties[t_field_name] = propSize.scale(value);
-          new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
-          new_obj.properties['color'] = get_color(value, i);
+          new_obj.geometry.coordinates = d3.geoCentroid({
+            type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+          new_obj.properties.color = get_color(value, i);
           if (color_field) new_obj.properties[color_field] = ft.properties[color_field];
           result.push([value, new_obj]);
         }
@@ -6244,14 +6606,15 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
       };
     };
 
+    var fields_id = getFieldsType('id', layer).concat(getFieldsType('category', layer));
+    var f_ix_len = fields_id ? fields_id.length : 0;
     var get_color = void 0,
         col1 = void 0,
-        col2 = void 0,
-        fields_id = getFieldsType('id', layer),
-        f_ix_len = fields_id ? fields_id.length : 0;
+        col2 = void 0;
 
-    if (rendering_params.break_val != undefined && rendering_params.fill_color.two) {
-      col1 = rendering_params.fill_color.two[0], col2 = rendering_params.fill_color.two[1];
+    if (rendering_params.break_val !== undefined && rendering_params.fill_color.two) {
+      col1 = rendering_params.fill_color.two[0];
+      col2 = rendering_params.fill_color.two[1];
       get_color = function get_color(val, ix) {
         return val > rendering_params.break_val ? col2 : col1;
       };
@@ -6264,35 +6627,37 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
         return rendering_params.fill_color;
       };
     }
-
     geojson_pt_layer = make_geojson_pt_layer();
+  } else {
+    geojson_pt_layer = _pt_layer;
   }
+
   var layer_id = encodeId(layer_to_add);
   _app.layer_to_id.set(layer_to_add, layer_id);
   _app.id_to_layer.set(layer_id, layer_to_add);
   result_data[layer_to_add] = [];
   if (symbol_type === 'circle') {
-    map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer').selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
+    map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer no_clip' }).selectAll('circle').data(geojson_pt_layer.features).enter().append('circle').attrs(function (d, i) {
       result_data[layer_to_add].push(d.properties);
       return {
-        'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
-        'r': d.properties[t_field_name],
-        'cx': path.centroid(d)[0],
-        'cy': path.centroid(d)[1]
+        id: ['PropSymbol_', i, ' feature_', d.id].join(''),
+        r: d.properties[t_field_name],
+        cx: path.centroid(d)[0],
+        cy: path.centroid(d)[1]
       };
     }).style('fill', function (d) {
       return d.properties.color;
     }).style('stroke', 'black').style('stroke-width', 1 / zs).call(drag_elem_geo2);
   } else if (symbol_type === 'rect') {
-    map.insert('g', '.legend').attr('id', layer_id).attr('class', 'layer').selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
+    map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer no_clip' }).selectAll('circle').data(geojson_pt_layer.features).enter().append('rect').attrs(function (d, i) {
       var size = d.properties[t_field_name];
       result_data[layer_to_add].push(d.properties);
       return {
-        'id': ['PropSymbol_', i, ' feature_', d.id].join(''),
-        'height': size,
-        'width': size,
-        'x': path.centroid(d)[0] - size / 2,
-        'y': path.centroid(d)[1] - size / 2
+        id: ['PropSymbol_', i, ' feature_', d.id].join(''),
+        height: size,
+        width: size,
+        x: path.centroid(d)[0] - size / 2,
+        y: path.centroid(d)[1] - size / 2
       };
     }).style('fill', function (d) {
       return d.properties.color;
@@ -6311,62 +6676,59 @@ function make_prop_symbols(rendering_params, geojson_pt_layer) {
     draggable: false
   };
 
-  if (rendering_params.fill_color.two != undefined) {
-    current_layers[layer_to_add]['fill_color'] = cloneObj(rendering_params.fill_color);
+  if (rendering_params.fill_color.two !== undefined) {
+    current_layers[layer_to_add].fill_color = cloneObj(rendering_params.fill_color);
   } else if (rendering_params.fill_color instanceof Array) {
-    current_layers[layer_to_add]['fill_color'] = { class: geojson_pt_layer.features.map(function (v) {
+    current_layers[layer_to_add].fill_color = {
+      class: geojson_pt_layer.features.map(function (v) {
         return v.properties.color;
-      }) };
+      })
+    };
   } else {
-    current_layers[layer_to_add]['fill_color'] = { single: rendering_params.fill_color };
+    current_layers[layer_to_add].fill_color = { single: rendering_params.fill_color };
   }
-  if (rendering_params.break_val != undefined) {
-    current_layers[layer_to_add]['break_val'] = rendering_params.break_val;
+  if (rendering_params.break_val !== undefined) {
+    current_layers[layer_to_add].break_val = rendering_params.break_val;
   }
   create_li_layer_elem(layer_to_add, nb_features, ['Point', 'prop'], 'result');
 
   if (warn_empty_features.length > 0) {
-    swal({ title: '',
-      text: i18next.t('app_page.common.warning_empty_geom', { count: warn_empty_features.length }),
-      type: 'warning',
-      showCancelButton: false,
-      allowOutsideClick: false,
-      confirmButtonColor: '#DD6B55',
-      confirmButtonText: i18next.t('app_page.common.valid') + '!'
-    });
+    display_warning_empty_geom(warn_empty_features);
   }
-  return;
 }
 
 function render_categorical(layer, rendering_params) {
+  var layer_name = void 0;
   if (rendering_params.new_name) {
-    var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
+    var fields = [].concat(getFieldsType('id', layer), rendering_params.rendered_field);
     copy_layer(layer, rendering_params.new_name, 'typo', fields);
     current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
     current_layers[rendering_params.new_name].type = current_layers[layer].type;
-    layer = rendering_params.new_name;
+    layer_name = rendering_params.new_name;
+  } else {
+    layer_name = layer;
   }
 
   var colorsByFeature = rendering_params.colorByFeature,
       color_map = rendering_params.color_map,
       field = rendering_params.rendered_field;
-  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer));
+  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer_name));
   layer_to_render.style('opacity', 1).style('stroke-width', 0.75 / d3.zoomTransform(svg_map).k + 'px');
-  if (current_layers[layer].type === 'Line') {
-    layer_to_render.selectAll('path').styles({ fill: 'transparent', 'stroke-opacity': 1 }).style('stroke', function (d, i) {
+  if (current_layers[layer_name].type === 'Line') {
+    layer_to_render.selectAll('path').styles({ fill: 'transparent', 'stroke-opacity': 1 }).style('stroke', function (_, i) {
       return colorsByFeature[i];
     });
   } else {
-    layer_to_render.selectAll('path').style('fill', function (d, i) {
+    layer_to_render.selectAll('path').style('fill', function (_, i) {
       return colorsByFeature[i];
     }).styles({ 'fill-opacity': 0.9, 'stroke-opacity': 0.9, stroke: '#000' });
   }
-  current_layers[layer].renderer = rendering_params['renderer'];
-  current_layers[layer].rendered_field = field;
-  current_layers[layer].fill_color = { 'class': rendering_params['colorByFeature'] };
-  current_layers[layer]['stroke-width-const'] = 0.75;
-  current_layers[layer].is_result = true;
-  current_layers[layer].color_map = color_map;
+  current_layers[layer_name].renderer = rendering_params.renderer;
+  current_layers[layer_name].rendered_field = field;
+  current_layers[layer_name].fill_color = { class: rendering_params.colorByFeature };
+  current_layers[layer_name]['stroke-width-const'] = 0.75;
+  current_layers[layer_name].is_result = true;
+  current_layers[layer_name].color_map = color_map;
   zoom_without_redraw();
 }
 
@@ -6374,56 +6736,61 @@ function render_categorical(layer, rendering_params) {
 // (layer should be the name of group of path, ie. not a PropSymbol layer)
 // Currently used fo "choropleth", "MTA - relative deviations", "gridded map" functionnality
 function render_choro(layer, rendering_params) {
+  var layer_name = void 0;
   if (rendering_params.new_name) {
-    var fields = [].concat(getFieldsType('id', layer), rendering_params['rendered_field']);
+    var fields = [].concat(getFieldsType('id', layer), rendering_params.rendered_field);
     copy_layer(layer, rendering_params.new_name, 'choro', fields);
-    //Assign the same key to the cloned layer so it could be used transparently on server side
+    // Assign the same key to the cloned layer so it could be used transparently on server side
     // after deletion of the reference layer if needed :
     current_layers[rendering_params.new_name].key_name = current_layers[layer].key_name;
     current_layers[rendering_params.new_name].type = current_layers[layer].type;
-    layer = rendering_params.new_name;
+    layer_name = rendering_params.new_name;
+  } else {
+    layer_name = layer;
   }
-  var breaks = rendering_params['breaks'];
-  var options_disc = { schema: rendering_params.schema,
+  var breaks = rendering_params.breaks;
+  var options_disc = {
+    schema: rendering_params.schema,
     colors: rendering_params.colors,
     no_data: rendering_params.no_data,
     type: rendering_params.type,
     breaks: breaks,
-    extra_options: rendering_params.extra_options };
-  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer));
-  layer_to_render.style('opacity', 1).style('stroke-width', 0.75 / d3.zoomTransform(svg_map).k, +'px');
-  if (current_layers[layer].type === 'Line') {
+    extra_options: rendering_params.extra_options
+  };
+  var layer_to_render = map.select('#' + _app.layer_to_id.get(layer_name));
+  layer_to_render.style('opacity', 1).style('stroke-width', 0.75 / d3.zoomTransform(svg_map).k + 'px');
+  if (current_layers[layer_name].type === 'Line') {
     layer_to_render.selectAll('path').styles({ fill: 'transparent', 'stroke-opacity': 1 }).style('stroke', function (d, i) {
-      return rendering_params['colorsByFeature'][i];
+      return rendering_params.colorsByFeature[i];
     });
   } else {
-    layer_to_render.selectAll('path').styles({ 'fill-opacity': 1, 'stroke-opacity': 1, 'stroke': '#000' }).style('fill', function (d, i) {
-      return rendering_params['colorsByFeature'][i];
+    layer_to_render.selectAll('path').styles({ 'fill-opacity': 1, 'stroke-opacity': 1, stroke: '#000' }).style('fill', function (d, i) {
+      return rendering_params.colorsByFeature[i];
     });
   }
-  current_layers[layer].renderer = rendering_params['renderer'];
-  current_layers[layer].rendered_field = rendering_params['rendered_field'];
-  current_layers[layer].fill_color = { 'class': rendering_params['colorsByFeature'] };
-  current_layers[layer]['stroke-width-const'] = 0.75;
-  current_layers[layer].is_result = true;
-  current_layers[layer].options_disc = options_disc;
+  current_layers[layer_name].renderer = rendering_params.renderer;
+  current_layers[layer_name].rendered_field = rendering_params.rendered_field;
+  current_layers[layer_name].fill_color = { class: rendering_params.colorsByFeature };
+  current_layers[layer_name]['stroke-width-const'] = 0.75;
+  current_layers[layer_name].is_result = true;
+  current_layers[layer_name].options_disc = options_disc;
   var colors_breaks = [];
   for (var i = breaks.length - 1; i > 0; --i) {
-    colors_breaks.push([[breaks[i - 1], ' - ', breaks[i]].join(''), rendering_params['colors'][i - 1]]);
+    colors_breaks.push([[breaks[i - 1], ' - ', breaks[i]].join(''), rendering_params.colors[i - 1]]);
   }
-  current_layers[layer].colors_breaks = colors_breaks;
+  current_layers[layer_name].colors_breaks = colors_breaks;
   zoom_without_redraw();
 }
 
-function render_mini_chart_serie(values, parent, cap, bins) {
-  bins = bins || values.length > 20 ? 16 : values.length > 15 ? 10 : 5;
+function render_mini_chart_serie(values, parent, max_h, nb_bins) {
+  var bins = nb_bins || (values.length > 20 ? 16 : undefined) || (values.length > 15 ? 10 : 5);
   var class_count = getBinsCount(values, bins),
       background = '#f1f1f1',
       color = '#6633ff',
       width = 3 * bins - 3,
       height = 25,
       canvas = document.createElement('canvas');
-  cap = cap || max_fast(class_count.counts);
+  var cap = max_h || max_fast(class_count.counts);
   canvas.width = width;
   canvas.height = height;
 
@@ -6435,10 +6802,9 @@ function render_mini_chart_serie(values, parent, cap, bins) {
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  var x = 0,
-      y = 0,
-      barwidth = 2,
-      barspace = 1;
+  var barwidth = 2;
+  var barspace = 1;
+  var x = 0;
 
   ctx.fillStyle = color;
   for (var i = 0; i < bins; i++) {
@@ -6448,7 +6814,7 @@ function render_mini_chart_serie(values, parent, cap, bins) {
     x += barwidth;
   }
   canvas.setAttribute('tooltip-info', make_mini_summary(class_count));
-  new Tooltip(canvas, {
+  var _ = new Tooltip(canvas, {
     dataAttr: 'tooltip-info',
     animation: 'slideNfade',
     duration: 50,
@@ -6459,9 +6825,14 @@ function render_mini_chart_serie(values, parent, cap, bins) {
 }
 
 function make_mini_summary(summary) {
-  var p = Math.max(get_nb_decimals(summary.min), get_nb_decimals(summary.max)),
-      props = { min: summary.min, max: summary.max, mean: summary.mean.toFixed(p),
-    median: summary.median.toFixed(p), stddev: summary.stddev.toFixed(p) };
+  var p = Math.max(get_nb_decimals(summary.min), get_nb_decimals(summary.max));
+  var props = {
+    min: summary.min,
+    max: summary.max,
+    mean: summary.mean.toFixed(p),
+    median: summary.median.toFixed(p),
+    stddev: summary.stddev.toFixed(p)
+  };
   return i18next.t('app_page.stat_summary.mini_summary', props);
 }
 
@@ -6470,29 +6841,35 @@ function fillMenu_PropSymbolTypo(layer) {
 
   var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
   a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field1' }).html(i18next.t('app_page.func_options.proptypo.field1'));
-  var field1_selec = a.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_1' });
+  a.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_1' });
 
   var b = dv2.append('p').attr('class', 'params_section2');
   b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.fixed_size' }).html(i18next.t('app_page.func_options.proptypo.fixed_size'));
-  var ref_size = b.insert('input').attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_size',
-    min: 0.1, max: 100.0, value: 60.0, step: 'any' }).style('width', '50px');
+  b.insert('input').attrs({ type: 'number',
+    class: 'params',
+    id: 'PropSymbolTypo_ref_size',
+    min: 0.1,
+    max: 100.0,
+    value: 60.0,
+    step: 'any' }).style('width', '50px');
   b.append('span').html(' (px)');
 
   var c = dv2.append('p').attr('class', 'params_section2');
   c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.on_value' }).html(i18next.t('app_page.func_options.proptypo.on_value'));
-  var ref_value = c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_value' }).attrs({ min: 0.1, step: 0.1 });
+  c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ type: 'number', class: 'params', id: 'PropSymbolTypo_ref_value' }).attrs({ min: 0.1, step: 0.1 });
 
   // Other symbols could probably easily be proposed :
   var d = dv2.append('p').attr('class', 'params_section2');
   d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.symbol_type' }).html(i18next.t('app_page.func_options.proptypo.symbol_type'));
-  var symb_selec = d.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_symbol_type' });
+  d.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_symbol_type' });
 
   var e = dv2.append('p').attr('class', 'params_section2');
   e.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.proptypo.field2' }).html(i18next.t('app_page.func_options.proptypo.field2'));
-  var field2_selec = e.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_2' });
+  e.insert('select').attrs({ class: 'params', id: 'PropSymbolTypo_field_2' });
 
   var f = dv2.insert('p').styles({ margin: 'auto', 'text-align': 'center' });
-  f.append('button').attrs({ id: 'Typo_class', class: 'button_disc params i18n',
+  f.append('button').attrs({ id: 'Typo_class',
+    class: 'button_disc params i18n',
     'data-i18n': '[html]app_page.func_options.typo.color_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typo.color_choice'));
 
   make_layer_name_button(dv2, 'PropSymbolTypo_output_name');
@@ -6503,24 +6880,24 @@ function fillMenu_PropSymbolTypo(layer) {
 function prepare_categories_array(layer_name, selected_field, col_map) {
   var cats = [];
   if (!col_map) {
-    col_map = new Map();
+    var _col_map = new Map();
     for (var i = 0, data_layer = user_data[layer_name]; i < data_layer.length; ++i) {
       var value = data_layer[i][selected_field],
-          ret_val = col_map.get(value);
-      col_map.set(value, ret_val ? [ret_val[0] + 1, [i].concat(ret_val[1])] : [1, [i]]);
+          ret_val = _col_map.get(value);
+      _col_map.set(value, ret_val ? [ret_val[0] + 1, [i].concat(ret_val[1])] : [1, [i]]);
     }
-    col_map.forEach(function (v, k) {
+    _col_map.forEach(function (v, k) {
       cats.push({ name: k, display_name: k, nb_elem: v[0], color: randomColor() });
     });
-    col_map = new Map();
+    _col_map = new Map();
     for (var _i7 = 0; _i7 < cats.length; _i7++) {
-      col_map.set(cats[_i7].name, [cats[_i7].color, cats[_i7].name, cats[_i7].nb_elem]);
+      _col_map.set(cats[_i7].name, [cats[_i7].color, cats[_i7].name, cats[_i7].nb_elem]);
     }
-  } else {
-    col_map.forEach(function (v, k) {
-      cats.push({ name: k, display_name: v[1], nb_elem: v[2], color: v[0] });
-    });
+    return [cats, _col_map];
   }
+  col_map.forEach(function (v, k) {
+    cats.push({ name: k, display_name: v[1], nb_elem: v[2], color: v[0] });
+  });
   return [cats, col_map];
 }
 
@@ -6552,8 +6929,12 @@ var fields_PropSymbolTypo = {
         return col_map.get(ft[field])[0];
       });
       self.rendering_params[field] = {
-        nb_class: nb_class, color_map: col_map, colorByFeature: colorByFeature,
-        renderer: 'Categorical', rendered_field: field, skip_alert: false
+        nb_class: nb_class,
+        color_map: col_map,
+        colorByFeature: colorByFeature,
+        renderer: 'Categorical',
+        rendered_field: field,
+        skip_alert: false
       };
     };
 
@@ -6607,17 +6988,13 @@ var fields_PropSymbolTypo = {
 
     btn_typo_class.on('click', function () {
       var selected_field = field2_selec.node().value,
-          new_layer_name = check_layer_name(['Typo', field1_selec.node().value, selected_field, layer].join('_')),
-          col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined,
-          cats = void 0;
+          new_layer_name = check_layer_name(['Typo', field1_selec.node().value, selected_field, layer].join('_'));
+      var col_map = self.rendering_params[selected_field] ? self.rendering_params[selected_field].color_map : undefined;
 
-      var _prepare_categories_a7 = prepare_categories_array(layer, selected_field, col_map);
-
-      var _prepare_categories_a8 = _slicedToArray(_prepare_categories_a7, 2);
-
-      cats = _prepare_categories_a8[0];
-      col_map = _prepare_categories_a8[1];
-
+      var _prepare_categories_a7 = prepare_categories_array(layer, selected_field, col_map),
+          _prepare_categories_a8 = _slicedToArray(_prepare_categories_a7, 2),
+          cats = _prepare_categories_a8[0],
+          c_map = _prepare_categories_a8[1];
 
       if (cats.length > 15) {
         swal({ title: '',
@@ -6633,21 +7010,31 @@ var fields_PropSymbolTypo = {
             if (confirmed) {
               // ok_button.attr("disabled", null);
               self.rendering_params[selected_field] = {
-                nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-                renderer: 'Categorical', rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
+                nb_class: confirmed[0],
+                color_map: confirmed[1],
+                colorByFeature: confirmed[2],
+                renderer: 'Categorical',
+                rendered_field: selected_field,
+                new_name: new_layer_name,
+                skip_alert: true
               };
             }
           });
         }, function (dismiss) {
-          return;
+          return null;
         });
       } else {
         display_categorical_box(user_data[layer], layer, selected_field, cats).then(function (confirmed) {
           if (confirmed) {
             // ok_button.attr("disabled", null);
             self.rendering_params[selected_field] = {
-              nb_class: confirmed[0], color_map: confirmed[1], colorByFeature: confirmed[2],
-              renderer: 'Categorical', rendered_field: selected_field, new_name: new_layer_name, skip_alert: true
+              nb_class: confirmed[0],
+              color_map: confirmed[1],
+              colorByFeature: confirmed[2],
+              renderer: 'Categorical',
+              rendered_field: selected_field,
+              new_name: new_layer_name,
+              skip_alert: true
             };
           }
         });
@@ -6671,7 +7058,7 @@ var fields_PropSymbolTypo = {
         }).then(function () {
           render();
         }, function (dismiss) {
-          return;
+          return null;
         });
       } else {
         render();
@@ -6690,14 +7077,16 @@ var fields_PropSymbolTypo = {
   rendering_params: {}
 };
 
-function render_PropSymbolTypo(field1, color_field, new_layer_name, ref_value, ref_size, symb_selec) {
-  if (!ref_value || !color_field || !fields_PropSymbolTypo.rendering_params[color_field]) return;
+function render_PropSymbolTypo(field1, color_field, n_layer_name, ref_value, ref_size, symb_selec) {
+  if (!ref_value || !color_field || !fields_PropSymbolTypo.rendering_params[color_field]) {
+    return;
+  }
   var layer = Object.getOwnPropertyNames(user_data)[0],
       nb_features = user_data[layer].length,
       rendering_params = fields_PropSymbolTypo.rendering_params[color_field],
       rd_params = {};
 
-  new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ['PropSymbolsTypo', field1, color_field, layer].join('_'));
+  var new_layer_name = check_layer_name(n_layer_name.length > 0 ? n_layer_name : ['PropSymbolsTypo', field1, color_field, layer].join('_'));
 
   rd_params.field = field1;
   rd_params.new_name = new_layer_name;
@@ -6709,7 +7098,11 @@ function render_PropSymbolTypo(field1, color_field, new_layer_name, ref_value, r
   rd_params.ref_size = +ref_size;
   rd_params.fill_color = rendering_params.colorByFeature;
 
-  if (symb_selec === 'line') make_prop_line(rd_params);else make_prop_symbols(rd_params);
+  if (symb_selec === 'line') {
+    make_prop_line(rd_params);
+  } else {
+    make_prop_symbols(rd_params);
+  }
 
   Object.assign(current_layers[new_layer_name], {
     renderer: 'PropSymbolsTypo',
@@ -6795,7 +7188,10 @@ var fields_Discont = {
       field_discont.append('option').text(field).attr('value', field);
     });
     // if (fields_id.length == 0) {
-    //     field_id.append("option").text(i18next.t("app_page.common.default")).attrs({"value": "__default__", "class": "i18n", "data-i18n": "[text]app_page.common.default"});
+    //     field_id.append("option")
+    //        .text(i18next.t("app_page.common.default"))
+    //        .attrs({"value": "__default__", "class": "i18n",
+    //                "data-i18n": "[text]app_page.common.default"});
     // } else {
     //   fields_id.forEach(function(field) {
     //       field_id.append("option").text(field).attr("value", field);
@@ -6826,8 +7222,8 @@ var render_discont = function render_discont() {
       discontinuity_type = document.getElementById('kind_Discont').value,
       discretization_type = document.getElementById('Discont_discKind').value,
       nb_class = 4,
-      user_color = document.getElementById('color_Discont').value,
-      new_layer_name = document.getElementById('Discont_output_name').value;
+      user_color = document.getElementById('color_Discont').value;
+  var new_layer_name = document.getElementById('Discont_output_name').value;
 
   new_layer_name = check_layer_name(new_layer_name.length > 0 ? new_layer_name : ['Disc', field, discontinuity_type, layer].join('_'));
 
@@ -6835,8 +7231,12 @@ var render_discont = function render_discont() {
   _app.layer_to_id.set(new_layer_name, id_layer);
   _app.id_to_layer.set(id_layer, new_layer_name);
 
-  // field_id = field_id == "__default__" ? undefined : field_id;
+  // This is the "id" field used to make a new id for the discontinuity line
+  // created in this function (by taking the id of the two nearby feature).
+  // We don't let the user choose it anymore but we might change that
+  // it just stay as 'undefined' for now:
   var field_id = undefined;
+  // field_id = field_id == "__default__" ? undefined : field_id;
 
   var result_value = new Map(),
       result_geom = {},
@@ -6846,7 +7246,7 @@ var render_discont = function render_discont() {
 
   document.getElementById('overlay').style.display = '';
 
-  // Discontinuity are computed in another thread to avoid blocking the ui (and so error message on large layer)
+  // Discontinuity are computed in another thread to avoid blocking the ui
   // (a waiting message is displayed during this time to avoid action from the user)
   var discont_worker = new Worker('static/js/webworker_discont.js');
   _app.webworker_to_cancel = discont_worker;
@@ -6874,27 +7274,28 @@ var render_discont = function render_discont() {
       swal('', i18next.t('app_page.common.error_discretization', { arg: w }), 'error');
       return;
     }
-
+    var require_clip_path = isInterrupted(current_proj_name.toLowerCase()) || current_proj_name.toLowerCase().indexOf('conicconformal') > -1 ? 'url(#clip)' : null;
     breaks = breaks.map(function (ft) {
       return [ft[0], ft[1]];
     }).filter(function (d) {
       return d[1] !== undefined;
     });
-    var result_layer = map.insert('g', '.legend').attr('id', id_layer).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).attr('class', 'layer');
-
     result_data[new_layer_name] = [];
-    var data_result = result_data[new_layer_name],
-        result_lyr_node = result_layer.node();
+    var result_layer = map.insert('g', '.legend').attrs({ id: id_layer, class: 'layer', 'clip-path': require_clip_path }).styles({ 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+    var data_result = result_data[new_layer_name];
+    var result_lyr_node = result_layer.node();
 
     for (var i = 0; i < nb_ft; i++) {
-      var val = d_res[i][0],
-          p_size = class_size[serie.getClass(val)],
-          elem = result_layer.append('path').datum(d_res[i][2]).attrs({ d: path, id: ['feature', i].join('_') }).styles({ stroke: user_color, 'stroke-width': p_size, 'fill': 'transparent', 'stroke-opacity': 1 });
+      var val = d_res[i][0];
+      var p_size = class_size[serie.getClass(val)];
+      var elem = result_layer.append('path').datum(d_res[i][2]).attrs({ d: path, id: ['feature', i].join('_') }).styles({ stroke: user_color, 'stroke-width': p_size, fill: 'transparent', 'stroke-opacity': 1 });
+      var elem_data = elem.node().__data__;
       data_result.push(d_res[i][1]);
-      elem.node().__data__.geometry = d_res[i][2];
-      elem.node().__data__.properties = data_result[i];
-      elem.node().__data__.properties['prop_val'] = p_size;
+      elem_data.geometry = d_res[i][2];
+      elem_data.properties = data_result[i];
+      elem_data.properties.prop_val = p_size;
     }
+
     document.getElementById('overlay').style.display = 'none';
     current_layers[new_layer_name] = {
       renderer: 'DiscLayer',
@@ -6906,7 +7307,7 @@ var render_discont = function render_discont() {
       is_result: true,
       fixed_stroke: true,
       ref_layer_name: layer,
-      fill_color: { 'single': user_color },
+      fill_color: { single: user_color },
       n_features: nb_ft
     };
     create_li_layer_elem(new_layer_name, nb_ft, ['Line', 'discont'], 'result');
@@ -6915,7 +7316,7 @@ var render_discont = function render_discont() {
       // Only display the 50% most important values :
       // TODO : reintegrate this upstream in the layer creation :
       var lim = 0.5 * current_layers[new_layer_name].n_features;
-      result_layer.selectAll('path').style('display', function (d, i) {
+      result_layer.selectAll('path').style('display', function (_, i) {
         return i <= lim ? null : 'none';
       });
       current_layers[new_layer_name].min_display = 0.5;
@@ -6936,25 +7337,26 @@ function fillMenu_PropSymbol(layer) {
 
   var a = dialog_content.append('p').attr('class', 'params_section2').style('margin-top', '2px');
   a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.common.field' }).html(i18next.t('app_page.func_options.common.field'));
-  var field_selec = a.insert('select').attrs({ class: 'params', 'id': 'PropSymbol_field_1' });
+  a.insert('select').attrs({ class: 'params', id: 'PropSymbol_field_1' });
 
   var b = dialog_content.append('p').attr('class', 'params_section2');
   b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.fixed_size' }).html(i18next.t('app_page.func_options.prop.fixed_size'));
-  var ref_size = b.insert('input').attrs({ id: 'PropSymbol_ref_size', type: 'number', class: 'params', min: 0.2, max: max_allowed_size, value: 60.0, step: 0.1 }).style('width', '50px');
+  b.insert('input').attrs({ id: 'PropSymbol_ref_size', type: 'number', class: 'params', min: 0.2, max: max_allowed_size, value: 60.0, step: 0.1 }).style('width', '50px');
   b.append('span').html(' px');
 
   var c = dialog_content.append('p').attr('class', 'params_section2');
   c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.on_value' }).html(i18next.t('app_page.func_options.prop.on_value'));
-  var ref_value = c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ id: 'PropSymbol_ref_value', type: 'number', class: 'params', min: 0.1, step: 0.1 });
+  c.insert('input').styles({ width: '100px', 'margin-left': '10px' }).attrs({ id: 'PropSymbol_ref_value', type: 'number', class: 'params', min: 0.1, step: 0.1 });
 
   var d = dialog_content.append('p').attr('class', 'params_section2');
   d.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_type' }).html(i18next.t('app_page.func_options.prop.symbol_type'));
-  var symb_selec = d.insert('select').attrs({ class: 'params i18n', id: 'PropSymbol_symbol' });
+  d.insert('select').attrs({ class: 'params i18n', id: 'PropSymbol_symbol' });
 
   // [['app_page.func_options.common.symbol_circle', 'circle'],
   //  ['app_page.func_options.common.symbol_square', 'rect']
   // ].forEach(function(symb) {
-  //     symb_selec.append("option").text(i18next.t(symb[0])).attrs({"value": symb[1], 'data-i18n': '[text]' + symb[0]});});
+  //     symb_selec.append("option")
+  //       .text(i18next.t(symb[0])).attrs({"value": symb[1], 'data-i18n': `[text]${symb[0]}`});});
 
   var color_section = dialog_content.append('p').attr('class', 'params_section2');
   color_section.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.symbol_color' }).html(i18next.t('app_page.func_options.prop.symbol_color'));
@@ -6968,7 +7370,7 @@ function fillMenu_PropSymbol(layer) {
 
   var col_b = dialog_content.insert('p').attr('class', 'params_section2');
   col_b.insert('span').style('display', 'none').attrs({ id: 'PropSymbol_color_txt', class: 'i18n', 'data-i18n': '[html]app_page.func_options.prop.options_break_two_colors' }).html(i18next.t('app_page.func_options.prop.options_break_two_colors'));
-  col_b.insert('input').attrs({ id: 'PropSymbol_break_val', 'type': 'number', class: 'params' }).styles({ display: 'none', width: '75px' });
+  col_b.insert('input').attrs({ id: 'PropSymbol_break_val', type: 'number', class: 'params' }).styles({ display: 'none', width: '75px' });
 
   make_layer_name_button(dialog_content, 'PropSymbol_output_name');
   make_ok_button(dialog_content, 'PropSymbol_yes', false);
@@ -6979,7 +7381,6 @@ var fields_PropSymbol = {
   fill: function fill(layer) {
     if (!layer) return;
     section2.selectAll('.params').attr('disabled', null);
-    // let fields = type_col(layer, "number"),
     var fields = getFieldsType('stock', layer),
         nb_features = user_data[layer].length,
         field_selec = section2.select('#PropSymbol_field_1'),
@@ -7016,7 +7417,6 @@ var fields_PropSymbol = {
         return +obj[field_name];
       }),
           max_val_field = max_fast(field_values);
-
       uo_layer_name.attr('value', ['PropSymbol', this.value, layer].join('_'));
       ref_value_field.attrs({ max: max_val_field, value: max_val_field });
       if (has_negative(field_values)) {
@@ -7038,9 +7438,9 @@ var fields_PropSymbol = {
         fill_color_text.style('display', 'inline');
       }
     });
+
     ok_button.on('click', function () {
-      var nb_features = user_data[layer].length,
-          field_to_render = field_selec.node().value,
+      var field_to_render = field_selec.node().value,
           symbol_to_use = symb_selec.node().value,
           user_new_layer_name = uo_layer_name.node().value,
           new_layer_name = check_layer_name(user_new_layer_name.length > 0 ? user_new_layer_name : ['PropSymbols', field_to_render, layer].join('_'));
@@ -7054,11 +7454,16 @@ var fields_PropSymbol = {
         ref_value: +ref_value_field.node().value,
         fill_color: fill_color.node().value
       };
+
       if (+nb_color.node().value === 2) {
-        rendering_params['break_val'] = +fill_color_opt.node().value;
-        rendering_params['fill_color'] = { two: [fill_color.node().value, fill_color2.node().value] };
+        rendering_params.break_val = +fill_color_opt.node().value;
+        rendering_params.fill_color = { two: [fill_color.node().value, fill_color2.node().value] };
       }
-      if (symbol_to_use === 'line') make_prop_line(rendering_params);else make_prop_symbols(rendering_params);
+      if (symbol_to_use === 'line') {
+        make_prop_line(rendering_params);
+      } else {
+        make_prop_symbols(rendering_params);
+      }
       zoom_without_redraw();
       switch_accordion_section();
       handle_legend(new_layer_name);
@@ -7078,10 +7483,11 @@ function fillMenu_TypoSymbol() {
   var dv2 = make_template_functionnality(section2);
   var a = dv2.append('p').attr('class', 'params_section2').style('margin-top', '2px');
   a.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.typosymbol.field' }).html(i18next.t('app_page.func_options.typosymbol.field'));
-  var field_selec = a.insert('select').attrs({ class: 'params', id: 'field_Symbol' });
+  a.insert('select').attrs({ class: 'params', id: 'field_Symbol' });
 
-  var b = dv2.insert('p').attr('class', 'params_section2').styles({ 'text-align': 'center', 'margin': 'auto' });
-  b.append('button').attrs({ id: 'selec_Symbol', class: 'button_disc params i18n',
+  var b = dv2.insert('p').attr('class', 'params_section2').styles({ 'text-align': 'center', margin: 'auto' });
+  b.append('button').attrs({ id: 'selec_Symbol',
+    class: 'button_disc params i18n',
     'data-i18n': '[html]app_page.func_options.typosymbol.symbols_choice' }).styles({ 'font-size': '0.8em', 'text-align': 'center' }).html(i18next.t('app_page.func_options.typosymbol.symbols_choice'));
 
   make_layer_name_button(dv2, 'TypoSymbols_output_name');
@@ -7129,8 +7535,8 @@ var fields_TypoSymbol = {
         confirmButtonText: i18next.t('app_page.common.valid') + '!',
         cancelButtonText: i18next.t('app_page.common.cancel')
       }).then(function () {
-        var field = document.getElementById('field_Symbol').value,
-            symbol_map = self.rendering_params[field] ? self.rendering_params[field].symbols_map : undefined;
+        var field = document.getElementById('field_Symbol').value;
+        var symbol_map = self.rendering_params[field] ? self.rendering_params[field].symbols_map : undefined;
         display_box_symbol_typo(layer, field, symbol_map).then(function (confirmed) {
           if (confirmed) {
             document.getElementById('yesTypoSymbols').disabled = null;
@@ -7142,7 +7548,7 @@ var fields_TypoSymbol = {
           }
         });
       }, function () {
-        return;
+        return null;
       });
     });
     ok_button.on('click', function () {
@@ -7164,24 +7570,24 @@ function render_TypoSymbols(rendering_params, new_name) {
   var ref_layer_id = _app.layer_to_id.get(layer_name);
   var field = rendering_params.field;
   var layer_to_add = check_layer_name(new_name.length > 0 ? new_name : ['Symbols', field, layer_name].join('_'));
-  var ref_selection = document.getElementById(_app.layer_to_id.get(ref_layer_id)).getElementsByTagName('path');
+  var ref_selection = document.getElementById(ref_layer_id).getElementsByTagName('path');
   var nb_ft = ref_selection.length;
 
   function make_geojson_pt_layer() {
     var result = [];
     for (var i = 0, nb_features = ref_selection.length; i < nb_features; ++i) {
-      var ft = ref_selection[i].__data__,
-          value = ft.properties[field],
-          new_obj = {
+      var ft = ref_selection[i].__data__;
+      var value = ft.properties[field];
+      var new_obj = {
         id: i,
         type: 'Feature',
         properties: {},
         geometry: { type: 'Point' }
       };
       if (ft.geometry.type.indexOf('Multi') < 0) {
-        new_obj.properties['symbol_field'] = value;
-        new_obj.properties['id_parent'] = ft.id;
-        new_obj.geometry['coordinates'] = d3.geoCentroid(ft.geometry);
+        new_obj.properties.symbol_field = value;
+        new_obj.properties.id_parent = ft.id;
+        new_obj.geometry.coordinates = d3.geoCentroid(ft.geometry);
         result.push(new_obj);
       } else {
         var areas = [];
@@ -7192,9 +7598,10 @@ function render_TypoSymbols(rendering_params, new_name) {
           }));
         }
         var ix_max = areas.indexOf(max_fast(areas));
-        new_obj.properties['symbol_field'] = value;
-        new_obj.properties['id_parent'] = ft.id;
-        new_obj.geometry['coordinates'] = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+        new_obj.properties.symbol_field = value;
+        new_obj.properties.id_parent = ft.id;
+        new_obj.geometry.coordinates = d3.geoCentroid({
+          type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
         result.push(new_obj);
       }
     }
@@ -7206,10 +7613,8 @@ function render_TypoSymbols(rendering_params, new_name) {
 
   var new_layer_data = make_geojson_pt_layer();
   var layer_id = encodeId(layer_to_add);
-  _app.layer_to_id.set(layer_to_add, layer_id);
-  _app.id_to_layer.set(layer_id, layer_to_add);
-  var context_menu = new ContextMenu(),
-      getItems = function getItems(self_parent) {
+  var context_menu = new ContextMenu();
+  var getItems = function getItems(self_parent) {
     return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
         make_style_box_indiv_symbol(self_parent);
       } }, { name: i18next.t('app_page.common.delete'), action: function action() {
@@ -7217,7 +7622,10 @@ function render_TypoSymbols(rendering_params, new_name) {
       } }];
   };
 
-  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer' }).selectAll('image').data(new_layer_data.features).enter().insert('image').attrs(function (d) {
+  _app.layer_to_id.set(layer_to_add, layer_id);
+  _app.id_to_layer.set(layer_id, layer_to_add);
+
+  map.insert('g', '.legend').attrs({ id: layer_id, class: 'layer no_clip' }).selectAll('image').data(new_layer_data.features).enter().insert('image').attrs(function (d) {
     var symb = rendering_params.symbols_map.get(d.properties.symbol_field),
         coords = path.centroid(d.geometry);
     return {
@@ -7260,8 +7668,13 @@ function fillMenu_griddedMap(layer) {
 
   var b = dialog_content.append('p').attr('class', 'params_section2');
   b.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.cellsize' }).html(i18next.t('app_page.func_options.grid.cellsize'));
-  b.insert('input').style('width', '100px').attrs({ type: 'number', class: 'params', id: 'Gridded_cellsize',
-    value: 10.0, min: 1.000, max: 7000, step: 'any' });
+  b.insert('input').style('width', '100px').attrs({ type: 'number',
+    class: 'params',
+    id: 'Gridded_cellsize',
+    value: 10.0,
+    min: 1.000,
+    max: 7000,
+    step: 'any' });
 
   var c = dialog_content.append('p').attr('class', 'params_section2');
   c.append('span').attrs({ class: 'i18n', 'data-i18n': '[html]app_page.func_options.grid.shape' }).html(i18next.t('app_page.func_options.grid.shape'));
@@ -7328,10 +7741,13 @@ function render_Gridded(field_n, resolution, cell_shape, color_palette, new_user
     return;
   }
 
-  if (current_layers[layer].original_fields.has(field_n)) var_to_send[field_n] = [];else var_to_send[field_n] = user_data[layer].map(function (i) {
-    return i[field_n];
-  });
-
+  if (current_layers[layer].original_fields.has(field_n)) {
+    var_to_send[field_n] = [];
+  } else {
+    var_to_send[field_n] = user_data[layer].map(function (i) {
+      return i[field_n];
+    });
+  }
   formToSend.append('json', JSON.stringify({
     topojson: current_layers[layer].key_name,
     var_name: var_to_send,
@@ -7341,7 +7757,7 @@ function render_Gridded(field_n, resolution, cell_shape, color_palette, new_user
   xhrequest('POST', 'compute/gridded', formToSend, true).then(function (data) {
     var options = { result_layer_on_add: true, func_name: 'grid' };
     if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-      options['choosed_name'] = new_user_layer_name;
+      options.choosed_name = new_user_layer_name;
     }
     var rendered_field = field_n + '_densitykm';
     var n_layer_name = add_layer_topojson(data, options);
@@ -7441,7 +7857,6 @@ var fields_FlowMap = {
     }
     if (layer) {
       var ref_fields = Object.getOwnPropertyNames(user_data[layer][0]);
-
       ref_fields.forEach(function (field) {
         join_field.append('option').text(field).attr('value', field);
       });
@@ -7450,7 +7865,7 @@ var fields_FlowMap = {
       section2.selectAll('.params').attr('disabled', null);
       uo_layer_name.attr('value', ['Links', layer].join('_'));
     }
-    var values_fij;
+    var values_fij = void 0;
 
     field_fij.on('change', function () {
       var name = this.value,
@@ -7466,10 +7881,10 @@ var fields_FlowMap = {
 
     disc_type.on('change', function () {
       var name = field_fij.node().value,
-          nclass = nb_class_input.node().value,
           disc = this.value,
           min_size = 0.5,
           max_size = 10;
+      var nclass = nb_class_input.node().value;
       if (disc === 'Q6') {
         nclass = 6;
         nb_class_input.attr('value', 6);
@@ -7492,17 +7907,21 @@ var fields_FlowMap = {
   },
 
   unfill: function unfill() {
-    var field_i = document.getElementById('FlowMap_field_i'),
-        field_j = document.getElementById('FlowMap_field_j'),
-        field_fij = document.getElementById('FlowMap_field_fij'),
-        join_field = document.getElementById('FlowMap_field_join');
-
-    for (var i = field_i.childElementCount - 1; i > -1; --i) {
-      field_i.removeChild(field_i.children[i]);
-      field_j.removeChild(field_j.children[i]);
-      field_fij.removeChild(field_fij.children[i]);
-    }
-    unfillSelectInput(join_field);
+    // const field_i = document.getElementById('FlowMap_field_i'),
+    //   field_j = document.getElementById('FlowMap_field_j'),
+    //   field_fij = document.getElementById('FlowMap_field_fij'),
+    //   join_field = document.getElementById('FlowMap_field_join');
+    //
+    // for (let i = field_i.childElementCount - 1; i > -1; --i) {
+    //   field_i.removeChild(field_i.children[i]);
+    //   field_j.removeChild(field_j.children[i]);
+    //   field_fij.removeChild(field_fij.children[i]);
+    // }
+    // unfillSelectInput(join_field);
+    unfillSelectInput(document.getElementById('FlowMap_field_i'));
+    unfillSelectInput(document.getElementById('FlowMap_field_j'));
+    unfillSelectInput(document.getElementById('FlowMap_field_fij'));
+    unfillSelectInput(document.getElementById('FlowMap_field_join'));
     document.getElementById('FlowMap_discTable').innerHTML = '';
     document.getElementById('FlowMap_output_name').value = '';
     section2.selectAll('.params').attr('disabled', true);
@@ -7537,10 +7956,9 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
   }));
 
   xhrequest('POST', 'compute/links', formToSend, true).then(function (data) {
-    // FIXME : should use the user selected new name if any
     var options = { result_layer_on_add: true, func_name: 'flow' };
     if (new_user_layer_name.length > 0 && /^\w+$/.test(new_user_layer_name)) {
-      options['choosed_name'] = new_user_layer_name;
+      options.choosed_name = new_user_layer_name;
     }
 
     var new_layer_name = add_layer_topojson(data, options);
@@ -7551,7 +7969,7 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
       return +obj[fij_field_name];
     }),
         nb_ft = fij_values.length,
-        serie = new geostats(fij_values);
+        serie = new geostats(fij_values); // eslint-disable-line new-cap
 
     if (user_breaks[0] < serie.min()) user_breaks[0] = serie.min();
     if (user_breaks[nb_class] > serie.max()) user_breaks[nb_class] = serie.max();
@@ -7585,7 +8003,7 @@ function render_FlowMap(field_i, field_j, field_fij, name_join_field, disc_type,
     display_error_during_computation();
     console.log(error);
   });
-};
+}
 
 var render_label = function render_label(layer, rendering_params, options) {
   var label_field = rendering_params.label_field;
@@ -7624,7 +8042,8 @@ var render_label = function render_label(layer, rendering_params, options) {
           }));
         }
         var ix_max = areas.indexOf(max_fast(areas));
-        coords = d3.geoCentroid({ type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
+        coords = d3.geoCentroid({
+          type: ft.geometry.type, coordinates: [ft.geometry.coordinates[ix_max]] });
       }
 
       new_layer_data.push({
@@ -7633,11 +8052,10 @@ var render_label = function render_label(layer, rendering_params, options) {
         properties: { label: ft.properties[label_field], x: coords[0], y: coords[1] },
         geometry: { type: 'Point', coordinates: coords }
       });
-      // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
     }
   }
-  var context_menu = new ContextMenu(),
-      getItems = function getItems(self_parent) {
+  var context_menu = new ContextMenu();
+  var getItems = function getItems(self_parent) {
     return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
         make_style_box_indiv_label(self_parent);
       } }, { name: i18next.t('app_page.common.delete'), action: function action() {
@@ -7684,7 +8102,7 @@ var render_label = function render_label(layer, rendering_params, options) {
     this.style.cursor = 'initial';
   }).on('dblclick contextmenu', function () {
     context_menu.showMenu(d3.event, document.querySelector('body'), getItems(this));
-  }).call(drag_elem_geo);;
+  }).call(drag_elem_geo);
 
   create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'label'], 'result');
   current_layers[layer_to_add] = {
@@ -7718,13 +8136,13 @@ var render_label_graticule = function render_label_graticule(layer, rendering_pa
     new_layer_data = options.data;
     nb_ft = new_layer_data.length;
   } else if (layer) {
-    var grat = d3.geoGraticule().step([current_layers['Graticule'].step, current_layers['Graticule'].step]);
-    grat = current_layers['Graticule'].extent ? grat.extent(current_layers['Graticule'].extent).lines() : grat.lines();
+    var grat = d3.geoGraticule().step([current_layers.Graticule.step, current_layers.Graticule.step]);
+    grat = current_layers.Graticule.extent ? grat.extent(current_layers.Graticule.extent).lines() : grat.lines();
     nb_ft = grat.length;
     for (var i = 0; i < nb_ft; i++) {
-      var txt = void 0,
-          geometry = void 0,
-          line = grat[i];
+      var line = grat[i];
+      var txt = void 0;
+      var geometry = void 0;
       if (line.coordinates[0][0] === line.coordinates[1][0]) {
         txt = line.coordinates[0][0];
         geometry = position_lat === 'bottom' ? { type: 'Point', coordinates: line.coordinates[0] } : { type: 'Point', coordinates: line.coordinates[line.length - 1] };
@@ -7732,7 +8150,7 @@ var render_label_graticule = function render_label_graticule(layer, rendering_pa
         txt = line.coordinates[0][1];
         geometry = position_lon === 'left' ? { type: 'Point', coordinates: line.coordinates[0] } : { type: 'Point', coordinates: line.coordinates[line.length - 1] };
       }
-      if (txt != undefined) {
+      if (txt !== undefined) {
         new_layer_data.push({
           id: i,
           type: 'Feature',
@@ -7740,11 +8158,10 @@ var render_label_graticule = function render_label_graticule(layer, rendering_pa
           geometry: geometry
         });
       }
-      // new_layer_data.push({label: ft.properties[label_field], coords: d3.geoCentroid(ft.geometry)});
     }
   }
-  var context_menu = new ContextMenu(),
-      getItems = function getItems(self_parent) {
+  var context_menu = new ContextMenu();
+  var getItems = function getItems(self_parent) {
     return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
         make_style_box_indiv_label(self_parent);
       } }, { name: i18next.t('app_page.common.delete'), action: function action() {
@@ -7850,7 +8267,9 @@ var drag_elem_geo2 = d3.drag().filter(function () {
   }
 });
 
-var drag_waffle = d3.drag().subject(function () {
+var drag_waffle = d3.drag().filter(function () {
+  return current_layers[_app.id_to_layer.get(this.parentElement.id)].draggable;
+}).subject(function () {
   var t = d3.select(this);
   var prev_translate = t.attr('transform');
   prev_translate = prev_translate ? prev_translate.slice(10, -1).split(',').map(function (f) {
@@ -7875,15 +8294,14 @@ var drag_waffle = d3.drag().subject(function () {
 });
 
 function setSelected(selectNode, value) {
-  selectNode.value = value;
+  selectNode.value = value; // eslint-disable-line no-param-reassign
   selectNode.dispatchEvent(new Event('change'));
 }
 
 // Function to be called after clicking on "render" in order to close the section 2
 // and to have the section 3 opened
 function switch_accordion_section(id_elem) {
-  id_elem = id_elem || 'btn_s3';
-  document.getElementById(id_elem).dispatchEvent(new MouseEvent('click'));
+  document.getElementById(id_elem || 'btn_s3').dispatchEvent(new MouseEvent('click'));
 }
 
 function check_remove_existing_box(box_selector) {
@@ -8166,11 +8584,11 @@ var type_col = function type_col(layerName, target) {
   }
   if (target) {
     var res = [];
-    for (var k in result) {
+    Object.keys(result).forEach(function (k) {
       if (result[k] === target && k !== '_uid') {
         res.push(k);
       }
-    }
+    });
     return res;
   }
   return result;
@@ -8210,11 +8628,11 @@ var type_col2 = function type_col2(table, _field) {
       tmpType = typeof val === 'undefined' ? 'undefined' : _typeof(val);
       if (tmpType === 'object' && isFinite(val)) {
         tmpType = 'empty';
-      } else if (tmpType === 'string' && val.length == 0) {
+      } else if (tmpType === 'string' && val.length === 0) {
         tmpType = 'empty';
       } else if (tmpType === 'string' && !isNaN(Number(val)) || tmpType === 'number') {
         var _val = Number(table[i][field]);
-        tmpType = (_val | 0) == val ? 'stock' : 'ratio';
+        tmpType = (_val | 0) === val ? 'stock' : 'ratio';
       }
       tmp[fields[j]].push(tmpType);
     }
@@ -8303,7 +8721,8 @@ function make_box_type_fields(layerName) {
     container.querySelector('#xclose').onclick = _onclose2;
   } else {
     // There is already types selected and no new fields (so this is a modification) :
-    // Use the previous values if the user close the window without confirmation (cancel or X button)
+    // Use the previous values if the user close
+    // the window without confirmation (cancel or X button)
     var _onclose3 = function _onclose3() {
       current_layers[layerName].fields_type = fields_type;
       deferred.resolve(false);
@@ -8328,9 +8747,9 @@ function make_box_type_fields(layerName) {
     }
     clean_up_box();
   };
-  function helper_esc_key_twbs(evt) {
-    evt = evt || window.event;
-    var isEscape = 'key' in evt ? evt.key == 'Escape' || evt.key == 'Esc' : evt.keyCode == 27;
+  function helper_esc_key_twbs(_evt) {
+    var evt = _evt || window.event;
+    var isEscape = 'key' in evt ? evt.key === 'Escape' || evt.key === 'Esc' : evt.keyCode === 27;
     if (isEscape) {
       evt.stopPropagation();
       current_layers[layerName].fields_type = tmp.slice();
@@ -8477,9 +8896,9 @@ var clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
           URL.revokeObjectURL(blobUrl);
         }
       }).then(function (inputValue) {
-        null;
+        return null;
       }, function (dismissValue) {
-        null;
+        return null;
       });
     } else {
       dlAnchorElem.style.display = 'none';
@@ -8491,8 +8910,8 @@ var clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
   });
 };
 
-var helper_esc_key_twbs_cb = function helper_esc_key_twbs_cb(evt, callback) {
-  evt = evt || window.event;
+var helper_esc_key_twbs_cb = function helper_esc_key_twbs_cb(_event, callback) {
+  var evt = _event || window.event;
   var isEscape = 'key' in evt ? evt.key === 'Escape' || evt.key === 'Esc' : evt.keyCode === 27;
   if (isEscape) {
     evt.stopPropagation();
@@ -8578,8 +8997,8 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 *  - no fancy functionnalities here (it doesn't add anything comparing to Math.min.apply()
 *    or d3.min() except a little speed-up)
 *
-* @param {Array} arr
-* @return {Number} min
+* @param {Array} arr - The serie of values.
+* @return {Number} - The minimum value.
 */
 function min_fast(arr) {
   var min = arr[0];
@@ -8634,11 +9053,11 @@ var contains_empty_val = function contains_empty_val(arr) {
 * @return {Boolean} result - True or False, according to whether it contains duplicate or not
 */
 function has_duplicate(arr) {
-  var h = {},
+  var _h = {},
       len_arr = arr.length;
   for (var i = 0; i < len_arr; i++) {
-    if (h[arr[i]]) return true;
-    h[arr[i]] = true;
+    if (_h[arr[i]]) return true;
+    _h[arr[i]] = true;
   }
   return false;
 }
@@ -8651,7 +9070,7 @@ function has_duplicate(arr) {
 * @return {Number} value - The rounded value.
 */
 var round_value = function round_value(val, nb) {
-  if (nb == undefined) {
+  if (nb === undefined) {
     return val;
   }
   var dec_mult = +['1', Array(Math.abs(nb)).fill('0').join('')].join('');
@@ -8683,7 +9102,7 @@ var get_precision_axis = function get_precision_axis(serie_min, serie_max, preci
   if (serie_max > 1 && range_serie > 100) {
     return '.0f';
   } else if (range_serie > 10) {
-    if (precision == 0) {
+    if (precision === 0) {
       return '.0f';
     }
     return '.1f';
@@ -8747,17 +9166,17 @@ function prop_sizer3_e(arr, fixed_value, fixed_size, type_symbol) {
       arr_len = arr.length,
       res = [];
 
-  if (!fixed_value || fixed_value == 0) {
+  if (!fixed_value || fixed_value === 0) {
     fixed_value = max_fast(arr);
   }
 
-  if (type_symbol == 'circle') {
+  if (type_symbol === 'circle') {
     var smax = fixed_size * fixed_size * pi;
     var _t = smax / fixed_value;
     for (var i = 0; i < arr_len; ++i) {
       res.push(sqrt(abs(arr[i]) * _t) / pi);
     }
-  } else if (type_symbol == 'line') {
+  } else if (type_symbol === 'line') {
     var _t2 = fixed_size / fixed_value;
     for (var _i = 0; _i < arr_len; ++_i) {
       res.push(abs(arr[_i]) * _t2);
@@ -8772,17 +9191,24 @@ function prop_sizer3_e(arr, fixed_value, fixed_size, type_symbol) {
   return res;
 }
 
+/**
+* Compute the "optimal" (cf. xxx) number of class according to the number
+* of features in serie of values.
+*
+* @param {Integer} len_serie - The length of the serie of values.
+* @return {Integer} - The "optimal" number of classes to be used to discretize the serie.
+*/
 function getOptNbClass(len_serie) {
   return Math.floor(1 + 3.3 * Math.log10(len_serie));
 }
 
 /**
-* Compute breaks according to "Q6" methods
+* Compute breaks according to "Q6" method
 * and compute the number of item in each bin.
 *
 * @param {Array} serie - An array of ordered values.
 * @param {Number} precision - An integer value decribing the precision of the serie.
-* @return {Object} summary - Object containing the breaks and the stock in each class.
+* @return {Object} - Object containing the breaks and the stock in each class.
 */
 function getBreaksQ6(serie) {
   var precision = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -8800,11 +9226,11 @@ function getBreaksQ6(serie) {
     tmp = j;
   }
   stock_class.shift();
-  if (breaks[0] == breaks[1]) {
+  if (breaks[0] === breaks[1]) {
     // breaks[1] = breaks[0] + (breaks[2] - breaks[1]) / 2;
     breaks[1] = (+serie[1] + breaks[0]) / 2;
   }
-  if (breaks[6] == breaks[5]) {
+  if (breaks[6] === breaks[5]) {
     breaks[5] = serie[len_serie - 2];
     // breaks[5] = breaks[4] + (breaks[5] - breaks[4]) / 2;
   }
@@ -8819,6 +9245,16 @@ function getBreaksQ6(serie) {
   };
 }
 
+/**
+* Compute breaks according to our "mean and standard deviation" method
+* and compute the number of item in each bin.
+*
+* @param {Array} serie - An array of ordered values.
+* @param {Number} share - The ratio of stddev to be used a size for each class.
+* @param {String} mean_position - The position of the mean value.
+* @param {Number} precision - An integer value decribing the precision of the serie.
+* @return {Object} - Object containing the breaks and the stock in each class.
+*/
 function getBreaksStdDev(serie, share) {
   var mean_position = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'center';
   var precision = arguments[3];
@@ -8828,9 +9264,9 @@ function getBreaksStdDev(serie, share) {
       mean = serie.mean(),
       std_dev = serie.stddev(),
       class_size = std_dev * share;
-  var breaks = mean_position == 'center' ? [mean - class_size / 2, mean + class_size / 2] : [mean - class_size, mean, mean + class_size];
+  var breaks = mean_position === 'center' ? [mean - class_size / 2, mean + class_size / 2] : [mean - class_size, mean, mean + class_size];
 
-  precision = precision || serie.precision;
+  var _precision = precision || serie.precision;
 
   while (breaks[0] > min) {
     breaks.unshift(breaks[0] - class_size);
@@ -8855,11 +9291,21 @@ function getBreaksStdDev(serie, share) {
   return {
     nb_class: nb_class,
     breaks: breaks.map(function (v) {
-      return round_value(v, precision);
+      return round_value(v, _precision);
     })
   };
 }
 
+/**
+* Compute a summary about the given serie of values.
+*
+* @param {Array} _values - The serie of values.
+* @param {Integer} bins - The number of bins to be used to compute the stock by class.
+* @return {Object} - A summary containing the break values (according to the number
+* of bins), the min value, the max value, the mean value, the median value,
+* the standard deviation and the stock by class.
+*
+*/
 function getBinsCount(_values) {
   var bins = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 16;
 
@@ -8869,16 +9315,14 @@ function getBinsCount(_values) {
     return a - b;
   });
   var nb_ft = values.length;
-  var mean = void 0,
-      stddev = void 0,
-      min = values[0],
+  var min = values[0],
       max = values[nb_ft - 1],
       extend = max - min,
       bin_size = extend / bins,
       counts = new Array(bins),
       break_values = [min],
-      sum = 0,
       ix_med = (nb_ft + 1) / 2;
+  var sum = 0;
 
   for (var i = 0; i < bins; i++) {
     break_values.push(break_values[i] + bin_size);
@@ -8889,11 +9333,11 @@ function getBinsCount(_values) {
     while (values[j] <= class_max) {
       sum += values[j];
       counts[_i3 - 1] += 1;
-      j++;
+      j += 1;
     }
   }
-  mean = sum / nb_ft;
-  stddev = getStdDev(values, mean);
+  var mean = sum / nb_ft;
+  var stddev = getStdDev(values, mean);
 
   return {
     breaks: break_values,
@@ -8901,11 +9345,21 @@ function getBinsCount(_values) {
     min: min,
     max: max,
     mean: mean,
-    median: (ix_med | 0) == ix_med ? values[ix_med] : (values[Math.floor(ix_med)] + values[Math.ceil(ix_med)]) / 2,
+    median: (ix_med | 0) === ix_med ? values[ix_med] : (values[Math.floor(ix_med)] + values[Math.ceil(ix_med)]) / 2,
     stddev: stddev
   };
 }
 
+/**
+* Parse a string of comma separated break values
+* to an actual Array of break values.
+* The serie is used to defined if there may be negative values
+* in the defined break values.
+*
+* @param {Array} serie - The serie of values to be discretised with `breaks_list`.
+* @param {String} breaks_list - The user_defined break values as String.
+* @return {Array} - The actual Array of break values.
+*/
 function parseUserDefinedBreaks(serie, breaks_list) {
   var separator = has_negative(serie) ? '- ' : '-';
   return breaks_list.split(separator).map(function (el) {
@@ -8913,21 +9367,28 @@ function parseUserDefinedBreaks(serie, breaks_list) {
   });
 }
 
-function getBreaks_userDefined(serie, break_values) {
-  if (typeof break_values === 'string') {
-    break_values = parseUserDefinedBreaks(serie, break_values);
-  }
+/**
+* Returns the break values and the stock of each class given
+* a list of breaks defined by the user.
+*
+* @param {Array} serie - The serie of values to be discretised
+* @param {Array} breaks - The list of breaks, whether as a String (a typed by the user)
+*                    or as an Array.
+* @return {Object} - An Object with the stock (number of feature) in each class
+*                    and the break values (should be unchanged if provided as an Array)
+*/
+function getBreaks_userDefined(serie, breaks) {
+  var break_values = typeof breaks === 'string' ? parseUserDefinedBreaks(serie, breaks) : breaks;
   var len_serie = serie.length,
-      j = 0,
       len_break_val = break_values.length,
       stock_class = new Array(len_break_val - 1);
-
+  var j = 0;
   for (var i = 1; i < len_break_val; ++i) {
     var class_max = break_values[i];
     stock_class[i - 1] = 0;
     while (serie[j] <= class_max) {
       stock_class[i - 1] += 1;
-      j++;
+      j += 1;
     }
   }
   return {
@@ -8982,11 +9443,11 @@ function coslaw_dist(A, B) {
 }
 
 /**
-* Return the eclidian distance between pt1 and pt2, in the unit provided
+* Compute the euclidian distance between pt1 and pt2, in the unit provided.
 *
 * @param {Array} pt1 - Coordinates of the 1st point as [x, y].
 * @param {Array} pt2 - Coordinates of the 2nd point as [x, y].
-* @return {Number} distance - The distance between pt1 and pt2.
+* @return {Number} - The euclidian distance between pt1 and pt2.
 */
 function get_distance(pt1, pt2) {
   var xs = pt2[0] - pt1[1];
@@ -8994,6 +9455,13 @@ function get_distance(pt1, pt2) {
   return Math.sqrt(xs * xs + ys * ys);
 }
 
+/**
+* Compute the standard deviation of a serie of values.
+*
+* @param {Array} values - The serie of values.
+* @param {Number} mean_val - The mean of the serie (computed upstream).
+* @return {Number} - The standard deviation.
+*/
 function getStdDev(values, mean_val) {
   var nb_val = values.length;
   // const pow = Math.pow;
@@ -9010,6 +9478,11 @@ function getStdDev(values, mean_val) {
 *  in order to locate a new legend without covering existing ones.
 *
 * Implementation taken from http://www.codinghands.co.uk/blog/2013/02/javascript-implementation-omn-maximal-rectangle-algorithm/
+*
+* @param {NodeList} legend_nodes - All the existing `Node`s corresponding
+                    to the main (ie. larger) element of a legend on the map.
+* @return {Object} - A summary about the larger available rectangle found.
+*
 */
 function getMaximalAvailableRectangle(legend_nodes) {
   function getMaxRect() {
@@ -9031,19 +9504,21 @@ function getMaximalAvailableRectangle(legend_nodes) {
           width = cache[y];
         }
         if (cache[y] < width) {
+          var _y = void 0;
+          var w0 = void 0;
           while (true) {
             var pop = stack.pop();
-            var y0 = pop.y,
-                w0 = pop.width;
-            if (width * (y - y0) > area(bestUpperLeft, bestLowerRight) && y - y0 >= minQuadY && width >= minQuadX) {
-              bestUpperLeft = { x: x, y: y0 };
+            _y = pop.y;
+            w0 = pop.width;
+            if (width * (y - _y) > area(bestUpperLeft, bestLowerRight) && y - _y >= minQuadY && width >= minQuadX) {
+              bestUpperLeft = { x: x, y: _y };
               bestLowerRight = { x: x + width - 1, y: y - 1 };
             }
             width = w0;
             if (cache[y] >= width) break;
           }
           width = cache[y];
-          if (width != 0) stack.push({ y: y0, width: w0 });
+          if (width !== 0) stack.push({ y: _y, width: w0 });
         }
       }
     }
@@ -9079,17 +9554,28 @@ function getMaximalAvailableRectangle(legend_nodes) {
       x0 = _get_map_xy.x,
       y0 = _get_map_xy.y;
 
-  x0 = Math.abs(x0);
-  y0 = Math.abs(y0);
-  var cols = Math.abs(w);
-  var rows = Math.abs(h);
   var minQuadY = 100;
   var minQuadX = 40;
-  var mat = new Array(cols);
+  // x0 = Math.abs(x0);
+  // y0 = Math.abs(y0);
+  // let cols = Math.abs(w);
+  // let rows = Math.abs(h);
+  // let mat = new Array(cols);
+  // for (let i = 0; i < cols; i++) {
+  //   mat[i] = new Array(rows);
+  //   for (let j = 0; j < rows; j++) {
+  //     mat[i][j] = 1;
+  //   }
+  // }
+  x0 = Math.floor(x0);
+  y0 = Math.floor(y0);
+  var cols = Math.floor(w);
+  var rows = Math.floor(h);
+  var mat = [];
   for (var i = 0; i < cols; i++) {
-    mat[i] = new Array(rows);
+    mat.push([]);
     for (var j = 0; j < rows; j++) {
-      mat[i][j] = 1;
+      mat[i].push(1);
     }
   }
   for (var _i4 = 0; _i4 < legend_nodes.length; _i4++) {
@@ -9101,6 +9587,13 @@ function getMaximalAvailableRectangle(legend_nodes) {
   return getMaxRect(mat);
 }
 
+/**
+* Get the x and y parameters to be used to translate a newly created legend
+* in order it doesn't overlay existing legends.
+*
+* @return {Array} - The x and y values to be used to translate the new legend.
+*
+*/
 function getTranslateNewLegend() {
   var legends = svg_map.querySelectorAll('.legend_feature');
   if (legends.length === 0) {
@@ -9114,15 +9607,15 @@ function getTranslateNewLegend() {
   }
 }
 
-var pidegrad = 0.017453292519943295;
-var piraddeg = 57.29577951308232;
-var degreesToRadians = function degreesToRadians(degrees) {
-  return degrees * pidegrad;
-};
-var radiansToDegrees = function radiansToDegrees(radians) {
-  return radians * piraddeg;
-};
-
+/**
+* Scale the map to the given rectangular bouding box (in geographic coordinates / WGS84),
+* redraw the path of all the layer and also reproject the layers containing ponctual
+* features (such as symbol layer, labels, etc.)
+*
+* @param {Array} bbox - The bounding box (as [xmin, ymin, xmax, ymax]) to scale on.
+* @return {void}
+*
+*/
 function scale_to_bbox(bbox) {
   var _bbox = _slicedToArray(bbox, 4),
       xmin = _bbox[0],
@@ -9233,24 +9726,28 @@ function handle_upload_files(files, target_layer_on_add, elem) {
     });
     elem.style.border = '';
     if (target_layer_on_add && _app.targeted_layer_added) {
-      swal({ title: i18next.t('app_page.common.error') + '!',
+      swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.error_only_one'),
         customClass: 'swal2_custom',
         type: 'error',
         allowEscapeKey: false,
-        allowOutsideClick: false });
+        allowOutsideClick: false
+      });
     } else if (files_to_send.length >= 4 && files_to_send.length <= 6) {
       handle_shapefile(files_to_send, target_layer_on_add);
       elem.style.border = '';
     } else {
       // elem.style.border = '3px dashed red';
       elem.style.border = '';
-      return swal({ title: i18next.t('app_page.common.error') + '!',
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.alert_upload1'),
         customClass: 'swal2_custom',
         type: 'error',
         allowEscapeKey: false,
-        allowOutsideClick: false });
+        allowOutsideClick: false
+      });
     }
   } else if (files[0].name.toLowerCase().indexOf('json') > -1 || files[0].name.toLowerCase().indexOf('zip') > -1 || files[0].name.toLowerCase().indexOf('gml') > -1 || files[0].name.toLowerCase().indexOf('kml') > -1) {
     elem.style.border = '';
@@ -9339,23 +9836,27 @@ function handle_upload_files(files, target_layer_on_add, elem) {
       return f.name.indexOf('.shp') > -1 || f.name.indexOf('.dbf') > -1 || f.name.indexOf('.shx') > -1 || f.name.indexOf('.prj') > -1 ? shp_part = true : null;
     });
     if (shp_part) {
-      return swal({ title: i18next.t('app_page.common.error') + '!',
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.alert_upload_shp'),
         type: 'error',
         customClass: 'swal2_custom',
         allowOutsideClick: false,
-        allowEscapeKey: false }).then(function (valid) {
-        null;
+        allowEscapeKey: false
+      }).then(function (valid) {
+        return null;
       }, function (dismiss) {
-        null;
+        return null;
       });
     } else {
-      return swal({ title: i18next.t('app_page.common.error') + '!',
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
         text: i18next.t('app_page.common.alert_upload_invalid'),
         type: 'error',
         customClass: 'swal2_custom',
         allowOutsideClick: false,
-        allowEscapeKey: false });
+        allowEscapeKey: false
+      });
     }
   }
 }
@@ -9444,7 +9945,6 @@ function handleOneByOneShp(files, target_layer_on_add) {
               reject(i18next.t('app_page.common.no_value'));
             } else {
               resolve();
-              // let file_list = [shp_slots.get(".shp"), shp_slots.get(".shx"), shp_slots.get(".dbf"), shp_slots.get(".prj")];
               handle_shapefile(file_list, value === 'target');
             }
           });
@@ -9463,14 +9963,17 @@ function handleOneByOneShp(files, target_layer_on_add) {
   var shp_slots = new Map();
   populate_shp_slot(shp_slots, files[0]);
   document.getElementById('dv_drop_shp').addEventListener('drop', function (event) {
-    event.preventDefault();event.stopPropagation();
+    event.preventDefault();
+    event.stopPropagation();
     var next_files = event.dataTransfer.files;
     for (var f_ix = 0; f_ix < next_files.length; f_ix++) {
       // let file = next_files[f_ix];
       populate_shp_slot(shp_slots, next_files[f_ix]);
     }
     if (shp_slots.size === 4 && !shp_slots.has('.cpg') || shp_slots.size === 5) {
-      document.getElementById('dv_drop_shp').innerHTML = document.getElementById('dv_drop_shp').innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg');
+      // const elem = document.getElementById('dv_drop_shp');
+      // elem.innerHTML = elem.innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg');
+      this.innerHTML = this.innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg');
     }
   });
   document.getElementById('dv_drop_shp').addEventListener('dragover', function (event) {
@@ -9636,8 +10139,8 @@ function convert_dataset(file) {
     var ajaxData = new FormData();
     ajaxData.append('action', 'submit_form');
     ajaxData.append('file[]', file);
-    xhrequest('POST', 'convert_tabular', ajaxData, true).then(function (data) {
-      data = JSON.parse(data);
+    xhrequest('POST', 'convert_tabular', ajaxData, true).then(function (raw_data) {
+      var data = JSON.parse(raw_data);
       dataset_name = data.name;
       swal({
         title: '',
@@ -9656,11 +10159,11 @@ function convert_dataset(file) {
   };
 
   if (joined_dataset.length !== 0) {
-    ask_replace_dataset().then(function (_) {
+    ask_replace_dataset().then(function () {
       remove_ext_dataset_cleanup();
       do_convert();
-    }, function (_) {
-      null;
+    }, function () {
+      return null;
     });
   } else {
     do_convert();
@@ -9697,7 +10200,7 @@ function handle_TopoJSON_files(files, target_layer_on_add) {
   }, function (error) {
     display_error_during_computation();
   });
-};
+}
 
 function handle_reload_TopoJSON(text, param_add_func) {
   var ajaxData = new FormData();
@@ -9842,9 +10345,10 @@ function update_menu_dataset() {
   var d_name = dataset_name.length > 20 ? [dataset_name.substring(0, 17), '(...)'].join('') : dataset_name,
       nb_features = joined_dataset[0].length,
       field_names = Object.getOwnPropertyNames(joined_dataset[0][0]),
-      data_ext = document.getElementById('data_ext');
+      data_ext = document.getElementById('data_ext'),
+      parent_elem = data_ext.parentElement;
 
-  d3.select(data_ext.parentElement.firstChild).attrs({
+  d3.select(parent_elem.firstChild).attrs({
     id: 'img_data_ext',
     class: 'user_panel',
     src: 'static/img/b/tabular.png',
@@ -9854,8 +10358,8 @@ function update_menu_dataset() {
 
   data_ext.classList.remove('i18n');
   data_ext.removeAttribute('data-i18n');
-  d3.select(data_ext).html([' <b>', d_name, '</b> - <i><span style="font-size:9px;">', nb_features, ' ', i18next.t('app_page.common.feature', { count: +nb_features }), ' - ', field_names.length, ' ', i18next.t('app_page.common.field', { count: +field_names.length }), '</i></span>'].join(''));
-  data_ext.parentElement.innerHTML = data_ext.parentElement.innerHTML + '<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_dataset" style="float:right;margin-top:10px;opacity:0.5">';
+  d3.select(data_ext).html([' <b>', d_name, '</b> - <i><span style="font-size:9px;">', nb_features, ' ', i18next.t('app_page.common.feature', { count: +nb_features }), ' - ', field_names.length, ' ', i18next.t('app_page.common.field', { count: +field_names.length }), '</i></span>'].join('')).on('click', null);
+  parent_elem.innerHTML += '<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_dataset" style="float:right;margin-top:10px;opacity:0.5">\n<img width="14" height="14" src="static/img/dataset.png" id="table_dataset_s1" style="float:right;margin:10px 5px 0 0;opacity:1">';
 
   document.getElementById('remove_dataset').onclick = function () {
     remove_ext_dataset();
@@ -9869,6 +10373,9 @@ function update_menu_dataset() {
   if (_app.targeted_layer_added) {
     valid_join_check_display(false);
   }
+  document.getElementById('table_dataset_s1').onclick = function () {
+    boxExplore2.create(dataset_name);
+  };
 }
 
 /**
@@ -9969,10 +10476,9 @@ function update_section1(type, nb_fields, nb_ft, lyr_name_to_add) {
 
   _input_geom.classList.remove('i18n');
   _input_geom.removeAttribute('data-i18n');
-  _input_geom.innerHTML = '<b>' + _lyr_name_display + '</b> - <i><span style="font-size:9px;">' + nb_ft + ' ' + i18next.t('app_page.common.feature', { count: +nb_ft }) + ' - ' + nb_fields + ' ' + i18next.t('app_page.common.field', { count: +nb_fields }) + '</i></span>';
+  // _input_geom.innerHTML = `<b>${_lyr_name_display}</b> - <i><span style="font-size:9px;">${nb_ft} ${i18next.t('app_page.common.feature', { count: +nb_ft })} - ${nb_fields} ${i18next.t('app_page.common.field', { count: +nb_fields })}</i></span>`;
   d3.select(_input_geom).attrs({ src: _button, width: '26', height: '26' }).html('<b>' + _lyr_name_display + '</b> - <i><span style="font-size:9px;">' + nb_ft + ' ' + i18next.t('app_page.common.feature', { count: +nb_ft }) + ' - ' + nb_fields + ' ' + i18next.t('app_page.common.field', { count: +nb_fields }) + '</i></span>').on('click', null);
-  _input_geom.parentElement.innerHTML = _input_geom.parentElement.innerHTML + '<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_target" style="float:right;margin-top:10px;opacity:0.5">';
-
+  _input_geom.parentElement.innerHTML = _input_geom.parentElement.innerHTML + '\n<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_target" style="float:right;margin-top:10px;opacity:0.5">\n<img width="14" height="14" src="static/img/dataset.png" id="table_layer_s1" style="float:right;margin:10px 5px 0 0;opacity:1">';
   var remove_target = document.getElementById('remove_target');
   remove_target.onclick = function () {
     remove_layer(Object.getOwnPropertyNames(user_data)[0]);
@@ -9983,6 +10489,8 @@ function update_section1(type, nb_fields, nb_ft, lyr_name_to_add) {
   remove_target.onmouseout = function () {
     this.style.opacity = 0.5;
   };
+  var table_target = document.getElementById('table_layer_s1');
+  table_target.onclick = display_table_target_layer;
 }
 
 function get_display_name_on_layer_list(layer_name_to_add) {
@@ -10022,6 +10530,11 @@ function ask_existing_feature(feature_name) {
     cancelButtonText: i18next.t('app_page.common.no')
   });
 }
+
+var display_table_target_layer = function display_table_target_layer() {
+  var layer_name = Object.keys(user_data)[0];
+  boxExplore2.create(layer_name);
+};
 
 // Add the TopoJSON to the 'svg' element :
 function add_layer_topojson(text) {
@@ -10081,7 +10594,8 @@ function add_layer_topojson(text) {
 
   if (_app.first_layer) {
     // remove_layer_cleanup('World');
-    var q = document.querySelector('.sortable.World > .layer_buttons > #eye_open');
+    var world_id = _app.layer_to_id.get('World');
+    var q = document.querySelector('.sortable.' + world_id + ' > .layer_buttons > #eye_open');
     if (q) q.click();
     delete _app.first_layer;
     if (parsedJSON.proj) {
@@ -10190,7 +10704,7 @@ function add_layer_topojson(text) {
     li.innerHTML = [_lyr_name_display_menu, '<div class="layer_buttons">', button_trash, sys_run_button_t2, button_zoom_fit, button_table, eye_open0, button_type.get(type), '</div>'].join('');
   }
 
-  if (!target_layer_on_add && _app.current_functionnality != undefined && _app.current_functionnality.name === "smooth") {
+  if (!target_layer_on_add && _app.current_functionnality != undefined && _app.current_functionnality.name === 'smooth') {
     fields_handler.fill();
   }
 
@@ -10317,7 +10831,7 @@ function scale_to_lyr(name) {
   proj.scale(s).translate(t);
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
-};
+}
 
 /**
 * Center and zoom to a layer (using zoom scale and translate properties).
@@ -10382,14 +10896,14 @@ function add_layout_feature(selected_feature) {
   } else if (selected_feature === 'sphere') {
     // if(current_layers.Sphere) return;
     var layer_to_add = check_layer_name(options.layer_name || 'Sphere');
-    var _layer_id = encodeId(layer_to_add);
+    var layer_id = encodeId(layer_to_add);
     var fill = options.fill || '#add8e6';
     var fill_opacity = options.fill_opacity || 0.2;
     var stroke_width = options.stroke_width || '0.5px';
     var stroke_opacity = options.stroke_opacity || 1;
     var stroke = options.stroke || '#ffffff';
-    _app.layer_to_id.set(layer_to_add, _layer_id);
-    _app.id_to_layer.set(_layer_id, layer_to_add);
+    _app.layer_to_id.set(layer_to_add, layer_id);
+    _app.id_to_layer.set(layer_id, layer_to_add);
     current_layers[layer_to_add] = {
       sphere: true,
       type: 'Polygon',
@@ -10397,14 +10911,14 @@ function add_layout_feature(selected_feature) {
       'stroke-width-const': +stroke_width.slice(0, -2),
       fill_color: { single: fill }
     };
-    map.append('g').attrs({ id: _layer_id, class: 'layer' }).styles({ 'stroke-width': stroke_width }).append('path').datum({ type: 'Sphere' }).styles({ fill: fill, 'fill-opacity': fill_opacity, 'stroke-opacity': stroke_opacity, stroke: stroke }).attrs({ d: path });
-    if (isInterrupted(current_proj_name)) {
-      map.select('g#' + _layer_id).attr('clip-path', 'url(#clip)');
+    map.append('g').attrs({ id: layer_id, class: 'layer' }).styles({ 'stroke-width': stroke_width }).append('path').datum({ type: 'Sphere' }).styles({ fill: fill, 'fill-opacity': fill_opacity, 'stroke-opacity': stroke_opacity, stroke: stroke }).attrs({ d: path });
+    if (isInterrupted(current_proj_name.toLowerCase())) {
+      map.select('g#' + layer_id).attr('clip-path', 'url(#clip)');
     }
     create_li_layer_elem(layer_to_add, null, 'Polygon', 'sample');
     alertify.notify(i18next.t('app_page.notification.success_sphere_added'), 'success', 5);
     zoom_without_redraw();
-    setSphereBottom(_layer_id);
+    setSphereBottom(layer_id);
   } else if (selected_feature === 'graticule') {
     if (current_layers.Graticule !== undefined) return;
     var _stroke = options.stroke || '#808080';
@@ -10419,7 +10933,11 @@ function add_layout_feature(selected_feature) {
       graticule = graticule.extent(extent);
       current_layers.Graticule.extent = extent;
     }
-    map.insert('g', '.legend').attrs({ id: 'Graticule', class: 'layer' }).styles({ 'stroke-width': _stroke_width }).append('path').datum(graticule).attrs({ d: path, class: 'graticule' }).styles({ 'stroke-dasharray': stroke_dasharray, fill: 'none', stroke: _stroke });
+    var _layer_to_add = 'Graticule';
+    var _layer_id = encodeId(_layer_to_add);
+    _app.layer_to_id.set(_layer_to_add, _layer_id);
+    _app.id_to_layer.set(_layer_id, _layer_to_add);
+    map.insert('g', '.legend').attrs({ id: _layer_id, class: 'layer' }).styles({ 'stroke-width': _stroke_width }).append('path').datum(graticule).attrs({ d: path, class: 'graticule' }).styles({ 'stroke-dasharray': stroke_dasharray, fill: 'none', stroke: _stroke });
     current_layers.Graticule = {
       graticule: true,
       type: 'Line',
@@ -10430,8 +10948,8 @@ function add_layout_feature(selected_feature) {
       step: step,
       dasharray: stroke_dasharray
     };
-    if (isInterrupted(current_proj_name)) {
-      map.select('g#' + layer_id).attr('clip-path', 'url(#clip)');
+    if (isInterrupted(current_proj_name.toLowerCase())) {
+      map.select('g#' + _layer_id).attr('clip-path', 'url(#clip)');
     }
     create_li_layer_elem('Graticule', null, 'Line', 'sample');
     alertify.notify(i18next.t('app_page.notification.success_graticule_added'), 'success', 5);
@@ -10445,18 +10963,18 @@ function add_layout_feature(selected_feature) {
         scaleBar.remove();
         handleClickAddOther('scalebar');
       }, function (dismiss) {
-        null;
+        return null;
       });
     }
   } else if (selected_feature === 'north_arrow') {
     if (!northArrow.displayed) {
       handleClickAddOther('north_arrow');
     } else {
-      ask_existing_feature('north_arrow').then(function (_) {
+      ask_existing_feature('north_arrow').then(function () {
         northArrow.remove();
         handleClickAddOther('north_arrow');
       }, function (dismiss) {
-        null;
+        return null;
       });
     }
   } else if (selected_feature === 'arrow') {
@@ -10541,11 +11059,9 @@ function add_single_symbol(symbol_dataurl, x, y) {
       } }];
   };
 
-  x = x || w / 2;
-  y = y || h / 2;
   return map.append('g').attrs({ class: 'legend single_symbol', id: symbol_id }).insert('image').attrs({
-    x: x,
-    y: y,
+    x: x || w / 2,
+    y: y || h / 2,
     width: width,
     height: height,
     'xlink:href': symbol_dataurl }).on('mouseover', function () {
@@ -10659,7 +11175,7 @@ function add_sample_layer() {
     content.select('#link2').on('click', function () {
       window.open('https://github.com/riatelab/basemaps/tree/master/Countries', 'riatelab/basemaps', 'toolbar=yes,menubar=yes,resizable=yes,scrollbars=yes,status=yes').focus();
     });
-  };
+  }
 
   function make_panel1() {
     box_body.selectAll('div').remove();
@@ -10678,6 +11194,7 @@ function add_sample_layer() {
     });
     if (selec) setSelected(t_layer_selec.node(), selec);
   }
+
   var box_body = d3.select('.sampleDialogBox').select('.modal-body');
   setTimeout(function (_) {
     document.querySelector('select.sample_target').focus();
@@ -10697,16 +11214,16 @@ function add_simplified_land_layer() {
   var visible = !(options.visible === false);
   var drop_shadow = options.drop_shadow || false;
 
-  // d3.json('static/data_sample/World.topojson', (error, json) => {
-  _app.layer_to_id.set('World', 'World');
-  _app.id_to_layer.set('World', 'World');
-  current_layers['World'] = {
+  var world_id = encodeId('World');
+  _app.layer_to_id.set('World', world_id);
+  _app.id_to_layer.set(world_id, 'World');
+  current_layers.World = {
     type: 'Polygon',
     n_features: 125,
     'stroke-width-const': +stroke_width.slice(0, -2),
     fill_color: { single: fill }
   };
-  map.insert('g', '.legend').attrs({ id: 'World', class: 'layer', 'clip-path': 'url(#clip)' }).style('stroke-width', stroke_width).selectAll('.subunit').data(topojson.feature(world_topology, world_topology.objects.World).features).enter().append('path').attr('d', path).styles({
+  map.insert('g', '.legend').attrs({ id: world_id, class: 'layer', 'clip-path': 'url(#clip)' }).style('stroke-width', stroke_width).selectAll('.subunit').data(topojson.feature(world_topology, world_topology.objects.World).features).enter().append('path').attr('d', path).styles({
     stroke: stroke,
     fill: fill,
     'stroke-opacity': stroke_opacity,
@@ -10724,7 +11241,6 @@ function add_simplified_land_layer() {
     handle_active_layer('World');
   }
   zoom_without_redraw();
-  // });
 }
 
 function add_sample_geojson(name, options) {
@@ -10749,6 +11265,12 @@ function send_remove_server(layer_name) {
   });
 }
 
+/**
+* Return the x and y position where the svg element is located
+* in the browser window.
+*
+* @return {Object} - An object with x and y properties.
+*/
 function get_map_xy0() {
   var bbox = svg_map.getBoundingClientRect();
   return { x: bbox.left, y: bbox.top };
@@ -11038,7 +11560,7 @@ function handleJoin() {
 
   if (!(layer_name.length === 1 && joined_dataset.length === 1)) {
     swal('', i18next.t('app_page.join_box.unable_join'), 'error');
-  } else if (field_join_map.length != 0) {
+  } else if (field_join_map.length !== 0) {
     make_confirm_dialog2('dialogBox', undefined, { html_content: i18next.t('app_page.join_box.ask_forget_join') }).then(function (confirmed) {
       if (confirmed) {
         valid_join_check_display();
@@ -11058,7 +11580,13 @@ function handleJoin() {
   }
 }
 
-// Function called to update the menu according to user operation (triggered when layers/dataset are added and after a join operation)
+/**
+* Function called to update the menu according to user operation
+* (triggered when layers/dataset are added and after a join operation)
+* @param {bool} val - ...
+* @param {Array} prop - The proportion of joined features
+* @return {void}
+*/
 function valid_join_check_display(val, prop) {
   if (!val) {
     var extDatasetImg = document.getElementById('img_data_ext');
@@ -11107,8 +11635,10 @@ function valid_join_check_display(val, prop) {
 // Where the real join is done
 // Its two main results are:
 //    -the update of the global "field_join_map" array
-//       (storing the relation between index of the geometry layer and index of the external dataset)
-//    -the update of the global "user_data" object, adding actualy the value to each object representing each feature of the layer
+//       (storing the relation between index of the geometry
+//         layer and index of the external dataset)
+//    -the update of the global "user_data" object, adding actualy the value
+//     to each object representing each feature of the layer
 function valid_join_on(layer_name, field1, field2) {
   var join_values1 = [],
       join_values2 = [];
@@ -11209,8 +11739,9 @@ function valid_join_on(layer_name, field1, field2) {
           f_name = fields_name_to_add[_j];
           if (f_name.length > 0) {
             var t_val = void 0;
-            if (val == undefined) t_val = null;else if (joined_dataset[0][val][f_name] === '') t_val = null;else t_val = joined_dataset[0][val][f_name];
-            user_data[layer_name][_i7][f_name] = val != undefined ? joined_dataset[0][val][f_name] : null;
+            if (val == undefined) t_val = null; // eslint-disable-line
+            else if (joined_dataset[0][val][f_name] === '') t_val = null;else t_val = joined_dataset[0][val][f_name];
+            user_data[layer_name][_i7][f_name] = val != undefined ? joined_dataset[0][val][f_name] : null; // eslint-disable-line
           }
         }
       }
@@ -11282,7 +11813,15 @@ var removeExistingJointure = function removeExistingJointure(layer_name) {
   }
 };
 'use strict';
-// TODO : refactor some functions in this file (they are really too messy)
+
+/**
+* Function to dispatch the click on the "open style box" icon
+* to the actual appropriate function according to the type of the layer.
+*
+* @param {String} layer_name - The name of the layer.
+* @return {void} - Nothing is returned but the "style box" should open.
+*
+*/
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -11299,6 +11838,8 @@ function handle_click_layer(layer_name) {
     createStyleBoxTypoSymbols(layer_name);
   } else if (current_layers[layer_name].renderer && current_layers[layer_name].renderer === 'TwoStocksWaffle') {
     createStyleBoxWaffle(layer_name);
+  } else if (current_layers[layer_name].renderer === 'Stewart') {
+    createStyleBoxStewart(layer_name);
   } else {
     createStyleBox(layer_name);
   }
@@ -11366,31 +11907,12 @@ function make_categorical_color_menu(fields, layer, fill_prev) {
         txt = [cats.size, ' cat.'].join('');
     d3.select('#nb_cat_txt').html(txt);
     var color_cat_map = new Map();
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = cats[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var val = _step.value;
-
-        color_cat_map.set(val, Colors.names[Colors.random()]);
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-
+    Array.from(cats.keys()).forEach(function (val) {
+      color_cat_map.set(val, Colors.names[Colors.random()]);
+    });
+    // for (let val of cats) {
+    //   color_cat_map.set(val, Colors.names[Colors.random()]);
+    // }
     current_layers[layer].fill_color = { categorical: [field_name, color_cat_map] };
     fill_categorical(layer, field_name, symbol, color_cat_map);
   });
@@ -11401,6 +11923,14 @@ function make_categorical_color_menu(fields, layer, fill_prev) {
   fill_color_section.append('span').attr('id', 'nb_cat_txt').html('');
 }
 
+/**
+* Function to create the input section allowing to change the name of a layer.
+* (Used by all the createStyleBox_xxx functions)
+*
+* @param {Object} parent - A d3 selection corresponding to the parent box.
+* @param {String} layer_name - The current name of layer edited in the style box.
+* @return {Object} - The d3 selection corresponding to the input element created.
+*/
 function make_change_layer_name_section(parent, layer_name) {
   var section = parent.insert('p').attr('class', 'inp_bottom');
   section.append('span').html(i18next.t('app_page.layer_style_popup.layer_name'));
@@ -11425,18 +11955,18 @@ function createStyleBoxTypoSymbols(layer_name) {
   var restore_prev_settings = function restore_prev_settings() {
     var features = selection._groups[0];
     for (var i = 0; i < features.length; i++) {
-      features[i].setAttribute('width', prev_settings[i]['size']);
-      features[i].setAttribute('height', prev_settings[i]['size']);
-      features[i].setAttribute('x', prev_settings[i]['position'][0]);
-      features[i].setAttribute('y', prev_settings[i]['position'][1]);
-      features[i].style.display = prev_settings[i]['display'];
+      features[i].setAttribute('width', prev_settings[i].size);
+      features[i].setAttribute('height', prev_settings[i].size);
+      features[i].setAttribute('x', prev_settings[i].position[0]);
+      features[i].setAttribute('y', prev_settings[i].position[1]);
+      features[i].style.display = prev_settings[i].display;
     }
     current_layers[layer_name].default_size = prev_settings_defaults.size;
   };
 
   check_remove_existing_box('.styleBox');
 
-  var selection = map.select('#' + _app.layer_to_id.get(layer)).selectAll('image'),
+  var selection = map.select('#' + _app.layer_to_id.get(layer_name)).selectAll('image'),
       ref_layer_name = current_layers[layer_name].ref_layer_name,
       symbols_map = current_layers[layer_name].symbols_map,
       rendered_field = current_layers[layer_name].rendered_field;
@@ -11492,31 +12022,34 @@ function createStyleBoxTypoSymbols(layer_name) {
     });
   });
 }
-//    popup.append("p").style("text-align", "center")
-//            .insert("button")
-//            .attr("id","modif_symb")
-//            .attr("class", "button_st4")
-//            .text(i18next.t("app_page.layer_style_popup.modify_symbols"))
-//            .on("click", function(){
-//                display_box_symbol_typo(ref_layer_name, rendered_field)().then(function(confirmed){
-//                    if(confirmed){
-//                        rendering_params = {
-//                            nb_cat: confirmed[0],
-//                            symbols_map: confirmed[1],
-//                            field: rendered_field
-//                        };
-//                        map.select("#" + layer_name)
-//                            .selectAll("image")
-//                            .attr("x", d => d.coords[0] - rendering_params.symbols_map.get(d.Symbol_field)[1] / 2)
-//                            .attr("y", d => d.coords[1] - rendering_params.symbols_map.get(d.Symbol_field)[1] / 2)
-//                            .attr("width", d => rendering_params.symbols_map.get(d.Symbol_field)[1] + "px")
-//                            .attr("height", d => rendering_params.symbols_map.get(d.Symbol_field)[1] + "px")
-//                            .attr("xlink:href", (d,i) => rendering_params.symbols_map.get(d.Symbol_field)[0]);
-//                    }
-//                });
-//            });
-//
-// }
+//  popup.append("p").style("text-align", "center")
+//    .insert("button")
+//    .attr("id","modif_symb")
+//    .attr("class", "button_st4")
+//    .text(i18next.t("app_page.layer_style_popup.modify_symbols"))
+//    .on("click", function(){
+//      display_box_symbol_typo(ref_layer_name, rendered_field)().then(function(confirmed){
+//        if(confirmed){
+//          rendering_params = {
+//              nb_cat: confirmed[0],
+//              symbols_map: confirmed[1],
+//              field: rendered_field
+//          };
+//          map.select("#" + layer_name)
+//            .selectAll("image")
+//            .attr("x",
+//               d => d.coords[0] - rendering_params.symbols_map.get(d.Symbol_field)[1] / 2)
+//            .attr("y",
+//               d => d.coords[1] - rendering_params.symbols_map.get(d.Symbol_field)[1] / 2)
+//            .attr("width",
+//               d => rendering_params.symbols_map.get(d.Symbol_field)[1] + "px")
+//            .attr("height",
+//               d => rendering_params.symbols_map.get(d.Symbol_field)[1] + "px")
+//            .attr("xlink:href",
+//               (d, i) => rendering_params.symbols_map.get(d.Symbol_field)[0]);
+//        }
+//      });
+//    });
 
 function createStyleBoxLabel(layer_name) {
   function get_prev_settings() {
@@ -11536,17 +12069,17 @@ function createStyleBoxLabel(layer_name) {
       size: current_layers[layer_name].default_size,
       font: current_layers[layer_name].default_font
     };
-  };
+  }
 
   function restore_prev_settings() {
     var features = selection._groups[0];
     for (var i = 0; i < features.length; i++) {
-      features[i].style.fill = prev_settings[i]['color'];
-      features[i].style.fontSize = prev_settings[i]['size'];
-      features[i].style.display = prev_settings[i]['display'];
-      features[i].setAttribute('x', prev_settings[i]['position'][0]);
-      features[i].setAttribute('y', prev_settings[i]['position'][1]);
-      features[i].style.fontFamily = prev_settings[i]['font'];
+      features[i].style.fill = prev_settings[i].color;
+      features[i].style.fontSize = prev_settings[i].size;
+      features[i].style.display = prev_settings[i].display;
+      features[i].setAttribute('x', prev_settings[i].position[0]);
+      features[i].setAttribute('y', prev_settings[i].position[1]);
+      features[i].style.fontFamily = prev_settings[i].font;
     }
 
     current_layers[layer_name].fill_color = prev_settings_defaults.color;
@@ -11558,10 +12091,9 @@ function createStyleBoxLabel(layer_name) {
 
   var selection = map.select('#' + _app.layer_to_id.get(layer_name)).selectAll('text'),
       ref_layer_name = current_layers[layer_name].ref_layer_name;
-
-  var prev_settings = [],
-      prev_settings_defaults = {},
-      rendering_params = {};
+  var rendering_params = {};
+  var prev_settings_defaults = {};
+  var prev_settings = [];
 
   get_prev_settings();
 
@@ -11629,7 +12161,7 @@ function createStyleBoxLabel(layer_name) {
 
 function createStyleBoxGraticule(layer_name) {
   check_remove_existing_box('.styleBox');
-  var current_params = cloneObj(current_layers['Graticule']);
+  var current_params = cloneObj(current_layers.Graticule);
   var selection = map.select('#Graticule > path');
   var selection_strokeW = map.select('#Graticule');
 
@@ -11653,14 +12185,14 @@ function createStyleBoxGraticule(layer_name) {
   color_choice.append('span').html(i18next.t('app_page.layer_style_popup.color'));
   color_choice.append('input').style('float', 'right').attrs({ type: 'color', value: current_params.fill_color.single }).on('change', function () {
     selection.style('stroke', this.value);
-    current_layers['Graticule'].fill_color.single = this.value;
+    current_layers.Graticule.fill_color.single = this.value;
   });
 
   var opacity_choice = popup.append('p').attr('class', 'line_elem');
   opacity_choice.append('span').html(i18next.t('app_page.layer_style_popup.opacity'));
   opacity_choice.append('input').attrs({ type: 'range', value: current_params.opacity, min: 0, max: 1, step: 0.1 }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right' }).on('change', function () {
     selection.style('stroke-opacity', this.value);
-    current_layers['Graticule'].opacity = +this.value;
+    current_layers.Graticule.opacity = +this.value;
     popup.select('#graticule_opacity_txt').html(+this.value * 100 + '%');
   });
   opacity_choice.append('span').attr('id', 'graticule_opacity_txt').style('float', 'right').html(current_params.opacity * 100 + '%');
@@ -11669,7 +12201,7 @@ function createStyleBoxGraticule(layer_name) {
   stroke_width_choice.append('span').html(i18next.t('app_page.layer_style_popup.width'));
   stroke_width_choice.append('input').attrs({ type: 'number', value: current_params['stroke-width-const'] }).styles({ width: '60px', float: 'right' }).on('change', function () {
     selection_strokeW.style('stroke-width', this.value);
-    current_layers['Graticule']['stroke-width-const'] = +this.value;
+    current_layers.Graticule['stroke-width-const'] = +this.value;
   });
 
   var steps_choice = popup.append('p').attr('class', 'line_elem');
@@ -11678,9 +12210,9 @@ function createStyleBoxGraticule(layer_name) {
     var next_layer = selection_strokeW.node().nextSibling;
     var step_val = +this.value;
     var dasharray_val = +document.getElementById('graticule_dasharray_txt').value;
-    current_layers['Graticule'].step = step_val;
+    current_layers.Graticule.step = step_val;
     map.select('#Graticule').remove();
-    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(d3.geoGraticule().step([step_val, step_val])).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
+    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(d3.geoGraticule().step([step_val, step_val])).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers.Graticule.fill_color.single, 'stroke-dasharray': dasharray_val });
     zoom_without_redraw();
     selection = map.select('#Graticule').selectAll('path');
     selection_strokeW = map.select('#Graticule');
@@ -11697,7 +12229,7 @@ function createStyleBoxGraticule(layer_name) {
   dasharray_choice.append('span').html(i18next.t('app_page.layer_style_popup.graticule_dasharray'));
   dasharray_choice.append('input').attrs({ type: 'range', value: current_params.dasharray, min: 0, max: 50, step: 0.1, id: 'graticule_range_dasharray' }).styles({ 'vertical-align': 'middle', width: '58px', display: 'inline', float: 'right' }).on('change', function () {
     selection.style('stroke-dasharray', this.value);
-    current_layers['Graticule'].dasharray = +this.value;
+    current_layers.Graticule.dasharray = +this.value;
     popup.select('#graticule_dasharray_txt').attr('value', this.value);
   });
   dasharray_choice.append('input').attrs({ type: 'number', value: current_params.dasharray, min: 0, max: 100, step: 'any', class: 'without_spinner', id: 'graticule_dasharray_txt' }).styles({ width: '30px', 'margin-left': '10px', float: 'right' }).on('change', function () {
@@ -11707,7 +12239,7 @@ function createStyleBoxGraticule(layer_name) {
   });
 
   var clip_extent_section = popup.append('p').attr('class', 'line_elem');
-  clip_extent_section.append('input').attrs({ type: 'checkbox', id: 'clip_graticule', checked: current_params['extent'] ? true : null }).on('change', function () {
+  clip_extent_section.append('input').attrs({ type: 'checkbox', id: 'clip_graticule', checked: current_params.extent ? true : null }).on('change', function () {
     var next_layer = selection_strokeW.node().nextSibling,
         step_val = +document.getElementById('graticule_step_txt').value,
         dasharray_val = +document.getElementById('graticule_dasharray_txt').value;
@@ -11722,11 +12254,11 @@ function createStyleBoxGraticule(layer_name) {
       if (extent_grat[2] > 180) extent_grat[2] = 180;
       if (extent_grat[3] > 90) extent_grat[3] = 90;
       graticule = graticule.extent(extent_grat);
-      current_layers['Graticule'].extent = extent_grat;
+      current_layers.Graticule.extent = extent_grat;
     } else {
-      current_layers['Graticule'].extent = undefined;
+      current_layers.Graticule.extent = undefined;
     }
-    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(graticule).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers['Graticule'].fill_color.single, 'stroke-dasharray': dasharray_val });
+    map.append('g').attrs({ id: 'Graticule', class: 'layer' }).append('path').datum(graticule).attrs({ class: 'graticule', d: path, 'clip-path': 'url(#clip)' }).styles({ fill: 'none', stroke: current_layers.Graticule.fill_color.single, 'stroke-dasharray': dasharray_val });
     zoom_without_redraw();
     selection = map.select('#Graticule').selectAll('path');
     selection_strokeW = map.select('#Graticule');
@@ -11737,11 +12269,20 @@ function createStyleBoxGraticule(layer_name) {
   make_generate_labels_graticule_section(popup);
 }
 
+/**
+* Function triggered to redraw the legend after changing some properties on a layer.
+*
+* @param {String} type_legend - The type of the legend to redraw.
+* @param {String} layer_name - The name of the layer concerned.
+* @param {String} field - The name of the rendered field.
+* @return {void}
+*
+*/
 function redraw_legend(type_legend, layer_name, field) {
   var _ref = type_legend === 'default' ? [['#legend_root.lgdf_', _app.layer_to_id.get(layer_name)].join(''), createLegend_choro] : type_legend === 'line_class' ? [['#legend_root_lines_class.lgdf_', _app.layer_to_id.get(layer_name)].join(''), createLegend_discont_links] : type_legend === 'line_symbol' ? [['#legend_root_lines_symbol.lgdf_', _app.layer_to_id.get(layer_name)].join(''), createLegend_line_symbol] : type_legend === 'waffle' ? [['#legend_root_waffle.lgdf_', _app.layer_to_id.get(layer_name)].join(''), createLegend_waffle] : undefined,
       _ref2 = _slicedToArray(_ref, 2),
       selector = _ref2[0],
-      func = _ref2[1];
+      legend_func = _ref2[1];
 
   var lgd = document.querySelector(selector);
   if (lgd) {
@@ -11761,13 +12302,13 @@ function redraw_legend(type_legend, layer_name, field) {
       no_data_txt = no_data_txt != null ? no_data_txt.textContent : null;
 
       lgd.remove();
-      func(layer_name, field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, no_data_txt, note);
+      legend_func(layer_name, field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, no_data_txt, note);
     } else if (type_legend === 'waffle') {
       lgd.remove();
-      func(layer_name, field, lgd_title, lgd_subtitle, rect_fill_value, note);
+      legend_func(layer_name, field, lgd_title, lgd_subtitle, rect_fill_value, note);
     } else {
       lgd.remove();
-      func(layer_name, current_layers[layer_name].rendered_field, lgd_title, lgd_subtitle, rect_fill_value, rounding_precision, note);
+      legend_func(layer_name, current_layers[layer_name].rendered_field, lgd_title, lgd_subtitle, rect_fill_value, rounding_precision, note);
     }
     lgd = document.querySelector(selector);
     if (transform_param) {
@@ -11816,11 +12357,11 @@ function createStyleBox_Line(layer_name) {
 
   make_confirm_dialog2('styleBox', layer_name, { top: true, widthFitContent: true, draggable: true }).then(function (confirmed) {
     if (confirmed) {
-      if (renderer != undefined && rendering_params != undefined && renderer !== 'Categorical' && renderer !== 'PropSymbolsTypo') {
+      if (renderer !== undefined && rendering_params !== undefined && renderer !== 'Categorical' && renderer !== 'PropSymbolsTypo') {
         current_layers[layer_name].fill_color = { class: rendering_params.colorsByFeature };
         var colors_breaks = [];
-        for (var i = rendering_params['breaks'].length - 1; i > 0; --i) {
-          colors_breaks.push([[rendering_params['breaks'][i - 1], ' - ', rendering_params['breaks'][i]].join(''), rendering_params['colors'][i - 1]]);
+        for (var i = rendering_params.breaks.length - 1; i > 0; --i) {
+          colors_breaks.push([[rendering_params.breaks[i - 1], ' - ', rendering_params.breaks[i]].join(''), rendering_params.breaks[i - 1]]);
         }
         current_layers[layer_name].colors_breaks = colors_breaks;
         current_layers[layer_name].rendered_field = rendering_params.field;
@@ -11833,13 +12374,15 @@ function createStyleBox_Line(layer_name) {
           extra_options: rendering_params.extra_options
         };
         redraw_legend('default', layer_name, rendering_params.field);
-      } else if ((renderer === 'Categorical' || renderer === 'PropSymbolsTypo') && rendering_params != undefined) {
+      } else if ((renderer === 'Categorical' || renderer === 'PropSymbolsTypo') && rendering_params !== undefined) {
         current_layers[layer_name].color_map = rendering_params.color_map;
-        current_layers[layer_name].fill_color = { class: [].concat(rendering_params.colorsByFeature) };
+        current_layers[layer_name].fill_color = {
+          class: [].concat(rendering_params.colorsByFeature)
+        };
         redraw_legend('default', layer_name, rendering_params.field);
       } else if (renderer === 'DiscLayer') {
         selection.each(function (d) {
-          d.properties.prop_val = this.style.strokeWidth;
+          d.properties.prop_val = this.style.strokeWidth; // eslint-disable-line no-param-reassign
         });
         // Also change the legend if there is one displayed :
         redraw_legend('line_class', layer_name);
@@ -11868,7 +12411,7 @@ function createStyleBox_Line(layer_name) {
       current_layers[layer_name]['stroke-width-const'] = stroke_width;
       var fill_meth = Object.getOwnPropertyNames(fill_prev)[0];
 
-      if (current_layers[layer_name].renderer === 'Links' && prev_min_display != undefined) {
+      if (current_layers[layer_name].renderer === 'Links' && prev_min_display !== undefined) {
         current_layers[layer_name].min_display = prev_min_display;
         current_layers[layer_name].breaks = prev_breaks;
         selection.style('fill-opacity', 0).style('stroke', fill_prev.single).style('display', function (d) {
@@ -11876,11 +12419,11 @@ function createStyleBox_Line(layer_name) {
         }).style('stroke-opacity', border_opacity).style('stroke-width', function (d, i) {
           return current_layers[layer_name].linksbyId[i][2];
         });
-      } else if (current_layers[layer_name].renderer === 'DiscLayer' && prev_min_display != undefined) {
+      } else if (current_layers[layer_name].renderer === 'DiscLayer' && prev_min_display !== undefined) {
         current_layers[layer_name].min_display = prev_min_display;
         current_layers[layer_name].size = prev_size;
         current_layers[layer_name].breaks = prev_breaks;
-        var lim = prev_min_display != 0 ? prev_min_display * current_layers[layer_name].n_features : -1;
+        var lim = prev_min_display !== 0 ? prev_min_display * current_layers[layer_name].n_features : -1;
         selection.style('fill-opacity', 0).style('stroke', fill_prev.single).style('stroke-opacity', border_opacity).style('display', function (d, i) {
           return +i <= lim ? null : 'none';
         }).style('stroke-width', function (d) {
@@ -11957,7 +12500,7 @@ function createStyleBox_Line(layer_name) {
             colorsByFeature: confirmed[4],
             schema: confirmed[5],
             no_data: confirmed[6],
-            //  renderer:"Choropleth",
+            // renderer:"Choropleth",
             field: current_layers[layer_name].rendered_field,
             extra_options: confirmed[7]
           };
@@ -12123,7 +12666,8 @@ function createStyleBox(layer_name) {
   var stroke_prev = selection.style('stroke');
   var prev_min_display = void 0,
       prev_size = void 0,
-      prev_breaks = void 0;
+      prev_breaks = void 0,
+      current_pt_size = void 0;
 
   if (stroke_prev.startsWith('rgb')) {
     stroke_prev = rgb2hex(stroke_prev);
@@ -12140,11 +12684,11 @@ function createStyleBox(layer_name) {
       if (type === 'Point' && current_layers[layer_name].pointRadius) {
         current_layers[layer_name].pointRadius = +current_pt_size;
       }
-      if (renderer != undefined && rendering_params != undefined && renderer !== 'Stewart' && renderer !== 'Categorical') {
-        current_layers[layer_name].fill_color = { 'class': rendering_params.colorsByFeature };
+      if (renderer !== undefined && rendering_params !== undefined && renderer !== 'Categorical') {
+        current_layers[layer_name].fill_color = { class: rendering_params.colorsByFeature };
         var colors_breaks = [];
-        for (var i = rendering_params['breaks'].length - 1; i > 0; --i) {
-          colors_breaks.push([[rendering_params['breaks'][i - 1], ' - ', rendering_params['breaks'][i]].join(''), rendering_params['colors'][i - 1]]);
+        for (var i = rendering_params.breaks.length - 1; i > 0; --i) {
+          colors_breaks.push([[rendering_params.breaks[i - 1], ' - ', rendering_params.breaks[i]].join(''), rendering_params.colors[i - 1]]);
         }
         current_layers[layer_name].colors_breaks = colors_breaks;
         current_layers[layer_name].rendered_field = rendering_params.field;
@@ -12156,17 +12700,14 @@ function createStyleBox(layer_name) {
           breaks: rendering_params.breaks,
           extra_options: rendering_params.extra_options
         };
-      } else if (renderer === 'Stewart') {
-        current_layers[layer_name].colors_breaks = rendering_params.breaks;
-        current_layers[layer_name].fill_color.class = rendering_params.breaks.map(function (obj) {
-          return obj[1];
-        });
-      } else if (renderer === 'Categorical' && rendering_params != undefined) {
+      } else if (renderer === 'Categorical' && rendering_params !== undefined) {
         current_layers[layer_name].color_map = rendering_params.color_map;
-        current_layers[layer_name].fill_color = { 'class': [].concat(rendering_params.colorsByFeature) };
+        current_layers[layer_name].fill_color = {
+          class: [].concat(rendering_params.colorsByFeature)
+        };
       }
 
-      if (rendering_params !== undefined && rendering_params.field !== undefined || renderer === 'Stewart') {
+      if (rendering_params !== undefined && rendering_params.field !== undefined) {
         redraw_legend('default', layer_name, current_layers[layer_name].rendered_field);
       }
       // Change the layer name if requested :
@@ -12184,10 +12725,7 @@ function createStyleBox(layer_name) {
       if (type === 'Point' && current_layers[layer_name].pointRadius) {
         selection.attr('d', path.pointRadius(+current_layers[layer_name].pointRadius));
       } else {
-        if (current_layers[layer_name].renderer === 'Stewart') {
-          recolor_stewart(prev_palette.name, prev_palette.reversed);
-          redraw_legend('default', layer_name, current_layers[layer_name].rendered_field);
-        } else if (fill_meth === 'single') {
+        if (fill_meth === 'single') {
           selection.style('fill', fill_prev.single).style('stroke', stroke_prev);
         } else if (fill_meth === 'class') {
           selection.style('fill-opacity', opacity).style('fill', function (d, i) {
@@ -12221,15 +12759,15 @@ function createStyleBox(layer_name) {
   }
 
   if (type === 'Point') {
-    var _current_pt_size = current_layers[layer_name].pointRadius;
+    current_pt_size = current_layers[layer_name].pointRadius;
     var pt_size = popup.append('p').attr('class', 'line_elem');
     pt_size.append('span').html(i18next.t('app_page.layer_style_popup.point_radius'));
-    pt_size.append('input').attrs({ type: 'range', min: 0, max: 80, value: _current_pt_size, id: 'point_radius_size' }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
-      _current_pt_size = +this.value;
-      document.getElementById('point_radius_size_txt').value = _current_pt_size;
-      selection.attr('d', path.pointRadius(_current_pt_size));
+    pt_size.append('input').attrs({ type: 'range', min: 0, max: 80, value: current_pt_size, id: 'point_radius_size' }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
+      current_pt_size = +this.value;
+      document.getElementById('point_radius_size_txt').value = current_pt_size;
+      selection.attr('d', path.pointRadius(current_pt_size));
     });
-    pt_size.append('input').attrs({ type: 'number', value: +_current_pt_size, min: 0, max: 80, step: 'any', class: 'without_spinner', id: 'point_radius_size_txt' }).styles({ width: '30px', 'margin-left': '10px', float: 'right' }).on('change', function () {
+    pt_size.append('input').attrs({ type: 'number', value: +current_pt_size, min: 0, max: 80, step: 'any', class: 'without_spinner', id: 'point_radius_size_txt' }).styles({ width: '30px', 'margin-left': '10px', float: 'right' }).on('change', function () {
       var pt_size_range = document.getElementById('point_radius_size');
       var old_value = pt_size_range.value;
       if (this.value === '' || isNaN(+this.value)) {
@@ -12242,7 +12780,7 @@ function createStyleBox(layer_name) {
     });
   }
 
-  if (current_layers[layer_name].colors_breaks == undefined && renderer !== 'Categorical') {
+  if (current_layers[layer_name].colors_breaks === undefined && renderer !== 'Categorical') {
     if (current_layers[layer_name].targeted || current_layers[layer_name].is_result) {
       var fields = getFieldsType('category', null, fields_layer);
       var fill_method = popup.append('p').html(i18next.t('app_page.layer_style_popup.fill_color')).insert('select');
@@ -12341,50 +12879,155 @@ function createStyleBox(layer_name) {
             field: field_to_discretize,
             extra_options: confirmed[7]
           };
-          var opacity_val = fill_opacity_section ? +fill_opacity_section.node().value : 0.9;
+          // let opacity_val = fill_opacity_section ? +fill_opacity_section.node().value : 0.9
           selection.transition().style('fill', function (d, i) {
             return rendering_params.colorsByFeature[i];
           });
         }
       });
     });
-  } else if (renderer === 'Stewart') {
-    var field_to_colorize = 'min',
-        nb_ft = current_layers[layer_name].n_features;
-    var prev_palette = cloneObj(current_layers[layer_name].color_palette);
-    rendering_params = { breaks: [].concat(current_layers[layer_name].colors_breaks) };
-
-    var recolor_stewart = function recolor_stewart(coloramp_name, reversed) {
-      var new_coloramp = getColorBrewerArray(nb_ft, coloramp_name);
-      if (reversed) new_coloramp.reverse();
-      for (var i = 0; i < nb_ft; ++i) {
-        rendering_params.breaks[i][1] = new_coloramp[i];
-      }selection.transition().style('fill', function (d, i) {
-        return new_coloramp[i];
-      });
-      current_layers[layer_name].color_palette = { name: coloramp_name, reversed: reversed };
-    };
-
-    var color_palette_section = popup.insert('p').attr('class', 'line_elem');
-    color_palette_section.append('span').html(i18next.t('app_page.layer_style_popup.color_palette'));
-    var seq_color_select = color_palette_section.insert('select').attr('id', 'coloramp_params').style('float', 'right').on('change', function () {
-      recolor_stewart(this.value, false);
-    });
-
-    ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (name) {
-      seq_color_select.append('option').text(name).attr('value', name);
-    });
-    seq_color_select.node().value = prev_palette.name;
-    popup.insert('p').attr('class', 'line_elem').styles({ 'text-align': 'center', margin: '0 !important' }).insert('button').attrs({ class: 'button_st3', id: 'reverse_colramp' }).html(i18next.t('app_page.layer_style_popup.reverse_palette')).on('click', function () {
-      var pal_name = document.getElementById('coloramp_params').value;
-      recolor_stewart(pal_name, true);
-    });
   }
+
   var fill_opacity_section = popup.append('p').attr('class', 'line_elem');
   fill_opacity_section.append('span').html(i18next.t('app_page.layer_style_popup.fill_opacity'));
   fill_opacity_section.insert('input').attrs({ type: 'range', min: 0, max: 1, step: 0.1, value: opacity }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
     selection.style('fill-opacity', this.value);
-    fill_opacity_section.select('#fill_opacity_txt').html(+this.value * 100 + '%');
+    fill_opacity_section.select('#fill_opacity_txt').html(this.value * 100 + '%');
+  });
+  fill_opacity_section.append('span').style('float', 'right').attr('id', 'fill_opacity_txt').html(+opacity * 100 + '%');
+
+  var c_section = popup.append('p').attr('class', 'line_elem');
+  c_section.insert('span').html(i18next.t('app_page.layer_style_popup.border_color'));
+  c_section.insert('input').attrs({ type: 'color', value: stroke_prev }).style('float', 'right').on('change', function () {
+    selection.style('stroke', this.value);
+  });
+
+  var opacity_section = popup.append('p').attr('class', 'line_elem');
+  opacity_section.insert('span').html(i18next.t('app_page.layer_style_popup.border_opacity'));
+  opacity_section.insert('input').attrs({ type: 'range', min: 0, max: 1, step: 0.1, value: border_opacity }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right' }).on('change', function () {
+    opacity_section.select('#opacity_val_txt').html(' ' + this.value);
+    selection.style('stroke-opacity', this.value);
+  });
+
+  opacity_section.append('span').attr('id', 'opacity_val_txt').styles({ display: 'inline', float: 'right' }).html(' ' + border_opacity);
+
+  var width_section = popup.append('p');
+  width_section.append('span').html(i18next.t('app_page.layer_style_popup.border_width'));
+  width_section.insert('input').attrs({ type: 'number', min: 0, step: 0.1, value: stroke_width }).styles({ width: '60px', float: 'right' }).on('change', function () {
+    var val = +this.value;
+    var zoom_scale = +d3.zoomTransform(map.node()).k;
+    map.select(g_lyr_name).style('stroke-width', val / zoom_scale + 'px');
+    current_layers[layer_name]['stroke-width-const'] = val;
+  });
+
+  var shadow_section = popup.append('p');
+  var chkbx = shadow_section.insert('input').style('margin', '0').attrs({
+    type: 'checkbox',
+    id: 'checkbox_shadow_layer',
+    checked: map.select(g_lyr_name).attr('filter') ? true : null });
+  shadow_section.insert('label').attr('for', 'checkbox_shadow_layer').html(i18next.t('app_page.layer_style_popup.layer_shadow'));
+  chkbx.on('change', function () {
+    if (this.checked) {
+      createDropShadow(_app.layer_to_id.get(layer_name));
+    } else {
+      var filter_id = map.select(g_lyr_name).attr('filter');
+      svg_map.querySelector(filter_id.substring(4).replace(')', '')).remove();
+      map.select(g_lyr_name).attr('filter', null);
+    }
+  });
+  make_generate_labels_section(popup, layer_name);
+}
+
+function createStyleBoxStewart(layer_name) {
+  check_remove_existing_box('.styleBox');
+  var g_lyr_name = '#' + _app.layer_to_id.get(layer_name),
+      selection = map.select(g_lyr_name).selectAll('path'),
+      opacity = selection.style('fill-opacity');
+
+  var nb_ft = current_layers[layer_name].n_features;
+  var prev_palette = cloneObj(current_layers[layer_name].color_palette);
+
+  var recolor_stewart = function recolor_stewart(coloramp_name, reversed) {
+    var new_coloramp = getColorBrewerArray(nb_ft, coloramp_name);
+    if (reversed) new_coloramp.reverse();
+    for (var i = 0; i < nb_ft; ++i) {
+      rendering_params.breaks[i][1] = new_coloramp[i];
+    }
+    selection.transition().style('fill', function (d, i) {
+      return new_coloramp[i];
+    });
+    current_layers[layer_name].color_palette = { name: coloramp_name, reversed: reversed };
+  };
+  var fill_prev = cloneObj(current_layers[layer_name].fill_color);
+  var rendering_params = { breaks: [].concat(current_layers[layer_name].colors_breaks) };
+  var prev_col_breaks = void 0;
+  if (current_layers[layer_name].colors_breaks && current_layers[layer_name].colors_breaks instanceof Array) {
+    prev_col_breaks = current_layers[layer_name].colors_breaks.concat([]);
+  }
+  var border_opacity = selection.style('stroke-opacity'),
+      stroke_width = +current_layers[layer_name]['stroke-width-const'];
+  var stroke_prev = selection.style('stroke');
+
+  if (stroke_prev.startsWith('rgb')) {
+    stroke_prev = rgb2hex(stroke_prev);
+  }
+
+  make_confirm_dialog2('styleBox', layer_name, { top: true, widthFitContent: true, draggable: true }).then(function (confirmed) {
+    if (confirmed) {
+      current_layers[layer_name].colors_breaks = rendering_params.breaks;
+      current_layers[layer_name].fill_color.class = rendering_params.breaks.map(function (obj) {
+        return obj[1];
+      });
+      redraw_legend('default', layer_name, current_layers[layer_name].rendered_field);
+      // Change the layer name if requested :
+      if (new_layer_name !== layer_name) {
+        change_layer_name(layer_name, check_layer_name(new_layer_name.trim()));
+      }
+      zoom_without_redraw();
+    } else {
+      // Reset to original values the rendering parameters if "no" is clicked
+      selection.style('fill-opacity', opacity).style('stroke-opacity', border_opacity);
+      var zoom_scale = +d3.zoomTransform(map.node()).k;
+      map.select(g_lyr_name).style('stroke-width', stroke_width / zoom_scale + 'px');
+      current_layers[layer_name]['stroke-width-const'] = stroke_width;
+      var fill_meth = Object.getOwnPropertyNames(fill_prev)[0];
+      recolor_stewart(prev_palette.name, prev_palette.reversed);
+      redraw_legend('default', layer_name, current_layers[layer_name].rendered_field);
+      current_layers[layer_name].colors_breaks = prev_col_breaks;
+      current_layers[layer_name].fill_color = fill_prev;
+      zoom_without_redraw();
+    }
+  });
+
+  var container = document.querySelector('.twbs > .styleBox');
+  var popup = d3.select(container).select('.modal-content').style('width', '300px').select('.modal-body');
+
+  var new_layer_name = layer_name;
+  var new_name_section = make_change_layer_name_section(popup, layer_name);
+  new_name_section.on('change', function () {
+    new_layer_name = this.value;
+  });
+
+  var color_palette_section = popup.insert('p').attr('class', 'line_elem');
+  color_palette_section.append('span').html(i18next.t('app_page.layer_style_popup.color_palette'));
+  var seq_color_select = color_palette_section.insert('select').attr('id', 'coloramp_params').style('float', 'right').on('change', function () {
+    recolor_stewart(this.value, false);
+  });
+
+  ['Blues', 'BuGn', 'BuPu', 'GnBu', 'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'RdPu', 'YlGn', 'Greens', 'Greys', 'Oranges', 'Purples', 'Reds'].forEach(function (name) {
+    seq_color_select.append('option').text(name).attr('value', name);
+  });
+  seq_color_select.node().value = prev_palette.name;
+  popup.insert('p').attr('class', 'line_elem').styles({ 'text-align': 'center', margin: '0 !important' }).insert('button').attrs({ class: 'button_st3', id: 'reverse_colramp' }).html(i18next.t('app_page.layer_style_popup.reverse_palette')).on('click', function () {
+    var pal_name = document.getElementById('coloramp_params').value;
+    recolor_stewart(pal_name, true);
+  });
+
+  var fill_opacity_section = popup.append('p').attr('class', 'line_elem');
+  fill_opacity_section.append('span').html(i18next.t('app_page.layer_style_popup.fill_opacity'));
+  fill_opacity_section.insert('input').attrs({ type: 'range', min: 0, max: 1, step: 0.1, value: opacity }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right', 'margin-right': '0px' }).on('change', function () {
+    selection.style('fill-opacity', this.value);
+    fill_opacity_section.select('#fill_opacity_txt').html(this.value * 100 + '%');
   });
   fill_opacity_section.append('span').style('float', 'right').attr('id', 'fill_opacity_txt').html(+opacity * 100 + '%');
 
@@ -12446,6 +13089,15 @@ function make_generate_labels_graticule_section(parent_node) {
   });
 }
 
+/**
+* Create the section allowing to generate labels on a parent style box.
+* (Used by all the createStyleBox_xxx functions)
+*
+* @param {Object} parent_node - The d3 selection corresponding the parent style box.
+* @param {String} layer_name - The name of the layer currently edited in the style box.
+* @return {void}
+*
+*/
 function make_generate_labels_section(parent_node, layer_name) {
   var _fields = get_fields_name(layer_name) || [];
   if (_fields && _fields.length > 0) {
@@ -12498,13 +13150,20 @@ function make_generate_labels_section(parent_node, layer_name) {
   }
 }
 
+/**
+* Return the name of the fields/columns
+* (ie. the members of the `properties` Object for each feature on a layer)
+*
+* @param {String} layer_name - The name of the layer.
+* @return {Array} - An array of Strings, one for each field name.
+*
+*/
 function get_fields_name(layer_name) {
   var elem = document.getElementById(_app.layer_to_id.get(layer_name)).childNodes[0];
   if (!elem.__data__ || !elem.__data__.properties) {
     return null;
-  } else {
-    return Object.getOwnPropertyNames(elem.__data__.properties);
   }
+  return Object.getOwnPropertyNames(elem.__data__.properties);
 }
 
 function createStyleBoxWaffle(layer_name) {
@@ -12562,10 +13221,11 @@ function createStyleBoxWaffle(layer_name) {
     var p = ref_colors_section.append('p').style('margin', '15px 5px');
     p.append('span').html(current_layers[layer_name].rendered_field[i]);
     p.insert('input').attr('type', 'color').attr('id', i).attr('value', current_layers[layer_name].fill_color[i]).style('float', 'right').on('change', function () {
+      // eslint-disable-line no-loop-func
       var col = rgb2hex(this.value);
       var to_replace = current_layers[layer_name].fill_color[i];
       current_layers[layer_name].fill_color[i] = col;
-      selection.selectAll(symbol).each(function (d, i) {
+      selection.selectAll(symbol).each(function () {
         if (rgb2hex(this.getAttribute('fill')) === to_replace) {
           this.setAttribute('fill', col);
         }
@@ -12577,7 +13237,7 @@ function createStyleBoxWaffle(layer_name) {
     _loop(i);
   }
 
-  var size_section = popup.append('p').attr('class', 'line_elem').attr('id', 'size_section').style('clear', 'both');;
+  var size_section = popup.append('p').attr('class', 'line_elem').attr('id', 'size_section').style('clear', 'both');
 
   size_section.append('span').html(i18next.t('app_page.layer_style_popup.ref_size'));
   size_section.insert('input').attrs({ type: 'range', min: 1, max: 40, step: 1, value: previous_params.size }).styles({ width: '58px', 'vertical-align': 'middle', display: 'inline', float: 'right' }).on('change', function () {
@@ -12585,7 +13245,7 @@ function createStyleBoxWaffle(layer_name) {
     var nCol = current_layers[layer_name].nCol;
     current_layers[layer_name].size = val;
     selection.selectAll('g').selectAll(symbol).each(function (d, i) {
-      if (symbol == 'circle') {
+      if (symbol === 'circle') {
         var t_x = round(i % nCol * 2 * val);
         var t_y = floor(floor(i / nCol) * 2 * val);
         this.setAttribute('r', val);
@@ -12626,6 +13286,20 @@ function createStyleBoxWaffle(layer_name) {
   });
   width_row_section.append('span').attr('id', 'width_row_text').style('float', 'right').html(previous_params.nCol);
 
+  var allow_move_section = popup.append('p');
+  var chkbx = allow_move_section.insert('input').style('margin', '0').attrs({
+    type: 'checkbox',
+    id: 'checkbox_move_symbol',
+    checked: current_layers[layer_name].draggable ? true : null });
+  allow_move_section.insert('label').attr('for', 'checkbox_move_symbol').html(i18next.t('app_page.layer_style_popup.let_draggable'));
+  chkbx.on('change', function () {
+    if (this.checked) {
+      current_layers[layer_name].draggable = true;
+    } else {
+      current_layers[layer_name].draggable = false;
+    }
+  });
+
   var new_layer_name = layer_name;
   var new_name_section = make_change_layer_name_section(popup, layer_name);
   new_name_section.on('change', function () {
@@ -12664,8 +13338,8 @@ function createStyleBox_ProbSymbol(layer_name) {
       }
     } else if (type_symbol === 'rect') {
       for (var _i = 0, _len = prop_values.length; _i < _len; _i++) {
-        var old_rect_size = +selec[_i].getAttribute('height'),
-            centr = [+selec[_i].getAttribute('x') + old_rect_size / 2 - prop_values[_i] / 2, +selec[_i].getAttribute('y') + old_rect_size / 2 - prop_values[_i] / 2];
+        var old_rect_size = +selec[_i].getAttribute('height');
+        var centr = [+selec[_i].getAttribute('x') + old_rect_size / 2 - prop_values[_i] / 2, +selec[_i].getAttribute('y') + old_rect_size / 2 - prop_values[_i] / 2];
         selec[_i].setAttribute('x', centr[0]);
         selec[_i].setAttribute('y', centr[1]);
         selec[_i].setAttribute('height', prop_values[_i]);
@@ -12676,7 +13350,7 @@ function createStyleBox_ProbSymbol(layer_name) {
 
   if (current_layers[layer_name].colors_breaks && current_layers[layer_name].colors_breaks instanceof Array) {
     prev_col_breaks = [].concat(current_layers[layer_name].colors_breaks);
-  } else if (current_layers[layer_name].break_val != undefined) {
+  } else if (current_layers[layer_name].break_val !== undefined) {
     prev_col_breaks = current_layers[layer_name].break_val;
   }
   if (stroke_prev.startsWith('rgb')) stroke_prev = rgb2hex(stroke_prev);
@@ -12691,22 +13365,24 @@ function createStyleBox_ProbSymbol(layer_name) {
       }
       if (type_symbol === 'circle') {
         selection.each(function (d, i) {
-          d.properties.prop_value = this.getAttribute('r');
-          d.properties.color = rgb2hex(this.style.fill);
+          d.properties.prop_value = this.getAttribute('r'); // eslint-disable-line no-param-reassign
+          d.properties.color = rgb2hex(this.style.fill); // eslint-disable-line no-param-reassign
         });
       } else {
         selection.each(function (d, i) {
-          d.properties.prop_value = this.getAttribute('height');
-          d.properties.color = rgb2hex(this.style.fill);
+          d.properties.prop_value = this.getAttribute('height'); // eslint-disable-line no-param-reassign
+          d.properties.color = rgb2hex(this.style.fill); // eslint-disable-line no-param-reassign
         });
       }
 
-      if ((type_method === 'PropSymbolsChoro' || type_method === 'PropSymbolsTypo') && rendering_params != undefined) {
+      if ((type_method === 'PropSymbolsChoro' || type_method === 'PropSymbolsTypo') && rendering_params !== undefined) {
         if (type_method === 'PropSymbolsChoro') {
-          current_layers[layer_name].fill_color = { class: [].concat(rendering_params.colorsByFeature) };
+          current_layers[layer_name].fill_color = {
+            class: [].concat(rendering_params.colorsByFeature)
+          };
           current_layers[layer_name].colors_breaks = [];
-          for (var i = rendering_params['breaks'].length - 1; i > 0; --i) {
-            current_layers[layer_name].colors_breaks.push([[rendering_params['breaks'][i - 1], ' - ', rendering_params['breaks'][i]].join(''), rendering_params['colors'][i - 1]]);
+          for (var i = rendering_params.breaks.length - 1; i > 0; --i) {
+            current_layers[layer_name].colors_breaks.push([[rendering_params.breaks[i - 1], ' - ', rendering_params.breaks[i]].join(''), rendering_params.colors[i - 1]]);
           }
           current_layers[layer_name].options_disc = {
             schema: rendering_params.schema,
@@ -12717,7 +13393,9 @@ function createStyleBox_ProbSymbol(layer_name) {
             extra_options: rendering_params.extra_options
           };
         } else if (type_method === 'PropSymbolsTypo') {
-          current_layers[layer_name].fill_color = { class: [].concat(rendering_params.colorsByFeature) };
+          current_layers[layer_name].fill_color = {
+            class: [].concat(rendering_params.colorsByFeature)
+          };
           current_layers[layer_name].color_map = rendering_params.color_map;
         }
         current_layers[layer_name].rendered_field2 = rendering_params.field;
@@ -12759,7 +13437,7 @@ function createStyleBox_ProbSymbol(layer_name) {
         fill_categorical(layer_name, fill_prev.categorical[0], type_symbol, fill_prev.categorical[1]);
       }
       current_layers[layer_name].fill_color = fill_prev;
-      if (current_layers[layer_name].size[1] != old_size[1]) {
+      if (current_layers[layer_name].size[1] !== old_size[1]) {
         var prop_values = prop_sizer3_e(d_values, old_size[0], old_size[1], type_symbol);
         redraw_prop_val(prop_values);
         current_layers[layer_name].size = [old_size[0], old_size[1]];
@@ -12806,7 +13484,7 @@ function createStyleBox_ProbSymbol(layer_name) {
         }
       });
     });
-  } else if (current_layers[layer_name].break_val != undefined) {
+  } else if (current_layers[layer_name].break_val !== undefined) {
     var fill_color_section = popup.append('div').attr('id', 'fill_color_section');
     fill_color_section.append('p').style('text-align', 'center').html(i18next.t('app_page.layer_style_popup.color_break'));
     var p2 = fill_color_section.append('p').style('display', 'inline');
@@ -12850,8 +13528,12 @@ function createStyleBox_ProbSymbol(layer_name) {
         container.modal.show();
         if (confirmed) {
           rendering_params = {
-            nb_class: confirmed[0], color_map: confirmed[1], colorsByFeature: confirmed[2],
-            renderer: 'Categorical', rendered_field: _field_color, field: _field_color
+            nb_class: confirmed[0],
+            color_map: confirmed[1],
+            colorsByFeature: confirmed[2],
+            renderer: 'Categorical',
+            rendered_field: _field_color,
+            field: _field_color
           };
           selection.style('fill', function (d, i) {
             return rendering_params.colorsByFeature[i];
@@ -12964,10 +13646,16 @@ function createStyleBox_ProbSymbol(layer_name) {
       }
     });
   });
-
   make_generate_labels_section(popup, layer_name);
 }
 
+/**
+* Function triggered when the user want to edit a single label.
+*
+* @param {Node} label_node - The HTMLElement corresponding to this label.
+* @return {void}
+*
+*/
 function make_style_box_indiv_label(label_node) {
   var current_options = {
     size: label_node.style.fontSize,
@@ -12982,37 +13670,32 @@ function make_style_box_indiv_label(label_node) {
   check_remove_existing_box('.styleTextAnnotation');
   make_confirm_dialog2('styleTextAnnotation', i18next.t('app_page.func_options.label.title_box_indiv'), { widthFitContent: true, draggable: true }).then(function (confirmed) {
     if (!confirmed) {
-      label_node.style.fontsize = current_options.size;
-      label_node.textContent = current_options.content;
-      label_node.style.fill = current_options.color;
-      label_node.style.fontFamily = current_options.font;
-    } else {
-      // Change the layer name if requested :
-      if (new_layer_name !== layer_name) {
-        change_layer_name(layer_name, check_layer_name(new_layer_name.trim()));
-      }
+      label_node.style.fontsize = current_options.size; // eslint-disable-line no-param-reassign
+      label_node.textContent = current_options.content; // eslint-disable-line no-param-reassign
+      label_node.style.fill = current_options.color; // eslint-disable-line no-param-reassign
+      label_node.style.fontFamily = current_options.font; // eslint-disable-line no-param-reassign
     }
   });
   var box_content = d3.select('.styleTextAnnotation').select('.modal-content').style('width', '300px').select('.modal-body').insert('div');
   var a = box_content.append('p').attr('class', 'line_elem');
   a.insert('span').html(i18next.t('app_page.func_options.label.font_size'));
   a.append('input').attrs({ type: 'number', id: 'font_size', min: 0, max: 34, step: 'any', value: +label_node.style.fontSize.slice(0, -2) }).styles({ width: '70px', float: 'right' }).on('change', function () {
-    label_node.style.fontSize = this.value + 'px';
+    label_node.style.fontSize = this.value + 'px'; // eslint-disable-line no-param-reassign
   });
   var b = box_content.append('p').attr('class', 'line_elem');
   b.insert('span').html(i18next.t('app_page.func_options.label.content'));
   b.append('input').attrs({ value: label_node.textContent, id: 'label_content' }).styles({ width: '70px', float: 'right' }).on('keyup', function () {
-    label_node.textContent = this.value;
+    label_node.textContent = this.value; // eslint-disable-line no-param-reassign
   });
   var c = box_content.append('p').attr('class', 'line_elem');
   c.insert('span').html(i18next.t('app_page.func_options.common.color'));
   c.append('input').attrs({ type: 'color', value: rgb2hex(label_node.style.fill), id: 'label_color' }).styles({ width: '70px', float: 'right' }).on('change', function () {
-    label_node.style.fill = this.value;
+    label_node.style.fill = this.value; // eslint-disable-line no-param-reassign
   });
   var d = box_content.append('p').attr('class', 'line_elem');
   d.insert('span').html(i18next.t('app_page.func_options.label.font_type'));
   var selec_fonts = d.append('select').style('float', 'right').on('change', function () {
-    label_node.style.fontFamily = this.value;
+    label_node.style.fontFamily = this.value; // eslint-disable-line no-param-reassign
   });
 
   available_fonts.forEach(function (name) {
@@ -13021,6 +13704,14 @@ function make_style_box_indiv_label(label_node) {
   selec_fonts.node().value = label_node.style.fontFamily;
 }
 
+/**
+* Function creating a drop shadow on a layer.
+* Currently the properties (offset, gaussianBlur) of this shadow are hard-coded.
+*
+* @param {String} layerId - The id of the layer (ie. the "id" attribute, not the layer name)
+* @return {void}
+*
+*/
 var createDropShadow = function createDropShadow(layerId) {
   var filt_to_use = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
   filt_to_use.setAttribute('id', 'filt_' + layerId);
@@ -13048,34 +13739,37 @@ var createDropShadow = function createDropShadow(layerId) {
   svg_map.querySelector('#' + layerId).setAttribute('filter', 'url(#filt_' + layerId + ')');
 };
 
-// /**
-// * Return the id of a gaussian blur filter with the desired size (stdDeviation attribute)
-// * if one with the same param already exists, its id is returned,
-// * otherwise a new one is created, and its id is returned
-// */
+/**
+* Return the id of a gaussian blur filter with the desired size (stdDeviation attribute)
+* if one with the same param already exists, its id is returned,
+* otherwise a new one is created, and its id is returned
+*/
 // var getBlurFilter = (function(size){
-//     var count = 0;
-//     return function(size) {
-//         let blur_filts = defs.node().getElementsByClassName("blur");
-//         let blur_filt_to_use;
-//         for(let i=0; i < blur_filts.length; i++){
-//             if(blur_filts[i].querySelector("feGaussianBlur").getAttributeNS(null, "stdDeviation") == size){
-//                 blur_filt_to_use = blur_filts[i];
-//             }
-//         }
-//         if(!blur_filt_to_use){
-//             count = count + 1;
-//             blur_filt_to_use = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-//             blur_filt_to_use.setAttribute("id","blurfilt" + count);
-//             blur_filt_to_use.setAttribute("class", "blur");
-//             var gaussianFilter = document.createElementNS("http://www.w3.org/2000/svg", "feGaussianBlur");
-//             gaussianFilter.setAttributeNS(null, "in", "SourceGraphic");
-//             gaussianFilter.setAttributeNS(null, "stdDeviation", size);
-//             blur_filt_to_use.appendChild(gaussianFilter);
-//             defs.node().appendChild(blur_filt_to_use);
-//         }
-//         return blur_filt_to_use.id;
-//     };
+//   var count = 0;
+//   return function(size) {
+//     let blur_filts = defs.node().getElementsByClassName("blur");
+//     let blur_filt_to_use;
+//     for(let i=0; i < blur_filts.length; i++){
+//       if(blur_filts[i].querySelector("feGaussianBlur")
+//                      .getAttributeNS(null, "stdDeviation") === size){
+//         blur_filt_to_use = blur_filts[i];
+//       }
+//     }
+//     if(!blur_filt_to_use){
+//       count = count + 1;
+//       blur_filt_to_use = document.createElementNS(
+//         "http://www.w3.org/2000/svg", "filter");
+//       blur_filt_to_use.setAttribute("id","blurfilt" + count);
+//       blur_filt_to_use.setAttribute("class", "blur");
+//       var gaussianFilter = document.createElementNS(
+//         "http://www.w3.org/2000/svg", "feGaussianBlur");
+//       gaussianFilter.setAttributeNS(null, "in", "SourceGraphic");
+//       gaussianFilter.setAttributeNS(null, "stdDeviation", size);
+//       blur_filt_to_use.appendChild(gaussianFilter);
+//       defs.node().appendChild(blur_filt_to_use);
+//     }
+//     return blur_filt_to_use.id;
+//   };
 // })();
 'use strict';
 
@@ -13106,7 +13800,7 @@ var UserArrow = function () {
     this.id = id;
     this.stroke_width = 4;
     this.color = 'rgb(0, 0, 0)';
-
+    this.hide_head = undefined;
     if (!untransformed) {
       var zoom_param = svg_map.__zoom;
       this.pt1 = [(origin_pt[0] - zoom_param.x) / zoom_param.k, (origin_pt[1] - zoom_param.y) / zoom_param.k], this.pt2 = [(destination_pt[0] - zoom_param.x) / zoom_param.k, (destination_pt[1] - zoom_param.y) / zoom_param.k];
@@ -13183,10 +13877,9 @@ var UserArrow = function () {
       _t.y2.baseVal.value = self.pt2[1];
     });
 
-    var defs = parent.querySelector('defs'),
-        markers = defs ? defs.querySelector('marker') : null;
+    var markers_exists = defs ? defs.node().querySelector('marker') : null;
 
-    if (!markers) {
+    if (!markers_exists) {
       this.add_defs_marker();
     }
     this.draw();
@@ -13202,7 +13895,7 @@ var UserArrow = function () {
         orient: 'auto',
         markerWidth: 4,
         markerHeight: 4 }).style('stroke-width', 1).append('path').attr('d', 'M0,-5L10,0L0,5').attr('class', 'arrowHead');
-      if (this.parent.childNodes[0].tagName != 'defs') {
+      if (this.parent.childNodes[0].tagName !== 'defs') {
         this.parent.insertBefore(defs.node(), this.parent.childNodes[0]);
       }
     }
@@ -13226,7 +13919,8 @@ var UserArrow = function () {
 
       this.arrow = this.svg_elem.append('g').style('cursor', 'all-scroll').attrs({ class: 'arrow legend scalable-legend', id: this.id, transform: svg_map.__zoom.toString() });
 
-      this.arrow.insert('line').attrs({ 'marker-end': 'url(#arrow_head)',
+      this.arrow.insert('line').attrs({
+        'marker-end': this.hide_head ? null : 'url(#arrow_head)',
         x1: this.pt1[0],
         y1: this.pt1[1],
         x2: this.pt2[0],
@@ -13410,9 +14104,9 @@ var UserArrow = function () {
       });
       s2.insert('input').attrs({ id: 'arrow_angle', type: 'range', value: angle, min: 0, max: 360, step: 1 }).styles({ width: '80px', 'vertical-align': 'middle', float: 'right' }).on('change', function () {
         var distance = sqrt((self.pt1[0] - self.pt2[0]) * (self.pt1[0] - self.pt2[0]) + (self.pt1[1] - self.pt2[1]) * (self.pt1[1] - self.pt2[1]));
-        var angle = -+this.value;
+        var _angle = -+this.value;
 
-        var _self$calcDestFromOAD = self.calcDestFromOAD(self.pt1, angle, distance),
+        var _self$calcDestFromOAD = self.calcDestFromOAD(self.pt1, _angle, distance),
             _self$calcDestFromOAD2 = _slicedToArray(_self$calcDestFromOAD, 2),
             nx = _self$calcDestFromOAD2[0],
             ny = _self$calcDestFromOAD2[1];
@@ -13420,6 +14114,17 @@ var UserArrow = function () {
         line.x2.baseVal.value = nx;
         line.y2.baseVal.value = ny;
         document.getElementById('arrow_angle_text').value = +this.value;
+      });
+      var s3 = box_content.append('p').attr('class', 'line_elem2');
+      s3.append('label').attrs({ for: 'checkbox_head_arrow' }).html(i18next.t('app_page.arrow_edit_box.arrowHead'));
+      s3.append('input').attrs({ type: 'checkbox', id: 'checkbox_head_arrow' }).styles({ 'margin-left': '45px', 'vertical-align': 'middle' }).property('checked', self.hide_head === true).on('change', function () {
+        if (this.checked) {
+          self.hide_head = true;
+          self.arrow.select('line').attr('marker-end', null);
+        } else {
+          self.hide_head = false;
+          self.arrow.select('line').attr('marker-end', 'url(#arrow_head)');
+        }
       });
     }
   }]);
@@ -13603,7 +14308,10 @@ var Textbox = function () {
 
       this.width = bbox.width;
       this.height = bbox.height;
-      this.group.select('rect').attrs({ x: bbox.left - x0 - 10, y: bbox.top - y0 - 10, height: this.height + 20, width: this.width + 20 });
+      this.group.select('rect').attrs({ x: bbox.left - x0 - 10,
+        y: bbox.top - y0 - 10,
+        height: this.height + 20,
+        width: this.width + 20 });
     }
   }, {
     key: 'editStyle',
@@ -13717,9 +14425,9 @@ var Textbox = function () {
       });
 
       var options_format = box_content.append('p').style('text-align', 'center');
-      var btn_bold = options_format.insert('span').attr('class', current_options.font_weight == 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">');
-      var btn_italic = options_format.insert('span').attr('class', current_options.font_style == 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">');
-      var btn_underline = options_format.insert('span').attr('class', current_options.text_decoration == 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
+      var btn_bold = options_format.insert('span').attr('class', current_options.font_weight === 'bold' ? 'active button_disc' : 'button_disc').html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">');
+      var btn_italic = options_format.insert('span').attr('class', current_options.font_style === 'italic' ? 'active button_disc' : 'button_disc').html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">');
+      var btn_underline = options_format.insert('span').attr('class', current_options.text_decoration === 'underline' ? 'active button_disc' : 'button_disc').html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
 
       var content_modif_zone = box_content.append('p');
       content_modif_zone.append('span').html(i18next.t('app_page.text_box_edit_box.content'));
@@ -13982,8 +14690,8 @@ var scaleBar = {
     }
   },
   editStyle: function editStyle() {
-    var new_val = void 0,
-        self = this,
+    var new_val = void 0;
+    var self = this,
         redraw_now = function redraw_now() {
       if (new_val) {
         self.resize(new_val);
@@ -14037,8 +14745,8 @@ var scaleBar = {
 
     var e = box_body.append('p').attr('class', 'line_elem2');
     e.append('span').html(i18next.t('app_page.scale_bar_edit_box.start_end_bar'));
-    e.append('input').style('float', 'right').attrs({ id: 'checkbox_start_end_bar', type: 'checkbox' }).on('change', function (a) {
-      self.start_end_bar = self.start_end_bar != true;
+    e.append('input').style('float', 'right').attrs({ id: 'checkbox_start_end_bar', type: 'checkbox' }).on('change', function (_) {
+      self.start_end_bar = self.start_end_bar !== true;
       self.handle_start_end_bar();
     });
     document.getElementById('checkbox_start_end_bar').checked = self.start_end_bar;
@@ -14871,29 +15579,27 @@ function createLegend(layer, title) {
   var renderer = current_layers[layer].renderer,
       field = current_layers[layer].rendered_field,
       field2 = current_layers[layer].rendered_field2,
-      type_layer = current_layers[layer].type,
-      el = void 0,
-      el2 = void 0,
-      lgd_pos = void 0,
-      lgd_pos2 = void 0;
+      type_layer = current_layers[layer].type;
+  var el = void 0,
+      el2 = void 0;
 
-  lgd_pos = getTranslateNewLegend();
+  var lgd_pos = getTranslateNewLegend();
 
   if (renderer.indexOf('Choropleth') > -1 || renderer.indexOf('Gridded') > -1 || renderer.indexOf('Stewart') > -1 || renderer.indexOf('TypoSymbols') > -1) {
     el = createLegend_choro(layer, field, title, field, 0);
   } else if (renderer.indexOf('Categorical') > -1) {
     el = createLegend_choro(layer, field, title, field, 4);
-  } else if (renderer.indexOf('Links') != -1 || renderer.indexOf('DiscLayer') != -1) {
+  } else if (renderer.indexOf('Links') !== -1 || renderer.indexOf('DiscLayer') !== -1) {
     el = createLegend_discont_links(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbolsChoro') != -1) {
+  } else if (renderer.indexOf('PropSymbolsChoro') !== -1) {
     el = createLegend_choro(layer, field2, title, field2, 0);
     el2 = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field) : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbolsTypo') != -1) {
+  } else if (renderer.indexOf('PropSymbolsTypo') !== -1) {
     el = createLegend_choro(layer, field2, title, field2, 4);
     el2 = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field) : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbols') != -1) {
+  } else if (renderer.indexOf('PropSymbols') !== -1) {
     el = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field) : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('TwoStocksWaffle') != -1) {
+  } else if (renderer.indexOf('TwoStocksWaffle') !== -1) {
     el = createLegend_waffle(layer, field, title, '');
   } else {
     swal('Oops..', i18next.t('No legend available for this representation') + '.<br>' + i18next.t('Want to make a <a href="/">suggestion</a> ?'), 'warning');
@@ -14905,12 +15611,12 @@ function createLegend(layer, title) {
   }
   pos_lgds_elem.set(el.attr('id') + ' ' + el.attr('class'), el.node().getBoundingClientRect());
   if (el2) {
-    var _lgd_pos = getTranslateNewLegend(),
-        prev_bbox = el.node().getBoundingClientRect(),
+    var prev_bbox = el.node().getBoundingClientRect(),
         dim_h = lgd_pos.y + prev_bbox.height,
         dim_w = lgd_pos.x + prev_bbox.width;
-    if (_lgd_pos.x != lgd_pos.x || _lgd_pos.y != lgd_pos.y) {
-      el2.attr('transform', 'translate(' + _lgd_pos.x + ',' + _lgd_pos.y + ')');
+    var lgd_pos2 = getTranslateNewLegend();
+    if (lgd_pos2.x !== lgd_pos.x || lgd_pos2.y !== lgd_pos.y) {
+      el2.attr('transform', 'translate(' + lgd_pos2.x + ',' + lgd_pos2.y + ')');
     } else if (dim_h < h) {
       el2.attr('transform', 'translate(' + lgd_pos.x + ',' + dim_h + ')');
     } else if (dim_w < w) {
@@ -14922,52 +15628,57 @@ function createLegend(layer, title) {
 
 function up_legend(legend_node) {
   var lgd_features = svg_map.querySelectorAll('.legend'),
-      nb_lgd_features = +lgd_features.length,
-      self_position = void 0;
+      nb_lgd_features = +lgd_features.length;
+  var self_position = void 0;
 
   for (var i = 0; i < nb_lgd_features; i++) {
-    if (lgd_features[i].id == legend_node.id && lgd_features[i].classList == legend_node.classList) {
+    if (lgd_features[i].id === legend_node.id && lgd_features[i].classList === legend_node.classList) {
       self_position = i;
     }
   }
-  if (self_position == nb_lgd_features - 1) {} else {
+  // if (self_position === nb_lgd_features - 1) {
+  //
+  // } else {
+  //   svg_map.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
+  // }
+  if (!(self_position === nb_lgd_features - 1)) {
     svg_map.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
   }
 }
 
 function down_legend(legend_node) {
   var lgd_features = svg_map.querySelectorAll('.legend'),
-      nb_lgd_features = +lgd_features.length,
-      self_position = void 0;
+      nb_lgd_features = +lgd_features.length;
+  var self_position = void 0;
 
   for (var i = 0; i < nb_lgd_features; i++) {
-    if (lgd_features[i].id == legend_node.id && lgd_features[i].classList == legend_node.classList) {
+    if (lgd_features[i].id === legend_node.id && lgd_features[i].classList === legend_node.classList) {
       self_position = i;
     }
   }
-  if (self_position == 0) {} else {
+  if (self_position !== 0) {
     svg_map.insertBefore(lgd_features[self_position], lgd_features[self_position - 1]);
   }
 }
 
 function make_legend_context_menu(legend_node, layer) {
-  var context_menu = new ContextMenu(),
-      getItems = function getItems() {
+  var context_menu = new ContextMenu();
+  var getItems = function getItems() {
     return [{ name: i18next.t('app_page.common.edit_style'), action: function action() {
-        createlegendEditBox(legend_node.attr('id'), layer);
+        createlegendEditBox(legend_node.attr('id'), legend_node.attr('layer_name'));
       } }, { name: i18next.t('app_page.common.up_element'), action: function action() {
         up_legend(legend_node.node());
       } }, { name: i18next.t('app_page.common.down_element'), action: function action() {
         down_legend(legend_node.node());
       } }, { name: i18next.t('app_page.common.hide'),
       action: function action() {
-        if (!(legend_node.attr('display') == 'none')) legend_node.attr('display', 'none');else legend_node.attr('display', null);
+        if (!(legend_node.attr('display') === 'none')) legend_node.attr('display', 'none');else legend_node.attr('display', null);
       } }];
   };
   legend_node.on('dblclick', function () {
     d3.event.stopPropagation();
     d3.event.preventDefault();
-    createlegendEditBox(legend_node.attr('id'), layer);
+    createlegendEditBox(legend_node.attr('id'), legend_node.attr('layer_name'));
   });
 
   legend_node.on('contextmenu', function () {
@@ -15029,8 +15740,8 @@ var drag_legend_func = function drag_legend_func(legend_group) {
     legend_group.attr('transform', 'translate(' + new_value + ')').style('cursor', 'grabbing');
 
     var bbox_elem = legend_group.node().getBoundingClientRect(),
-        map_offset = d3.event.subject.map_offset,
-        val_x = d3.event.x,
+        map_offset = d3.event.subject.map_offset;
+    var val_x = d3.event.x,
         val_y = d3.event.y,
         change = void 0;
 
@@ -15119,7 +15830,7 @@ function createLegend_waffle(layer, fields, title, subtitle, rect_fill_value, ra
 
   legend_root.insert('text').attrs(subtitle != '' ? { id: 'legendtitle', x: xpos + space_elem, y: ypos } : { id: 'legendtitle', x: xpos + space_elem, y: ypos + 15 }).style('font', 'bold 12px "Enriqueta", arial, serif').text(title || '');
 
-  legend_root.insert('text').attrs({ 'id': 'legendsubtitle', x: xpos + space_elem, y: ypos + 15 }).style('font', 'italic 12px "Enriqueta", arial, serif').text(subtitle);
+  legend_root.insert('text').attrs({ id: 'legendsubtitle', x: xpos + space_elem, y: ypos + 15 }).style('font', 'italic 12px "Enriqueta", arial, serif').text(subtitle);
 
   var fields_colors = [];
   for (var i = 0; i < nbVar; i++) {
@@ -15173,7 +15884,7 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
       breaks = current_layers[layer].breaks,
       nb_class = breaks.length;
 
-  if (rounding_precision == undefined) {
+  if (rounding_precision === undefined) {
     var b_val = breaks.map(function (v, i) {
       return v[0][0];
     }).concat(breaks[nb_class - 1][0][1]);
@@ -15193,41 +15904,22 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
   // Prepare symbols for the legend, taking care of not representing values
   // under the display threshold defined by the user (if any) :
   var current_min_value = +current_layers[layer].min_display;
-  if (current_layers[layer].renderer == 'DiscLayer') {
+  if (current_layers[layer].renderer === 'DiscLayer') {
     // Todo use the same way to store the threshold for links and disclayer
     // in order to avoid theses condition
     var values = Array.prototype.map.call(svg_map.querySelector('#' + _app.layer_to_id.get(layer)).querySelectorAll('path'), function (d) {
       return +d.__data__.properties.disc_value;
     });
-    current_min_value = current_min_value != 1 ? values[Math.round(current_min_value * current_layers[layer].n_features)] : values[values.length - 1];
+    current_min_value = current_min_value !== 1 ? values[Math.round(current_min_value * current_layers[layer].n_features)] : values[values.length - 1];
   }
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = breaks[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _b_val = _step.value;
-
-      if (_b_val[1] != 0) {
-        if (current_min_value >= +_b_val[0][0] && current_min_value < +_b_val[0][1]) {
-          ref_symbols_params.push({ value: [current_min_value, _b_val[0][1]], size: _b_val[1] });
-        } else if (current_min_value < +_b_val[0][0] && current_min_value < +_b_val[0][1]) {
-          ref_symbols_params.push({ value: _b_val[0], size: _b_val[1] });
-        }
-      }
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator.return) {
-        _iterator.return();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
+  // for (const b_val of breaks) {
+  for (var ix = 0; ix < nb_class; ix++) {
+    var _b_val = breaks[ix];
+    if (_b_val[1] !== 0) {
+      if (current_min_value >= +_b_val[0][0] && current_min_value < +_b_val[0][1]) {
+        ref_symbols_params.push({ value: [current_min_value, _b_val[0][1]], size: _b_val[1] });
+      } else if (current_min_value < +_b_val[0][0] && current_min_value < +_b_val[0][1]) {
+        ref_symbols_params.push({ value: _b_val[0], size: _b_val[1] });
       }
     }
   }
@@ -15239,10 +15931,10 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
   });
 
   var max_size = current_layers[layer].size[1],
-      last_size = 0,
-      last_pos = y_pos2,
       color = current_layers[layer].fill_color.single,
       xrect = xpos + space_elem + max_size / 2;
+  var last_size = 0,
+      last_pos = y_pos2;
 
   legend_elems.append('rect').styles({ fill: color, stroke: 'rgb(0, 0, 0)', 'fill-opacity': 1, 'stroke-width': 0 }).attrs(function (d) {
     last_pos = boxgap + last_pos + last_size;
@@ -15383,10 +16075,10 @@ function createLegend_symbol(layer, field, title, subtitle) {
 
   var t = current_layers[layer].size_legend_symbol;
   var ref_symbols_params = [{ size: propSize.scale(t[0].value) * z_scale, value: t[0].value }, { size: propSize.scale(t[1].value) * z_scale, value: t[1].value }, { size: propSize.scale(t[2].value) * z_scale, value: t[2].value }, { size: propSize.scale(t[3].value) * z_scale, value: t[3].value }];
-  if (ref_symbols_params[3].value == 0) {
+  if (ref_symbols_params[3].value === 0) {
     ref_symbols_params.pop();
   }
-  if (ref_symbols_params[2].value == 0) {
+  if (ref_symbols_params[2].value === 0) {
     ref_symbols_params.pop();
   }
   var legend_elems = legend_root.selectAll('.legend').append('g').data(ref_symbols_params).enter().insert('g').attr('class', function (d, i) {
@@ -15481,7 +16173,7 @@ function createLegend_symbol(layer, field, title, subtitle) {
     }
   }
 
-  if (current_layers[layer].break_val != undefined) {
+  if (current_layers[layer].break_val !== undefined) {
     var bottom_colors = legend_root.append('g');
     bottom_colors.insert('text').attr('id', 'col1_txt').attr('x', xpos + space_elem).attr('y', last_pos + 1.75 * space_elem).styles({ 'alignment-baseline': 'middle', 'font-size': '10px' }).html('< ' + current_layers[layer].break_val.toLocaleString());
     bottom_colors.insert('rect').attr('id', 'col1').attr('x', xpos + space_elem).attr('y', last_pos + 2 * space_elem).attrs({ width: space_elem, height: space_elem }).style('fill', current_layers[layer].fill_color.two[0]);
@@ -15524,7 +16216,7 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
       size_interm2 = size_interm1 + diff_size / 3,
       ref_symbols_params = [{ size: size_max, value: val_max }, { size: size_interm2, value: val_interm2 }, { size: size_interm1, value: val_interm1 }, { size: size_min, value: val_min }];
 
-  if (rounding_precision == undefined) {
+  if (rounding_precision === undefined) {
     rounding_precision = get_lgd_display_precision(ref_symbols_params.map(function (d) {
       return d.value;
     }));
@@ -15579,8 +16271,8 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
 var get_lgd_display_precision = function get_lgd_display_precision(breaks) {
   // Set rounding precision to 0 if they are all integers :
   if (breaks.filter(function (b) {
-    return (b | 0) == b;
-  }).length == breaks.length) {
+    return (b | 0) === b;
+  }).length === breaks.length) {
     return 0;
   }
   // Compute the difference between each break to set
@@ -15609,7 +16301,7 @@ var get_lgd_display_precision = function get_lgd_display_precision(breaks) {
 };
 
 function createLegend_choro(layer, field, title, subtitle) {
-  var boxgap = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+  var box_gap = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
   var rect_fill_value = arguments[5];
   var rounding_precision = arguments[6];
   var no_data_txt = arguments[7];
@@ -15618,14 +16310,15 @@ function createLegend_choro(layer, field, title, subtitle) {
   var boxheight = 18,
       boxwidth = 18,
       xpos = 30,
-      ypos = 30;
-  var last_pos = null,
+      ypos = 30,
       y_pos2 = ypos + boxheight * 1.8,
-      tmp_class_name = ['legend', 'legend_feature', 'lgdf_' + _app.layer_to_id.get(layer)].join(' '),
+      tmp_class_name = ['legend', 'legend_feature', 'lgdf_' + _app.layer_to_id.get(layer)].join(' ');
+
+  var boxgap = +box_gap;
+
+  var last_pos = null,
       nb_class = void 0,
       data_colors_label = void 0;
-
-  boxgap = +boxgap;
 
   if (current_layers[layer].renderer.indexOf('Categorical') > -1 || current_layers[layer].renderer.indexOf('PropSymbolsTypo') > -1) {
     data_colors_label = [];
@@ -15644,7 +16337,7 @@ function createLegend_choro(layer, field, title, subtitle) {
       return { value: obj[0], color: obj[1] };
     });
     nb_class = current_layers[layer].colors_breaks.length;
-    if (rounding_precision == undefined) {
+    if (rounding_precision === undefined) {
       var breaks = current_layers[layer].options_disc.breaks;
       rounding_precision = get_lgd_display_precision(breaks);
     }
@@ -15868,7 +16561,7 @@ function createlegendEditBox(legend_id, layer_name) {
     ratio_waffle_txt: ratio_waffle_txt != null ? ratio_waffle_txt.textContent : null
   }; // , source_content: source_content.textContent ? source_content.textContent : ""
 
-  if (legend_node.getAttribute('visible_rect') == 'true') {
+  if (legend_node.getAttribute('visible_rect') === 'true') {
     rect_fill_value = {
       color: legend_node.querySelector('#under_rect').style.fill,
       opacity: legend_node.querySelector('#under_rect').style.fillOpacity
@@ -15942,7 +16635,7 @@ function createlegendEditBox(legend_id, layer_name) {
     });
   }
 
-  if (legend_id == 'legend_root_symbol') {
+  if (legend_id === 'legend_root_symbol') {
     var choice_break_value_section1 = box_body.insert('p').styles({ 'text-align': 'center', 'margin-top': '25px !important' });
     choice_break_value_section1.append('span').attr('class', 'button_disc').styles({ cursor: 'pointer' }).html(i18next.t('app_page.legend_style_box.choice_break_symbol')).on('click', function () {
       container.modal.hide();
@@ -16023,7 +16716,7 @@ function createlegendEditBox(legend_id, layer_name) {
   }
 
   if (legend_id === 'legend_root') {
-    var current_state = +legend_node.getAttribute('boxgap') == 0;
+    var current_state = +legend_node.getAttribute('boxgap') === 0;
     var gap_section = box_body.insert('p');
     gap_section.append('input').style('margin-left', '0px').attrs({ type: 'checkbox', id: 'style_lgd' }).on('change', function () {
       var rendered_field = current_layers[layer_name].rendered_field2 ? current_layers[layer_name].rendered_field2 : current_layers[layer_name].rendered_field;
@@ -16034,10 +16727,10 @@ function createlegendEditBox(legend_id, layer_name) {
           lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
           lgd_subtitle = legend_node.querySelector('#legendsubtitle').innerHTML,
           note = legend_node.querySelector('#legend_bottom_note').innerHTML;
-      var no_data_txt = legend_node.querySelector('#no_data_txt');
-      no_data_txt = no_data_txt != null ? no_data_txt.textContent : null;
+      var _no_data_txt = legend_node.querySelector('#no_data_txt');
+      _no_data_txt = _no_data_txt != null ? _no_data_txt.textContent : null;
       legend_node.remove();
-      createLegend_choro(layer_name, rendered_field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, no_data_txt, note);
+      createLegend_choro(layer_name, rendered_field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, _no_data_txt, note);
       bind_selections();
       if (transform_param) {
         svg_map.querySelector(['#legend_root.lgdf_', _app.layer_to_id.get(layer_name)].join('')).setAttribute('transform', transform_param);
@@ -16046,13 +16739,13 @@ function createlegendEditBox(legend_id, layer_name) {
     gap_section.append('label').attrs({ for: 'style_lgd', class: 'i18n', 'data-i18n': '[html]app_page.legend_style_box.gap_boxes' }).html(i18next.t('app_page.legend_style_box.gap_boxes'));
 
     document.getElementById('style_lgd').checked = current_state;
-  } else if (legend_id == 'legend_root_symbol') {
-    var _current_state = legend_node.getAttribute('nested') == 'true';
+  } else if (legend_id === 'legend_root_symbol') {
+    var _current_state = legend_node.getAttribute('nested') === 'true';
     var _gap_section = box_body.insert('p');
     _gap_section.append('input').style('margin-left', '0px').attrs({ id: 'style_lgd', type: 'checkbox' }).on('change', function () {
       legend_node = svg_map.querySelector(['#legend_root_symbol.lgdf_', _app.layer_to_id.get(layer_name)].join(''));
       var rendered_field = current_layers[layer_name].rendered_field;
-      var nested = legend_node.getAttribute('nested') == 'true' ? 'false' : 'true';
+      var nested = legend_node.getAttribute('nested') === 'true' ? 'false' : 'true';
       var rounding_precision = legend_node.getAttribute('rounding_precision');
       var transform_param = legend_node.getAttribute('transform'),
           lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
@@ -16082,8 +16775,8 @@ function createlegendEditBox(legend_id, layer_name) {
     checked: rect_fill_value.color === undefined ? null : true }).on('change', function () {
     if (this.checked) {
       rectangle_options2.style('display', '');
-      var _a = document.getElementById('choice_color_under_rect');
-      rect_fill_value = _a ? { color: _a.value, opacity: 1 } : { color: '#ffffff', opacity: 1 };
+      var r = document.getElementById('choice_color_under_rect');
+      rect_fill_value = r ? { color: r.value, opacity: 1 } : { color: '#ffffff', opacity: 1 };
     } else {
       rectangle_options2.style('display', 'none');
       rect_fill_value = {};
@@ -16181,6 +16874,8 @@ var get_max_nb_left_sep = function get_max_nb_left_sep(layer_name) {
 };
 'use strict';
 
+/* eslint-disable no-loop-func */
+
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function get_map_template() {
@@ -16202,7 +16897,14 @@ function get_map_template() {
         });
       }
     }
-
+    return result;
+  };
+  var getWaffleCurrentPos = function getWaffleCurrentPos(selection) {
+    var result = [];
+    var nbFt = selection.length;
+    for (var i = 0; i < nbFt; i++) {
+      result.push(selection[i].getAttribute('transform'));
+    }
     return result;
   };
   var get_legend_info = function get_legend_info(lgd_node) {
@@ -16221,11 +16923,15 @@ function get_map_template() {
       bottom_note: lgd_node.querySelector('#legend_bottom_note').innerHTML
     };
     if (type_lgd === 'legend_root') {
-      result['boxgap'] = lgd_node.getAttribute('boxgap');
+      result.boxgap = lgd_node.getAttribute('boxgap');
       var no_data = lgd_node.querySelector('#no_data_txt');
       if (no_data) result.no_data_txt = no_data.innerHTML;
     } else if (type_lgd === 'legend_root_symbol') {
       result.nested_symbols = lgd_node.getAttribute('nested');
+    } else if (type_lgd === 'legend_root_waffle') {
+      var lyr_name = lgd_node.getAttribute('layer_name');
+      result.field = current_layers[lyr_name].rendered_field;
+      result.ratio_txt = lgd_node.querySelector('#ratio_txt').innerHTML;
     }
     return result;
   };
@@ -16254,6 +16960,7 @@ function get_map_template() {
   map_config.n_layers = layers._groups[0].length;
   map_config.background_color = map.style('background-color');
   map_config.canvas_rotation = typeof canvas_rotation_value === 'string' ? canvas_rotation_value.match(/\d+/) : undefined;
+  map_config.custom_palettes = Array.from(_app.custom_palettes.entries());
 
   if (map_title) {
     map_config.title = {
@@ -16315,12 +17022,17 @@ function get_map_template() {
           id: ft.id
         });
       } else if (ft.classList.contains('user_rectangle')) {
-        if (!map_config.layout_features.user_rectangle) map_config.layout_features.user_rectangle = [];
+        if (!map_config.layout_features.user_rectangle) {
+          map_config.layout_features.user_rectangle = [];
+        }
         var rect = ft.childNodes[0];
         map_config.layout_features.user_rectangle.push({
-          x: rect.getAttribute('x'), y: rect.getAttribute('y'),
-          width: rect.getAttribute('width'), height: rect.getAttribute('height'),
-          style: rect.getAttribute('style'), id: ft.id
+          x: rect.getAttribute('x'),
+          y: rect.getAttribute('y'),
+          width: rect.getAttribute('width'),
+          height: rect.getAttribute('height'),
+          style: rect.getAttribute('style'),
+          id: ft.id
         });
       } else if (ft.classList.contains('arrow')) {
         if (!map_config.layout_features.arrow) map_config.layout_features.arrow = [];
@@ -16330,7 +17042,8 @@ function get_map_template() {
           stroke: line.style.stroke,
           pt1: [line.x1.baseVal.value, line.y1.baseVal.value],
           pt2: [line.x2.baseVal.value, line.y2.baseVal.value],
-          id: ft.id
+          id: ft.id,
+          marker_head: line.getAttribute('marker-end')
         });
       } else if (ft.classList.contains('txt_annot')) {
         if (!map_config.layout_features.text_annot) map_config.layout_features.text_annot = [];
@@ -16346,7 +17059,9 @@ function get_map_template() {
           transform: text.getAttribute('transform')
         });
       } else if (ft.classList.contains('single_symbol')) {
-        if (!map_config.layout_features.single_symbol) map_config.layout_features.single_symbol = [];
+        if (!map_config.layout_features.single_symbol) {
+          map_config.layout_features.single_symbol = [];
+        }
         var img = ft.childNodes[0];
         map_config.layout_features.single_symbol.push({
           id: ft.id,
@@ -16366,7 +17081,7 @@ function get_map_template() {
         layer_id = layers._groups[0][_i2].id,
         layer_name = _app.id_to_layer.get(layer_id),
         current_layer_prop = current_layers[layer_name],
-        layer_type = current_layer_prop.sphere ? 'sphere' : current_layer_prop.graticule ? 'graticule' : 'layer',
+        layer_type = (current_layer_prop.sphere ? 'sphere' : false) || (current_layer_prop.graticule ? 'graticule' : 'layer'),
         nb_ft = current_layer_prop.n_features;
     var selection = void 0;
 
@@ -16387,16 +17102,21 @@ function get_map_template() {
       layer_style_i.filter_shadow = true;
     }
 
-    if (current_layer_prop['stroke-width-const']) layer_style_i['stroke-width-const'] = current_layer_prop['stroke-width-const'];
-
-    if (current_layer_prop.pointRadius != undefined) layer_style_i.pointRadius = current_layer_prop.pointRadius;
-
-    if (current_layer_prop.fixed_stroke != undefined) layer_style_i.fixed_stroke = current_layer_prop.fixed_stroke;
-
-    if (current_layer_prop.colors_breaks) layer_style_i.colors_breaks = current_layer_prop.colors_breaks;
-
-    if (current_layer_prop.options_disc !== undefined) layer_style_i.options_disc = current_layer_prop.options_disc;
-
+    if (current_layer_prop['stroke-width-const']) {
+      layer_style_i['stroke-width-const'] = current_layer_prop['stroke-width-const'];
+    }
+    if (current_layer_prop.pointRadius !== undefined) {
+      layer_style_i.pointRadius = current_layer_prop.pointRadius;
+    }
+    if (current_layer_prop.fixed_stroke !== undefined) {
+      layer_style_i.fixed_stroke = current_layer_prop.fixed_stroke;
+    }
+    if (current_layer_prop.colors_breaks) {
+      layer_style_i.colors_breaks = current_layer_prop.colors_breaks;
+    }
+    if (current_layer_prop.options_disc !== undefined) {
+      layer_style_i.options_disc = current_layer_prop.options_disc;
+    }
     if (current_layer_prop.targeted) {
       selection = map.select('#' + layer_id).selectAll('path');
       layer_style_i.fill_opacity = selection.style('fill-opacity');
@@ -16407,7 +17127,7 @@ function get_map_template() {
       layer_style_i.fields_type = current_layer_prop.fields_type;
       layer_style_i.stroke_color = selection.style('stroke');
     } else if (layer_type === 'sphere' || layer_type === 'graticule' || layer_name === 'World') {
-      selection = map.select('#' + layer_id).selectAll('path'); //layer_name_
+      selection = map.select('#' + layer_id).selectAll('path');
       layer_style_i.fill_color = rgb2hex(selection.style('fill'));
       layer_style_i.stroke_color = rgb2hex(selection.style('stroke'));
       if (layer_type === 'graticule') {
@@ -16527,8 +17247,8 @@ function get_map_template() {
 
       var state_to_save = [];
       var selec = selection._groups[0];
-      for (var _i3 = 0; _i3 < selec.length; _i3++) {
-        var _ft = selec[_i3];
+      for (var ix = 0; ix < selec.length; ix++) {
+        var _ft = selec[ix];
         state_to_save.push({
           display: _ft.style.display,
           data: _ft.__data__,
@@ -16566,6 +17286,7 @@ function get_map_template() {
       layer_style_i.nCol = current_layer_prop.nCol;
       layer_style_i.ref_layer_name = current_layer_prop.ref_layer_name;
       layer_style_i.result_data = JSON.stringify(result_data[layer_name]);
+      layer_style_i.current_position = getWaffleCurrentPos(svg_map.querySelectorAll('#' + layer_id + ' > g'));
     } else {
       selection = map.select('#' + layer_id).selectAll('path');
     }
@@ -16573,13 +17294,15 @@ function get_map_template() {
     layer_style_i.fill_opacity = selection.style('fill-opacity');
   }
 
-  // return Promise.all(layers_style.map(obj => (obj.topo_geom && !obj.targeted) ? xhrequest("GET", "/get_layer/" + obj.topo_geom, null, false) : null))
+  // return Promise.all(
+  // layers_style.map(obj => (obj.topo_geom && !obj.targeted)
+  //      ? xhrequest("GET", "/get_layer/" + obj.topo_geom, null, false) : null))
   return Promise.all(layers_style.map(function (obj) {
     return obj.topo_geom ? serialize_layer_to_topojson(obj.layer_name) : null;
   })).then(function (result) {
-    for (var _i4 = 0; _i4 < layers_style.length; _i4++) {
-      if (result[_i4]) {
-        layers_style[_i4].topo_geom = result[_i4];
+    for (var _i3 = 0; _i3 < layers_style.length; _i3++) {
+      if (result[_i3]) {
+        layers_style[_i3].topo_geom = result[_i3];
       }
     }
     // console.log(JSON.stringify({"map_config": map_config, "layers": layers_style}))
@@ -16669,19 +17392,19 @@ function apply_user_preferences(json_pref) {
     for (var i = 0, nb_layers = layer_names.length; i < nb_layers; i++) {
       remove_layer_cleanup(layer_names[i]);
     }
-    var _l = void 0,
-        _ll = void 0;
+    var _l = void 0;
+    var _ll = void 0;
     // Make sure there is no layers and legend/layout features on the map :
     _l = svg_map.childNodes;
     _ll = _l.length;
-    for (var _i5 = _ll - 1; _i5 > -1; _i5--) {
-      _l[_i5].remove();
+    for (var _i4 = _ll - 1; _i4 > -1; _i4--) {
+      _l[_i4].remove();
     }
     // And in the layer manager :
     _l = layer_list.node().childNodes;
     _ll = _l.length;
-    for (var _i6 = _ll - 1; _i6 > -1; _i6--) {
-      _l[_i6].remove();
+    for (var _i5 = _ll - 1; _i5 > -1; _i5--) {
+      _l[_i5].remove();
     }
     // Get a new object for where we are storing the main properties :
     current_layers = {};
@@ -16709,6 +17432,11 @@ function apply_user_preferences(json_pref) {
       });
     }
   };
+  var restorePreviousPosWaffle = function restorePreviousPosWaffle(layer_id, current_position, type_symbol) {
+    map.select('#' + layer_id).selectAll('g').attr('transform', function (d, i) {
+      return current_position[i];
+    });
+  };
 
   var set_final_param = function set_final_param() {
     setTimeout(function () {
@@ -16735,7 +17463,18 @@ function apply_user_preferences(json_pref) {
           desired_order.reverse();
           reorder_layers(desired_order);
         }
-      } else if (map_config.global_order && map_config.global_order.length > 1) {
+      } else if (p_version.minor <= 4) {
+        reorder_layers_elem_legends(map_config.global_order);
+        if (layers.length > 1) {
+          var _desired_order = layers.map(function (i) {
+            return i.layer_name;
+          });
+          reorder_elem_list_layer(_desired_order);
+          _desired_order.reverse();
+          reorder_layers(_desired_order);
+        }
+        // Current method to reorder layers:
+      } else if (map_config.global_order && map_config.global_order.length > 1 && (p_version.minor > 4 || p_version.minor === 4 && p_version.patch > 1)) {
         var order = layers.map(function (i) {
           return i.layer_name;
         });
@@ -16747,9 +17486,9 @@ function apply_user_preferences(json_pref) {
         document.getElementById('canvas_rotation_value_txt').value = map_config.canvas_rotation;
         rotate_global(map_config.canvas_rotation);
       }
-      var a = document.getElementById('overlay');
-      a.style.display = 'none';
-      a.querySelector('button').style.display = '';
+      var overlay_elem = document.getElementById('overlay');
+      overlay_elem.style.display = 'none';
+      overlay_elem.querySelector('button').style.display = '';
       var targeted_layer = Object.getOwnPropertyNames(user_data)[0];
       if (targeted_layer) getAvailablesFunctionnalities(targeted_layer);
       for (var ii = 0; ii < at_end.length; ii++) {
@@ -16803,14 +17542,16 @@ function apply_user_preferences(json_pref) {
         northArrow.displayed = map_config.layout_features.north_arrow.displayed;
       }
       if (map_config.layout_features.arrow) {
-        for (var _i7 = 0; _i7 < map_config.layout_features.arrow.length; _i7++) {
-          var ft = map_config.layout_features.arrow[_i7];
-          new UserArrow(ft.id, ft.pt1, ft.pt2, svg_map, true);
+        for (var _i6 = 0; _i6 < map_config.layout_features.arrow.length; _i6++) {
+          var ft = map_config.layout_features.arrow[_i6];
+          var _arrow = new UserArrow(ft.id, ft.pt1, ft.pt2, svg_map, true);
+          _arrow.hide_head = map_config.layout_features.arrow[_i6].marker_head === null;
+          _arrow.arrow.select('line').attr('marker-end', map_config.layout_features.arrow[_i6].marker_head);
         }
       }
       if (map_config.layout_features.user_ellipse) {
-        for (var _i8 = 0; _i8 < map_config.layout_features.user_ellipse.length; _i8++) {
-          var _ft2 = map_config.layout_features.user_ellipse[_i8];
+        for (var _i7 = 0; _i7 < map_config.layout_features.user_ellipse.length; _i7++) {
+          var _ft2 = map_config.layout_features.user_ellipse[_i7];
           var ellps = new UserEllipse(_ft2.id, [_ft2.cx, _ft2.cy], svg_map, true);
           var ellps_node = ellps.ellipse.node().querySelector('ellipse');
           ellps_node.setAttribute('rx', _ft2.rx);
@@ -16820,8 +17561,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.user_rectangle) {
-        for (var _i9 = 0; _i9 < map_config.layout_features.user_rectangle.length; _i9++) {
-          var _ft3 = map_config.layout_features.user_rectangle[_i9],
+        for (var _i8 = 0; _i8 < map_config.layout_features.user_rectangle.length; _i8++) {
+          var _ft3 = map_config.layout_features.user_rectangle[_i8],
               rect = new UserRectangle(_ft3.id, [_ft3.x, _ft3.y], svg_map, true),
               rect_node = rect.rectangle.node().querySelector('rect');
           rect_node.setAttribute('height', _ft3.height);
@@ -16830,8 +17571,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.text_annot) {
-        for (var _i10 = 0; _i10 < map_config.layout_features.text_annot.length; _i10++) {
-          var _ft4 = map_config.layout_features.text_annot[_i10];
+        for (var _i9 = 0; _i9 < map_config.layout_features.text_annot.length; _i9++) {
+          var _ft4 = map_config.layout_features.text_annot[_i9];
           var new_txt_box = new Textbox(svg_map, _ft4.id, [_ft4.position_x, _ft4.position_y]);
           new_txt_box.textAnnot.node().setAttribute('style', _ft4.style);
           new_txt_box.textAnnot.attrs({
@@ -16848,8 +17589,8 @@ function apply_user_preferences(json_pref) {
         }
       }
       if (map_config.layout_features.single_symbol) {
-        for (var _i11 = 0; _i11 < map_config.layout_features.single_symbol.length; _i11++) {
-          var _ft5 = map_config.layout_features.single_symbol[_i11];
+        for (var _i10 = 0; _i10 < map_config.layout_features.single_symbol.length; _i10++) {
+          var _ft5 = map_config.layout_features.single_symbol[_i10];
           var symb = add_single_symbol(_ft5.href, _ft5.x, _ft5.y, _ft5.width, _ft5.height, _ft5.id);
           if (_ft5.scalable) {
             var parent_symb = symb.node().parentElement;
@@ -16871,6 +17612,9 @@ function apply_user_preferences(json_pref) {
   document.getElementById('input-width').value = w;
   document.getElementById('input-height').value = h;
 
+  // Recrate the Map for the palettes defined by the user:
+  _app.custom_palettes = new Map(map_config.custom_palettes);
+
   // Set the variables/fields related to the projection
   // (names were slightly changed in a last version, thus the replacing of whitespace)
   current_proj_name = map_config.projection.replace(/ /g, '');
@@ -16891,6 +17635,7 @@ function apply_user_preferences(json_pref) {
   map.selectAll('.layer').selectAll('path').attr('d', path);
   addLastProjectionSelect(current_proj_name);
   // Set the background color of the map :
+  console.log(map_config.background_color);
   map.style('background-color', map_config.background_color);
   document.querySelector('input#bg_color').value = rgb2hex(map_config.background_color);
 
@@ -16904,8 +17649,8 @@ function apply_user_preferences(json_pref) {
 
   // Add each layer :
 
-  var _loop = function _loop(_i12) {
-    var _layer = layers[_i12];
+  var _loop = function _loop(_i11) {
+    var _layer = layers[_i11];
     var layer_name = _layer.layer_name,
         layer_type = _layer.layer_type,
         layer_id = void 0,
@@ -16931,13 +17676,13 @@ function apply_user_preferences(json_pref) {
         skip_rescale: true
       };
       if (_layer.targeted) {
-        tmp['target_layer_on_add'] = true;
+        tmp.target_layer_on_add = true;
       } else if (_layer.renderer) {
-        tmp['func_name'] = func_name_corresp.get(_layer.renderer);
-        tmp['result_layer_on_add'] = true;
+        tmp.func_name = func_name_corresp.get(_layer.renderer);
+        tmp.result_layer_on_add = true;
       }
       if (_layer.pointRadius !== undefined) {
-        tmp['pointRadius'] = _layer.pointRadius;
+        tmp.pointRadius = _layer.pointRadius;
       }
       // handle_reload_TopoJSON(_layer.topo_geom, tmp).then(function(n_layer_name){
       layer_name = handle_reload_TopoJSON(_layer.topo_geom, tmp);
@@ -17088,7 +17833,9 @@ function apply_user_preferences(json_pref) {
           make_prop_line(rendering_params, geojson_layer);
         } else {
           make_prop_symbols(rendering_params, geojson_layer);
-          if (_layer.stroke_color) map.select('#' + _app.layer_to_id.get(layer_name)).selectAll(_layer.symbol).style('stroke', _layer.stroke_color);
+          if (_layer.stroke_color) {
+            map.select('#' + _app.layer_to_id.get(layer_name)).selectAll(_layer.symbol).style('stroke', _layer.stroke_color);
+          }
         }
         if (_layer.renderer === 'PropSymbolsTypo') {
           current_layers[layer_name].color_map = new Map(_layer.color_map);
@@ -17133,8 +17880,12 @@ function apply_user_preferences(json_pref) {
           ref_font_size: _layer.default_size,
           font: _layer.default_font
         };
-        // TODO : apply the same thing as with PropSymbol for setting label at their original positions :
-        render_label(null, _rendering_params, { data: _layer.data_labels, current_position: _layer.current_position });
+        // TODO : apply the same thing as with PropSymbol
+        // for setting label at their original positions :
+        render_label(null, _rendering_params, {
+          data: _layer.data_labels,
+          current_position: _layer.current_position
+        });
         layer_id = _app.layer_to_id.get(layer_name);
       } else if (_layer.renderer && _layer.renderer === 'TwoStocksWaffle') {
         render_twostocks_waffle(undefined, {
@@ -17149,6 +17900,12 @@ function apply_user_preferences(json_pref) {
         });
         layer_id = _app.layer_to_id.get(layer_name);
         map.select('#' + layer_id).selectAll(_layer.symbol).style('fill-opacity', _layer.fill_opacity);
+        if (_layer.legend) {
+          rehandle_legend(layer_name, _layer.legend);
+        }
+        if (_layer.current_position) {
+          at_end.push([restorePreviousPosWaffle, layer_id, _layer.current_position, _layer.symbol]);
+        }
       } else if (_layer.renderer && _layer.renderer.startsWith('TypoSymbol')) {
         var symbols_map = new Map(_layer.symbols_map);
         var new_layer_data = {
@@ -17217,21 +17974,24 @@ function apply_user_preferences(json_pref) {
         handle_active_layer(layer_name);
       }
       // This function is called on each layer added
-      //   to delay the call to the function doing a final adjusting of the zoom factor / translate values / layers orders :
+      //   to delay the call to the function doing a final
+      //   adjusting of the zoom factor / translate values / layers orders :
       done += 1;
       if (done === map_config.n_layers) set_final_param();
     }
   };
 
-  for (var _i12 = map_config.n_layers - 1; _i12 > -1; --_i12) {
-    _loop(_i12);
+  for (var _i11 = map_config.n_layers - 1; _i11 > -1; --_i11) {
+    _loop(_i11);
   }
 }
+/* eslint-enable no-loop-func */
 
 function reorder_layers(desired_order) {
   var layers = svg_map.querySelectorAll('.layer'),
       parent = layers[0].parentNode,
       nb_layers = desired_order.length;
+  // eslint-disable-next-line no-param-reassign
   desired_order = desired_order.map(function (el) {
     return _app.layer_to_id.get(el);
   });
@@ -17279,6 +18039,8 @@ function rehandle_legend(layer_name, properties) {
       createLegend_discont_links(layer_name, prop.field, prop.title, prop.subtitle, prop.rect_fill_value, prop.rounding_precision, prop.bottom_note);
     } else if (prop.type === 'legend_root_lines_symbol') {
       createLegend_line_symbol(layer_name, prop.field, prop.title, prop.subtitle, prop.rect_fill_value, prop.rounding_precision, prop.bottom_note);
+    } else if (prop.type === 'legend_root_waffle') {
+      createLegend_waffle(layer_name, prop.field, prop.title, prop.subtitle, prop.rect_fill_value, prop.ratio_txt, prop.bottom_note);
     }
     var lgd = svg_map.querySelector('#' + prop.type + '.lgdf_' + _app.layer_to_id.get(layer_name));
     lgd.setAttribute('transform', prop.transform);
@@ -17698,7 +18460,7 @@ var removeTooltipProj4 = function removeTooltipProj4(ev) {
 };
 
 var makeTooltipProj4 = function makeTooltipProj4(proj_select, proj4string) {
-  proj_select.tooltip = proj4string;
+  proj_select.tooltip = proj4string; // eslint-disable-line no-param-reassign
   proj_select.addEventListener('mouseover', displayTooltipProj4);
   proj_select.addEventListener('mouseout', removeTooltipProj4);
 };
@@ -17737,30 +18499,10 @@ var createBoxCustomProjection = function createBoxCustomProjection() {
     display_select_proj.remove();
     display_select_proj = p.append('select').attr('id', 'select_proj').attr('size', 18);
     if (!filter_in && !filter_ex) {
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = available_projections.keys()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var proj_name = _step.value;
-
-          display_select_proj.append('option').attrs({ class: 'i18n', value: proj_name, 'data-i18n': 'app_page.projection_name.' + proj_name }).text(i18next.t('app_page.projection_name.' + proj_name));
-        }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
+      // for (const proj_name of available_projections.keys()) { .. }
+      Array.from(available_projections.keys()).forEach(function (proj_name) {
+        display_select_proj.append('option').attrs({ class: 'i18n', value: proj_name, 'data-i18n': 'app_page.projection_name.' + proj_name }).text(i18next.t('app_page.projection_name.' + proj_name));
+      });
     } else if (!filter_ex) {
       available_projections.forEach(function (v, k) {
         if (v.param_in === filter_in) {
@@ -17878,7 +18620,7 @@ var createBoxCustomProjection = function createBoxCustomProjection() {
 
   Array.prototype.forEach.call(document.querySelectorAll('.filter1,.filter2'), function (el) {
     el.onclick = onClickFilter;
-  });
+  }); // eslint-disable-line no-param-reassign
 
   var p = column3.append('p').style('margin', 'auto');
   var display_select_proj = p.append('select').attr('id', 'select_proj').attr('size', 18);
@@ -17988,8 +18730,13 @@ var createBoxCustomProjection = function createBoxCustomProjection() {
   overlay_under_modal.display();
 };
 
-// Function to change (one of more of) the three rotations axis of a d3 projection
-// and redraw all the path (+ move symbols layers) in respect to that
+/**
+* Function to change (one of more of) the three rotations axis of a d3 projection
+* and redraw all the path (+ move symbols layers) in respect to that.
+*
+* @param {Array} param - The new [lambda, phi, gamma] properties to be used.
+* @return {void}
+*/
 function handle_proj_center_button(param) {
   // Fetch the current rotation params :
   var current_rotation = proj.rotate();
@@ -18017,6 +18764,42 @@ function handle_parallel_change(parallel) {
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
 }
+
+// const getD3ProjFromProj4 = function getD3ProjFromProj4(_proj) {
+//   // Create the custom d3 projection using proj 4 forward and inverse functions:
+//   const projRaw = function (lambda, phi) {
+//     return _proj.forward([lambda, phi].map(radiansToDegrees));
+//   };
+//   projRaw.invert = function (x, y) {
+//     return _proj.inverse([x, y]).map(degreesToRadians);
+//   };
+//   return d3.geoProjection(projRaw);
+// };
+// const pidegrad = 0.017453292519943295;
+// const piraddeg = 57.29577951308232;
+// const degreesToRadians = function degreesToRadians(degrees) { return degrees * pidegrad; };
+// const radiansToDegrees = function radiansToDegrees(radians) { return radians * piraddeg; };
+
+/**
+* Return a d3.geoProjection from a proj4 projection.
+* (code below should avoid some function calls compared to the previous commented
+* section but achieve exactly the same job).
+*
+* @param {Object} _proj - The valid proj4 object returned by proj4.
+* @return {Object} - The projection as a d3.geoProjection.
+*
+*/
+var getD3ProjFromProj4 = function getD3ProjFromProj4(_proj) {
+  // Create the custom d3 projection using proj 4 forward and inverse functions:
+  var projRaw = function projRaw(lambda, phi) {
+    return _proj.forward([lambda * 57.29577951308232, phi * 57.29577951308232]);
+  };
+  projRaw.invert = function (x, y) {
+    var p = _proj.inverse([x, y]);
+    return [p[0] * 0.017453292519943295, p[1] * 0.017453292519943295];
+  };
+  return d3.geoProjection(projRaw);
+};
 'use strict';
 
 var sin = Math.sin;
@@ -18139,7 +18922,7 @@ function get_fun_operator(operator) {
 */
 function add_field_table(table, layer_name, parent) {
   function check_name() {
-    if (regexp_name.test(this.value) || this.value == '') {
+    if (regexp_name.test(this.value) || this.value === '') {
       chooses_handler.new_name = this.value;
     } else {
       // Rollback to the last correct name  :
@@ -18156,8 +18939,8 @@ function add_field_table(table, layer_name, parent) {
         fi1 = options.field1,
         fi2 = options.field2,
         new_name_field = options.new_name,
-        operation = options.operator,
-        opt_val = options.opt_val;
+        operation = options.operator;
+    var opt_val = options.opt_val;
 
     if (!regexp_name.test(new_name_field)) {
       swal({ title: '',
@@ -18169,11 +18952,11 @@ function add_field_table(table, layer_name, parent) {
     if (options.type_operation === 'math_compute' && table.length > 3200) {
       var formToSend = new FormData();
       var var1 = [],
-          var2 = fi2 == 'user_const_value' ? +opt_val : [];
+          var2 = fi2 === 'user_const_value' ? +opt_val : [];
       for (var i = 0; i < table.length; i++) {
         var1.push(+table[i][fi1]);
       }
-      if (fi2 != 'user_const_value') {
+      if (fi2 !== 'user_const_value') {
         for (var _i = 0; _i < table.length; _i++) {
           var2.push(+table[_i][fi2]);
         }
@@ -18182,16 +18965,15 @@ function add_field_table(table, layer_name, parent) {
       formToSend.append('var2', JSON.stringify(var2));
       formToSend.append('operator', operation);
       return xhrequest('POST', '/helpers/calc', formToSend, false).then(function (data) {
-        data = JSON.parse(data);
+        var parsed_result = JSON.parse(data);
         for (var _i2 = 0; _i2 < table.length; _i2++) {
-          table[_i2][new_name_field] = data[_i2];
+          table[_i2][new_name_field] = parsed_result[_i2];
         }
-
         return true;
       });
     } else if (options.type_operation === 'math_compute') {
       var math_func = get_fun_operator(operation);
-      if (fi2 != 'user_const_value') {
+      if (fi2 !== 'user_const_value') {
         for (var _i3 = 0; _i3 < table.length; _i3++) {
           if (table[_i3][fi1] != null && table[_i3][fi1] != '' && table[_i3][fi2] != null && table[_i3][fi2] != '') {
             table[_i3][new_name_field] = math_func(+table[_i3][fi1], +table[_i3][fi2]);
@@ -18210,7 +18992,7 @@ function add_field_table(table, layer_name, parent) {
         }
       }
       return Promise.resolve(true);
-    } else if (operation == 'truncate') {
+    } else if (operation === 'truncate') {
       opt_val = +opt_val;
       if (opt_val >= 0) {
         for (var _i5 = 0; _i5 < table.length; _i5++) {
@@ -18222,7 +19004,7 @@ function add_field_table(table, layer_name, parent) {
         }
       }
       return Promise.resolve(true);
-    } else if (operation == 'concatenate') {
+    } else if (operation === 'concatenate') {
       for (var _i7 = 0; _i7 < table.length; _i7++) {
         table[_i7][new_name_field] = [table[_i7][fi1], table[_i7][fi2]].join(opt_val);
       }
@@ -18243,16 +19025,19 @@ function add_field_table(table, layer_name, parent) {
     });
     field2 = div1.append('select').on('change', function () {
       chooses_handler.field2 = this.value;
-      if (this.value == 'user_const_value') {
+      if (this.value === 'user_const_value') {
         val_opt.style('display', null);
       }
     });
-    if (type == 'math_compute') {
+    if (type === 'math_compute') {
       math_operation.forEach(function (op) {
         operator.append('option').text(op).attr('value', op);
       });
-      for (var k in fields_type) {
-        if (fields_type[k] == 'number') {
+      // for (const k in fields_type) {
+      var _f = Object.getOwnPropertyNames(fields_type);
+      for (var i = 0, n = _f.length; i < n; i++) {
+        var k = _f[i];
+        if (fields_type[k] === 'number') {
           field1.append('option').text(k).attr('value', k);
           field2.append('option').text(k).attr('value', k);
         }
@@ -18265,8 +19050,11 @@ function add_field_table(table, layer_name, parent) {
       string_operation.forEach(function (op) {
         operator.append('option').text(op[0]).attr('value', op[1]);
       });
-      for (var _k in fields_type) {
-        if (fields_type[_k] == 'string') {
+      // for (const k in fields_type) {
+      var _f2 = Object.getOwnPropertyNames(fields_type);
+      for (var _i8 = 0, _n = _f2.length; _i8 < _n; _i8++) {
+        var _k = _f2[_i8];
+        if (fields_type[_k] === 'string') {
           field1.append('option').text(_k).attr('value', _k);
           field2.append('option').text(_k).attr('value', _k);
         }
@@ -18281,7 +19069,7 @@ function add_field_table(table, layer_name, parent) {
 
   function refresh_subtype_content(type, subtype) {
     if (type !== 'string_field') {
-      if (field2.node().value != 'user_const_value') {
+      if (field2.node().value !== 'user_const_value') {
         val_opt.style('display', 'none');
         txt_op.text('');
       }
@@ -18304,7 +19092,7 @@ function add_field_table(table, layer_name, parent) {
     operator: undefined,
     type_operation: undefined,
     opt_val: undefined,
-    new_name: 'NewFieldName'
+    new_name: i18next.t('app_page.explore_box.add_field_box.new_name_placeholder')
   };
 
   make_confirm_dialog2('addFieldBox', i18next.t('app_page.explore_box.button_add_field'), { width: w > 430 ? 430 : undefined, height: h > 280 ? 280 : undefined }).then(function (valid) {
@@ -18324,7 +19112,7 @@ function add_field_table(table, layer_name, parent) {
           parent.display_table(layer_name);
         }
       }, function (error) {
-        if (error != 'Invalid name') {
+        if (error !== 'Invalid name') {
           display_error_during_computation();
         }
         console.log(error);
@@ -18344,7 +19132,7 @@ function add_field_table(table, layer_name, parent) {
       div1 = box_content.append('div').attr('id', 'field_div1'),
       div2 = box_content.append('div').attr('id', 'field_div2');
 
-  var new_name = div1.append('p').html(i18next.t('app_page.explore_box.add_field_box.new_name')).insert('input').attr('value', 'NewFieldName').on('keyup', check_name);
+  var new_name = div1.append('p').html(i18next.t('app_page.explore_box.add_field_box.new_name')).insert('input').attr('value', i18next.t('app_page.explore_box.add_field_box.new_name_placeholder')).on('keyup', check_name);
 
   var type_content = div1.append('p').html(i18next.t('app_page.explore_box.add_field_box.new_content')).insert('select').attr('id', 'type_content_select').on('change', function () {
     chooses_handler.type_operation = this.value;
@@ -18374,8 +19162,10 @@ function add_field_table(table, layer_name, parent) {
   {
     var a = type_content.node();
     var b = false;
-    for (var fi in fields_type) {
-      if (fields_type[fi] == 'number') {
+    var _f = Object.getOwnPropertyNames(fields_type);
+    for (var i = 0, n = _f.length; i < n; i++) {
+      var fi = _f[i];
+      if (fields_type[fi] === 'number') {
         b = true;
         break;
       }
@@ -18385,8 +19175,8 @@ function add_field_table(table, layer_name, parent) {
   }
 }
 
-function createTableDOM(data, options) {
-  options = options || {};
+function createTableDOM(data, opts) {
+  var options = opts || {};
   options.id = options.id || 'myTable';
   var doc = document,
       nb_features = data.length,
@@ -18403,11 +19193,11 @@ function createTableDOM(data, options) {
   }
   headers.appendChild(headers_row);
   myTable.appendChild(headers);
-  for (var _i8 = 0; _i8 < nb_features; _i8++) {
+  for (var _i9 = 0; _i9 < nb_features; _i9++) {
     var row = doc.createElement('tr');
     for (var j = 0; j < nb_columns; j++) {
       var _cell = doc.createElement('td');
-      _cell.innerHTML = data[_i8][column_names[j]];
+      _cell.innerHTML = data[_i9][column_names[j]];
       row.appendChild(_cell);
     }
     body.appendChild(row);
@@ -18425,8 +19215,8 @@ function make_table(layer_name) {
       table.push({ id: features[i].__data__.id || i });
     }
   } else {
-    for (var _i9 = 0, _nb_ft = features.length; _i9 < _nb_ft; _i9++) {
-      table.push(features[_i9].__data__.properties);
+    for (var _i10 = 0, _nb_ft = features.length; _i10 < _nb_ft; _i10++) {
+      table.push(features[_i10].__data__.properties);
     }
   }
   return table;
@@ -18452,22 +19242,29 @@ var boxExplore2 = {
       document.querySelector('.dataTable-wrapper').remove();
     }
 
-    // TODO : allow to add_field on all the layer instead of just targeted / result layers :
-    if (this.tables.get(table_name)) {
+    if (this.tables.get(table_name) && (table_name !== dataset_name || table_name === dataset_name && field_join_map.length === 0)) {
       this.top_buttons.insert('button').attrs({ id: 'add_field_button', class: 'button_st3' }).html(i18next.t('app_page.explore_box.button_add_field')).on('click', function () {
         _this.modal_box.hide();
         add_field_table(the_table, table_name, _this);
       });
     }
     var txt_intro = ['<b>', table_name, '</b><br>', this.nb_features, ' ', i18next.t('app_page.common.feature', { count: this.nb_features }), ' - ', this.columns_names.length, ' ', i18next.t('app_page.common.field', { count: this.columns_names.length })].join('');
-    this.box_table.append('p').attr('id', 'table_intro').html(txt_intro);
+    this.box_table.append('p').attr('id', 'table_intro').style('margin', '10px 0 !important').html(txt_intro);
     this.box_table.node().appendChild(createTableDOM(the_table, { id: 'myTable' }));
-
+    var list_per_page_select = [5, 10, 15, 20, 25];
+    if (this.nb_features > 25) {
+      list_per_page_select.push(this.nb_features);
+    }
     var myTable = document.getElementById('myTable');
     this.datatable = new DataTable(myTable, {
       sortable: true,
       searchable: true,
-      fixedHeight: true
+      perPageSelect: list_per_page_select,
+      labels: {
+        placeholder: i18next.t('app_page.table.search'), // The search input placeholder
+        perPage: i18next.t('app_page.table.entries_page'), // per-page dropdown label
+        noRows: i18next.t('app_page.table.no_rows'), // Message shown when there are no search results
+        info: i18next.t('app_page.table.info') }
     });
     // Adjust the size of the box (on opening and after adding a new field)
     // and/or display scrollbar if its overflowing the size of the window minus a little margin :
@@ -18485,71 +19282,34 @@ var boxExplore2 = {
         box.querySelector('.modal-dialog').style.width = new_width + 80 + 'px';
       }
       box.style.left = new_width > window.innerWidth * 0.85 ? '5px' : +box.style.left.replace('px', '') / 2 + 'px';
+      // if (new_height > 350 || new_height > window.innerHeight * 0.80) {
+
+      var modal_body = box.querySelector('.modal-body');
+      modal_body.style.padding = '12.5px 15px 15px 15px';
       if (new_height > 350 || new_height > window.innerHeight * 0.80) {
-        box.querySelector('.modal-body').style.height = new_height + 175 + 'px';
-        box.querySelector('.modal-body').style.overflow = 'auto';
+        modal_body.style.height = Math.min(new_height + 115, window.innerHeight - 125) + 'px';
       }
-      setSelected(document.querySelector('.dataTable-selector'), '10');
-      // let datatable_info = box.querySelector(".dataTable-bottom");
-      // box.querySelector(".modal-footer").insertBefore(datatable_info, box.querySelector(".btn_ok"));
-    }, 225);
+      modal_body.style.overflow = 'auto';
+      // }
+    }, 250);
+    setSelected(document.querySelector('.dataTable-selector'), '10');
   },
   get_available_tables: function get_available_tables() {
     var target_layer = Object.getOwnPropertyNames(user_data),
         ext_dataset = dataset_name,
         result_layers = Object.getOwnPropertyNames(result_data),
         available = new Map();
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = target_layer[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var lyr_name = _step.value;
-        available.set(lyr_name, [i18next.t('app_page.common.target_layer'), user_data[lyr_name]]);
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
+    for (var i = 0, n = target_layer.length; i < n; i++) {
+      var lyr_name = target_layer[i];
+      available.set(lyr_name, [i18next.t('app_page.common.target_layer'), user_data[lyr_name]]);
     }
-
     if (ext_dataset) {
       available.set(dataset_name, [i18next.t('app_page.common.ext_dataset'), joined_dataset[0]]);
     }
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
-
-    try {
-      for (var _iterator2 = result_layers[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var _lyr_name = _step2.value;
-        available.set(_lyr_name, [i18next.t('app_page.common.result_layer'), result_data[_lyr_name]]);
-      }
-    } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-          _iterator2.return();
-        }
-      } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
-        }
-      }
+    for (var _i11 = 0, _n2 = result_layers.length; _i11 < _n2; _i11++) {
+      var _lyr_name = result_layers[_i11];
+      available.set(_lyr_name, [i18next.t('app_page.common.result_layer'), result_data[_lyr_name]]);
     }
-
     return available;
   },
   create: function create(layer_name) {
@@ -18850,6 +19610,14 @@ var TextImportWizard = function () {
 }();
 'use strict';
 
+/**
+* Function triggered when the user click on the "zoom by tracing a rectangle"
+* button.
+* If the feature is already active, it disable it. Otherwise it enable it.
+*
+* @return {void}
+*
+*/
 var handleZoomRect = function handleZoomRect() {
   var b = map.select('.brush');
   if (b.node()) {
@@ -18859,6 +19627,13 @@ var handleZoomRect = function handleZoomRect() {
   }
 };
 
+/**
+* Function handling the click on the map and the brush effect when
+* the "zoom by tracing a rectangle" is enabled.
+* It may fail on some projections when the user click outside of the sphere.
+*
+* @return {void}
+*/
 var makeZoomRect = function makeZoomRect() {
   if (!proj.invert) return;
   function idled() {
@@ -18867,7 +19642,10 @@ var makeZoomRect = function makeZoomRect() {
   function brushended() {
     var s = d3.event.selection;
     if (!s) {
-      if (!idleTimeout) return idleTimeout = setTimeout(idled, idleDelay);
+      if (!idleTimeout) {
+        idleTimeout = setTimeout(idled, idleDelay);
+        return idleTimeout;
+      }
     } else {
       var x_min = s[0][0],
           x_max = s[1][0];
@@ -18892,8 +19670,8 @@ var makeZoomRect = function makeZoomRect() {
     }
   }
 
-  var brush = d3.brush().on('end', brushended),
-      idleTimeout,
+  var brush = d3.brush().on('end', brushended);
+  var idleTimeout = void 0,
       idleDelay = 350;
   map.append('g').attr('class', 'brush').call(brush);
 };

@@ -1,6 +1,42 @@
 Changes
 =======
 
+0.5.0 (2017-08-24)
+------------------
+
+- Allow to create, use (and re-use) custom palette for choropleth maps.
+
+- Allow to hide/display the head of arrows.
+
+- Notable change: some old project-files may no longer be loaded correctly (the impact is really quite limited, but precisely, the overlay order of layout features could be incorrect when opening these old project-files).
+
+- Fix error with legend customization box after changing the layer name.
+
+- Re-allow to display the table of the joined dataset and improve the table layout.
+
+- Improve handling of fields containing mixed numerical and not numerical values for some representations.
+
+
+0.4.1 (2017-08-14)
+------------------
+
+- Fix background color when exporting to svg.
+
+- Fix property box not opening on pictograms layer.
+
+- Don't apply clipping path to pictograms layers nor symbols layers.
+
+- Change the overlay displayed when a layer is loading.
+
+
+0.4.0 (2017-07-24)
+------------------
+
+- Fix error occuring on some representations when using a target layer with empty geometries and warn the user if it's the case.
+
+- Introduce a new representation, waffle map, for mapping two (or more) comparable stocks together.
+
+
 0.3.7 (2017-07-17)
 ------------------
 

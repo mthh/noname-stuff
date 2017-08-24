@@ -176,7 +176,9 @@ const ColorsSelected = {
     // These colors came from "Pastel1" and "Pastel2" coloramps from ColorBrewer
   colorCodes: ['#b3e2cd', '#fdcdac', '#cbd5e8', '#f4cae4', '#e6f5c9', '#fff2ae', '#f1e2cc', '#cccccc',
     '#fbb4ae', '#b3cde3', '#ccebc5', '#decbe4', '#fed9a6', '#ffffcc', '#e5d8bd', '#fddaec', '#f2f2f2'],
-  seen: new Set(),  // In order to avoid randomly returning the same color as the last one, at least for the first layers
+  // In order to avoid randomly returning the same color
+  // as the last one, at least for the first layers
+  seen: new Set(),
   random(to_rgb = false) {
     const nb_color = this.colorCodes.length;
     let seen = this.seen;
@@ -201,14 +203,14 @@ const ColorsSelected = {
 //   itself adapted from http://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
 const randomColor = (function () {
   const golden_ratio_conjugate = 0.618033988749895;
-  let h = Math.random();
+  let _h = Math.random();
 
   const hslToRgb = function (h, s, l) {
     let r,
       g,
       b;
 
-    if (s == 0) {
+    if (s === 0) {
       r = g = b = l; // achromatic
     } else {
       function hue2rgb(p, q, t) {
@@ -231,8 +233,12 @@ const randomColor = (function () {
   };
 
   return function () {
-    h += golden_ratio_conjugate;
-    h %= 1;
-    return hslToRgb(h, 0.5, 0.60);
+    _h += golden_ratio_conjugate;
+    _h %= 1;
+    return hslToRgb(_h, 0.5, 0.60);
   };
 }());
+
+const addNewCustomPalette = function addNewCustomPalette(palette_name, colors) {
+  _app.custom_palettes.set(palette_name, colors);
+}

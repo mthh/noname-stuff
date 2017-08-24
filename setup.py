@@ -25,7 +25,7 @@ setup(
     name='magrit_app',
     version=magrit_app.__version__,
     description="",
-    url='https://github.com/mthh/magrit',
+    url='https://github.com/riatelab/magrit',
     packages=find_packages(),
     setup_requires=['setuptools>=25.1', 'Cython>=0.24'],
     ext_modules=exts,

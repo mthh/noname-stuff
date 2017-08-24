@@ -98,6 +98,12 @@
             "class": "{{count}} class",
             "download_link": "Download link"
         },
+        "table": {
+            "search": "Search...",
+            "entries_page": "{select} entries per page",
+            "no_rows": "No entries found",
+            "info": "Showing {start} to {end} of {rows} entries"
+        },
         "notification":{
             "success_sphere_added": "Success: sphere added!",
             "success_graticule_added": "Success: graticule added!",
@@ -274,7 +280,8 @@
             "flow": "Display sized links between features.",
             "discont": "Display discontinuities between polygons features",
             "typo": "Display a map sorting a field by category",
-            "typosymbol": "Create a (qualitative) map using pictograms"
+            "typosymbol": "Create a (qualitative) map using pictograms",
+            "two_stocks": "Create a waffle map using 2 or more numerical data"
         },
         "func_title" : {
             "smooth": "Smoothed map (Stewart potentials)",
@@ -394,10 +401,18 @@
             "unknown": "Unknown",
             "id": "Id"
         },
+        "palette_box": {
+            "button": "Custom palette?",
+            "title": "Custom palette",
+            "error_name_existing": "Palette name already in use",
+            "error_name_invalid": "Invalid palette name",
+            "new_name": "Palette name:"
+        },
         "explore_box": {
             "title": "Explore dataset",
             "button_add_field": "Add a new field...",
             "add_field_box": {
+                "new_name_placeholder": "NewField",
                 "new_name": "New field name<br>",
                 "new_content": "New field content<br>",
                 "between_numerical": "Computation based on two existing numerical fields",
@@ -429,7 +444,8 @@
             "additionnal_notes": "Notes<br>",
             "under_rectangle": "Display a box under the legend",
             "info_tooltip_line_break": "Line break allowed with symbol <i> \\n </i>",
-            "choice_break_symbol": "Customize symbols values..."
+            "choice_break_symbol": "Customize symbols values...",
+            "ratio_waffle_txt": "Text corresponding to the ratio"
         },
         "legend_symbol_values_box": {
             "reset": "Reset to default values",
@@ -480,7 +496,8 @@
             "arrowWeight": "Arrow weight",
             "arrowColor": "Arrow color",
             "arrowAngle": "Slope",
-            "move_points": "Move arrow start or end point"
+            "move_points": "Move arrow start or end point",
+            "arrowHead": "Hide arrow head"
         },
         "ellipse_edit_box": {
             "title": "Ellipse options",

@@ -3,7 +3,7 @@ function handleJoin() {
 
   if (!(layer_name.length === 1 && joined_dataset.length === 1)) {
     swal('', i18next.t('app_page.join_box.unable_join'), 'error');
-  } else if (field_join_map.length != 0) {
+  } else if (field_join_map.length !== 0) {
     make_confirm_dialog2('dialogBox', undefined, { html_content: i18next.t('app_page.join_box.ask_forget_join') })
       .then((confirmed) => {
         if (confirmed) {
@@ -23,7 +23,13 @@ function handleJoin() {
   }
 }
 
-// Function called to update the menu according to user operation (triggered when layers/dataset are added and after a join operation)
+/**
+* Function called to update the menu according to user operation
+* (triggered when layers/dataset are added and after a join operation)
+* @param {bool} val - ...
+* @param {Array} prop - The proportion of joined features
+* @return {void}
+*/
 function valid_join_check_display(val, prop) {
   if (!val) {
     const extDatasetImg = document.getElementById('img_data_ext');
@@ -67,8 +73,10 @@ function valid_join_check_display(val, prop) {
 // Where the real join is done
 // Its two main results are:
 //    -the update of the global "field_join_map" array
-//       (storing the relation between index of the geometry layer and index of the external dataset)
-//    -the update of the global "user_data" object, adding actualy the value to each object representing each feature of the layer
+//       (storing the relation between index of the geometry
+//         layer and index of the external dataset)
+//    -the update of the global "user_data" object, adding actualy the value
+//     to each object representing each feature of the layer
 function valid_join_on(layer_name, field1, field2) {
   const join_values1 = [],
     join_values2 = [];
@@ -169,10 +177,10 @@ function valid_join_on(layer_name, field1, field2) {
           f_name = fields_name_to_add[j];
           if (f_name.length > 0) {
             let t_val;
-            if (val == undefined) t_val = null;
+            if (val == undefined) t_val = null;  // eslint-disable-line
             else if (joined_dataset[0][val][f_name] === '') t_val = null;
             else t_val = joined_dataset[0][val][f_name];
-            user_data[layer_name][i][f_name] = val != undefined ? joined_dataset[0][val][f_name] : null;
+            user_data[layer_name][i][f_name] = val != undefined ? joined_dataset[0][val][f_name] : null; // eslint-disable-line
           }
         }
       }
@@ -244,7 +252,8 @@ const removeExistingJointure = (layer_name) => {
   if (!user_data[layer_name] || user_data[layer_name].length < 1) return;
   const dataLayer = user_data[layer_name];
   const original_fields = current_layers[layer_name].original_fields;
-  const fieldDifference = Object.getOwnPropertyNames(dataLayer[0]).filter(f => !original_fields.has(f));
+  const fieldDifference = Object.getOwnPropertyNames(
+    dataLayer[0]).filter(f => !original_fields.has(f));
   const nbFields = fieldDifference.length;
   for (let i = 0, nbFt = dataLayer.length; i < nbFt; i++) {
     for (let j = 0; j < nbFields; j++) {

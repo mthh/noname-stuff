@@ -410,7 +410,7 @@ class ReloadCompareProjectsTest(TestBase):
         with self.subTest(i=i):
             driver = self.driver
             driver.get(self.base_url + "?reload={}".format(url))
-            time.sleep(0.2)
+            time.sleep(0.3)
             if i > 0:
                 driver.switch_to.alert.accept()
             if not self.wait_until_overlay_disapear(5):
@@ -427,9 +427,9 @@ class ReloadCompareProjectsTest(TestBase):
             input_name.send_keys('{}.png'.format(name))
             driver.find_element_by_id("export_button_section5b").click()
             time.sleep(2.5)
-            self.assertTrue(
-                is_same_image(
-                    '{}{}.png'.format(self.tmp_folder, name), b_image))
+            if not is_same_image(
+                    '{}{}.png'.format(self.tmp_folder, name), b_image):
+                self.fail("Image {} differs from original".format(name))
             os.remove('{}{}.png'.format(self.tmp_folder, name))
             driver.find_element_by_id('save_file_button').click()
             time.sleep(2.5)
@@ -545,17 +545,17 @@ class MainFunctionnalitiesTest(TestBase):
         # Test the graticule :
         driver.find_element_by_id('btn_graticule').click()
         time.sleep(0.2)
-        if not self.try_element_present(By.ID, "Graticule"):
+        if not self.try_element_present(By.ID, "L_Graticule"):
             self.fail("Graticule won't display")
-        if not self.try_element_present(By.CSS_SELECTOR, "li.Graticule"):
+        if not self.try_element_present(By.CSS_SELECTOR, "li.L_Graticule"):
             self.fail("Graticule won't appeat in layer manager")
 
         # Test the sphere element :
         driver.find_element_by_id('btn_sphere').click()
         time.sleep(0.2)
-        if not self.try_element_present(By.ID, "Sphere"):
+        if not self.try_element_present(By.ID, "L_Sphere"):
             self.fail("Sphere background won't display")
-        if not self.try_element_present(By.CSS_SELECTOR, "li.Sphere"):
+        if not self.try_element_present(By.CSS_SELECTOR, "li.L_Sphere"):
             self.fail("Sphere won't appeat in layer manager")
 
         # Test the text annotation and feed it with some text :
@@ -731,7 +731,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.open_menu_section(3)
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.nuts2-2013-data > div > .style_target_layer"))
+                "li.L_nuts2-2013-data > div > .style_target_layer"))
         time.sleep(0.5)
         self.clickWaitTransition("#generate_labels")
         Select(driver.find_element_by_css_selector("select.swal2-select")
@@ -741,7 +741,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.click_element_with_retry(".btn_ok")
         time.sleep(0.5)
         labels = driver.find_element_by_id(
-            "Labels_id_nuts2-2013-data"
+            "L_Labels_id_nuts2-2013-data"
             ).find_elements_by_css_selector("text")
         self.assertIsInstance(labels, list)
         self.assertGreater(len(labels), 0)
@@ -770,10 +770,10 @@ class MainFunctionnalitiesTest(TestBase):
         self.assertEqual(proj_name, "HEALPix")
         # Layer have a clip-path (as this projection is interrupted) :
         clip_path_value1 = driver.execute_script(
-            '''val = document.getElementById("World").getAttribute("clip-path");
+            '''val = document.getElementById("L_World").getAttribute("clip-path");
             return val;''');
         clip_path_value2 = driver.execute_script(
-            '''val = document.getElementById("nuts2-2013-data").getAttribute("clip-path");
+            '''val = document.getElementById("L_nuts2-2013-data").getAttribute("clip-path");
             return val;''');
         self.assertEqual("url(#clip)", clip_path_value1)
         self.assertEqual("url(#clip)", clip_path_value2)
@@ -788,10 +788,10 @@ class MainFunctionnalitiesTest(TestBase):
         self.assertEqual(proj_name, "Robinson")
         # Layer don't have a clip-path anymore :
         clip_path_value1 = driver.execute_script(
-            '''val = document.getElementById("World").getAttribute("clip-path");
+            '''val = document.getElementById("L_World").getAttribute("clip-path");
             return val;''');
         clip_path_value2 = driver.execute_script(
-            '''val = document.getElementById("nuts2-2013-data").getAttribute("clip-path");
+            '''val = document.getElementById("L_nuts2-2013-data").getAttribute("clip-path");
             return val;''');
         self.assertEqual(None, clip_path_value1)
         self.assertEqual(None, clip_path_value2)
@@ -804,7 +804,7 @@ class MainFunctionnalitiesTest(TestBase):
         # Click on the "fit-zoom" button of the targeted layer :
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.nuts2-2013-data > div > #zoom_fit_button"))
+                "li.L_nuts2-2013-data > div > #zoom_fit_button"))
 
         # Fetch again the current zoom value :
         zoom_val2 = driver.execute_script(
@@ -815,11 +815,11 @@ class MainFunctionnalitiesTest(TestBase):
         # Click on the "fit-zoom" button of an other layer and fetch the new zoom value :
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.World > div > #eye_closed"))
+                "li.L_World > div > #eye_closed"))
 
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.World > div > #zoom_fit_button"))
+                "li.L_World > div > #zoom_fit_button"))
         zoom_val3 = driver.execute_script(
             '''val = svg_map.__zoom.toString(); return val;''');
         # This time it should have changed :
@@ -876,12 +876,12 @@ class MainFunctionnalitiesTest(TestBase):
 
         driver.find_element_by_id('btn_graticule').click()
         time.sleep(0.2)
-        if not self.try_element_present(By.ID, "Graticule"):
+        if not self.try_element_present(By.ID, "L_Graticule"):
             self.fail("Graticule won't display")
 
         driver.find_element_by_id('btn_sphere').click()
         time.sleep(0.2)
-        if not self.try_element_present(By.ID, "Sphere"):
+        if not self.try_element_present(By.ID, "L_Sphere"):
             self.fail("Sphere background won't display")
 
         driver.find_element_by_id('btn_rectangle').click()
@@ -906,10 +906,10 @@ class MainFunctionnalitiesTest(TestBase):
         if not self.try_element_present(By.ID, "scale_bar"):
             self.fail("Scale bar not reloaded")
 
-        if not self.try_element_present(By.ID, "Graticule"):
+        if not self.try_element_present(By.ID, "L_Graticule"):
             self.fail("Graticule not reloaded")
 
-        if not self.try_element_present(By.ID, "Sphere"):
+        if not self.try_element_present(By.ID, "L_Sphere"):
             self.fail("Sphere background  not reloaded")
 
         if not self.try_element_present(By.ID, "user_rectangle_0"):
@@ -938,11 +938,11 @@ class MainFunctionnalitiesTest(TestBase):
         layers = driver.find_elements_by_css_selector('#svg_map > .layer')
         map_elems = driver.find_elements_by_css_selector('#svg_map > *')
         expected_results = [
-            'Sphere', 'World', 'world_data',
-            'Typo_has_data_world_data', 'Graticule']
+            'L_Sphere', 'L_World', 'L_world_data',
+            'L_Typo_has_data_world_data', 'L_Graticule']
         self.assertEqual(len(layers), 5)
-        for expected_name, layer in zip(expected_results, layers):
-            self.assertEqual(expected_name, layer.get_attribute('id'))
+        for expected_id, layer in zip(expected_results, layers):
+            self.assertEqual(expected_id, layer.get_attribute('id'))
 
         self.assertEqual(len(map_elems), 8)
         self.assertEqual(map_elems[7].get_attribute('id'), 'map_title')
@@ -1058,7 +1058,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.validTypefield()
 
         self.open_menu_section(3)
-        driver.find_element_by_css_selector("li.nuts2-2013-data"
+        driver.find_element_by_css_selector("li.L_nuts2-2013-data"
             ).find_elements_by_css_selector("#browse_data_button")[0].click()
         time.sleep(1)
 
@@ -1104,7 +1104,7 @@ class MainFunctionnalitiesTest(TestBase):
 
         time.sleep(1)
 
-        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_result_layer", 5):
+        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_L_result_layer", 5):
             self.fail("Legend not displayed for Categorical map")
 
         self._verif_legend_hide_show_button('result_layer')
@@ -1126,7 +1126,7 @@ class MainFunctionnalitiesTest(TestBase):
         # Change the name of the target layer:
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.nuts2-2013-data > div > .style_target_layer"))
+                "li.L_nuts2-2013-data > div > .style_target_layer"))
         time.sleep(0.3)
         name_zone = driver.find_element_by_css_selector('input#lyr_change_name')
         name_zone.clear()
@@ -1169,7 +1169,7 @@ class MainFunctionnalitiesTest(TestBase):
         # Change the name of the result layer for something more meaningful:
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.W_ird_output_n_me > div > .style_target_layer"))
+                "li.L_W_ird_output_n_me > div > .style_target_layer"))
         time.sleep(0.6)
         name_zone = driver.find_element_by_css_selector('input#lyr_change_name')
         name_zone.clear()
@@ -1226,14 +1226,14 @@ class MainFunctionnalitiesTest(TestBase):
         driver.find_element_by_id("stewart_yes").click()
         self.waitClickButtonSwal()
         # The legend is displayed :
-        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_my_result_0", 5):
+        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_L_my_result_0", 5):
             self.fail("Legend not displayed on stewart")
 
         self._verif_legend_hide_show_button('my_result_0')
 
         # The legend contains the correct number of class :
         legend_elems = driver.find_element_by_class_name(
-            'lgdf_my_result_0').find_elements_by_css_selector(
+            'lgdf_L_my_result_0').find_elements_by_css_selector(
                 'rect:not(#under_rect)')
         self.assertEqual(len(legend_elems), 7)
         self._verif_export_result('my_result_0')
@@ -1252,14 +1252,14 @@ class MainFunctionnalitiesTest(TestBase):
         driver.find_element_by_id("stewart_yes").click()
         self.waitClickButtonSwal()
         # The legend is displayed :
-        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_my_result_1", 5):
+        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_L_my_result_1", 5):
             self.fail("Legend not displayed on stewart")
 
         self._verif_legend_hide_show_button('my_result_1')
 
         # The legend contains the correct number of class :
         legend_elems = driver.find_element_by_class_name(
-            'lgdf_my_result_1').find_elements_by_css_selector(
+            'lgdf_L_my_result_1').find_elements_by_css_selector(
                 'rect:not(#under_rect)')
         self.assertEqual(len(legend_elems), 9)
         self._verif_export_result('my_result_1')
@@ -1283,17 +1283,86 @@ class MainFunctionnalitiesTest(TestBase):
         driver.find_element_by_id("stewart_yes").click()
         self.waitClickButtonSwal()
         # The legend is displayed :
-        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_my_result_2", 5):
+        if not self.try_element_present(By.CSS_SELECTOR, ".lgdf_L_my_result_2", 5):
             self.fail("Legend not displayed on stewart")
 
         self._verif_legend_hide_show_button('my_result_2')
 
         # The legend contains the correct number of class :
         legend_elems = driver.find_element_by_class_name(
-            'lgdf_my_result_2').find_elements_by_css_selector(
+            'lgdf_L_my_result_2').find_elements_by_css_selector(
                 'rect:not(#under_rect)')
         self.assertEqual(len(legend_elems), 6)
         self._verif_export_result('my_result_2')
+
+    def test_waffle(self):
+        driver = self.driver
+        driver.get(self.base_url)
+        # Open the box of sample layers:
+        self.clickWaitTransition("#sample_link")
+        # Select the "Martinique" layer:
+        Select(driver.find_element_by_css_selector("select.sample_target")
+            ).select_by_value("martinique")
+        driver.find_element_by_css_selector(".btn_ok").click()
+        self.waitClickButtonSwal()
+
+        # Valid the type of each field:
+        self.validTypefield()
+
+        # Open the table for the Martinique layer:
+        self.open_menu_section(3)
+        driver.find_element_by_css_selector("li.L_martinique"
+            ).find_elements_by_css_selector("#browse_data_button")[0].click()
+        time.sleep(1)
+
+        # Create a new field from the total stock of dwellings (P13_LOG)
+        # and the stock of empty dwellings (P13_LOGVAC)
+        # to obtain the stock of non empty dwellings (P13_LOGNONVAC) :
+        self.clickWaitTransition("#add_field_button")
+        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
+        driver.find_element_by_css_selector(
+            "input[value=\"NewFieldName\"]").send_keys("P13_LOGNONVAC")
+        Select(driver.find_element_by_css_selector(
+            "#field_div1 > select")).select_by_visible_text("P13_LOG")
+        Select(driver.find_element_by_xpath(
+            "//div[@id='field_div1']/select[3]")).select_by_visible_text("P13_LOGVAC")
+        Select(driver.find_element_by_xpath(
+            "//div[@id='field_div1']/select[2]")).select_by_visible_text("-")
+        driver.find_element_by_css_selector(
+            ".addFieldBox").find_elements_by_css_selector(
+            ".btn_ok")[0].click()
+        time.sleep(0.4)
+        self.click_elem_retry(
+            driver.find_element_by_id(
+                "browse_data_box").find_elements_by_css_selector(
+                ".btn_ok")[0])
+        time.sleep(0.4)
+
+        #  Test the waffle functionnality :
+        self.open_menu_section(2)
+        self.clickWaitTransition("#button_two_stocks")
+
+        # Select the two appropriate fields :
+        s = Select(driver.find_element_by_id("TwoStocks_fields"))
+        s.select_by_visible_text('P13_LOGVAC')
+        s.select_by_visible_text('P13_LOGNONVAC')
+        driver.find_element_by_id("TwoStocks_waffle_WidthRow")
+
+        # Set the number of symbol by line:
+        elem = driver.find_element_by_id("TwoStocks_waffle_WidthRow")
+        elem.clear()
+        elem.send_keys('5')
+
+        # Create the new layer:
+        driver.find_element_by_id("twoStocks_yes").click()
+        time.sleep(0.2)
+
+        # Is the legend displayed ?
+        if not self.try_element_present(By.ID, "legend_root_waffle", 5):
+            self.fail("Legend not displayed on waffle map")
+
+#        # Can we hide and redisplay the legend ?
+#        self._verif_legend_hide_show_button('martinique_Waffle')
 
     def test_cartogram_new_field(self):
         driver = self.driver
@@ -1308,7 +1377,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.validTypefield()
 
         self.open_menu_section(3)
-        driver.find_element_by_css_selector("li.nuts2-2013-data"
+        driver.find_element_by_css_selector("li.L_nuts2-2013-data"
             ).find_elements_by_css_selector("#browse_data_button")[0].click()
         time.sleep(1)
 
@@ -1390,8 +1459,8 @@ class MainFunctionnalitiesTest(TestBase):
 
         self._verif_export_result('carto_doug')
 
-        Select(driver.find_element_by_css_selector(
-            "select.params")).select_by_visible_text("Dougenik & al. (1985)")
+#        Select(driver.find_element_by_css_selector(
+#            "select.params")).select_by_visible_text("Dougenik & al. (1985)")
 
         self.open_menu_section('2b')
         #  Test the olson cartogram functionnality...
@@ -1425,7 +1494,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.open_menu_section(3)
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.martinique").find_element_by_css_selector(
+                "li.L_martinique").find_element_by_css_selector(
                 "#browse_data_button"))
         time.sleep(0.5)
 
@@ -1589,7 +1658,7 @@ class MainFunctionnalitiesTest(TestBase):
         self._verif_legend_hide_show_button('my_result_layer')
 
         # Try to remove a layer from the map (the 'World' layer, here by default):
-        driver.find_element_by_css_selector('.sortable.World > div > #trash_button').click()
+        driver.find_element_by_css_selector('.sortable.L_World > div > #trash_button').click()
         # Valid the confirmation :
         self.waitClickButtonSwal()
         nb_layer_t1 = driver.execute_script(
@@ -1646,7 +1715,7 @@ class MainFunctionnalitiesTest(TestBase):
         # Test that labels are correctly generated from a layer of prop symbols :
         self.click_elem_retry(
             driver.find_element_by_css_selector(
-                "li.my_result_layer > div > .style_target_layer"))
+                "li.L_my_result_layer > div > .style_target_layer"))
         time.sleep(0.5)
         self.clickWaitTransition("#generate_labels")
         Select(driver.find_element_by_css_selector("select.swal2-select")
@@ -1656,7 +1725,7 @@ class MainFunctionnalitiesTest(TestBase):
         self.click_element_with_retry(".btn_ok")
         time.sleep(0.5)
         labels = driver.find_element_by_id(
-            "Labels_LIBCOM_my_result_layer"
+            "L_Labels_LIBCOM_my_result_layer"
             ).find_elements_by_css_selector("text")
         self.assertIsInstance(labels, list)
         self.assertGreater(len(labels), 0)
@@ -1705,9 +1774,9 @@ class MainFunctionnalitiesTest(TestBase):
 
     def _verif_legend_hide_show_button(self, layer_name):
         driver = self.driver
-        button_legend = driver.find_element_by_css_selector("li." + layer_name
+        button_legend = driver.find_element_by_css_selector("li.L_" + layer_name
             ).find_element_by_css_selector('#legend_button')
-        legends = driver.find_elements_by_css_selector(".lgdf_" + layer_name)
+        legends = driver.find_elements_by_css_selector(".lgdf_L_" + layer_name)
 
         # Hide legend(s) for this representation :
         button_legend.click()

@@ -48,9 +48,9 @@ const drag_elem_geo2 = d3.drag()
     d3.event.sourceEvent.preventDefault();
     handle_click_hand('lock');
     const zoom = svg_map.__zoom;
-    let centroid = path.centroid(this.__data__.geometry);
-    centroid[0] = centroid[0] * zoom.k + zoom.x ;
-    centroid[1] = centroid[1] * zoom.k + zoom.y ;
+    const centroid = path.centroid(this.__data__.geometry);
+    centroid[0] = centroid[0] * zoom.k + zoom.x;
+    centroid[1] = centroid[1] * zoom.k + zoom.y;
     map.append('rect')
       .attrs({ x: centroid[0] - 2, y: centroid[1] - 2, height: 4, width: 4, id: 'ref_symbol_location' })
       .style('fill', 'red');
@@ -70,6 +70,9 @@ const drag_elem_geo2 = d3.drag()
   });
 
 const drag_waffle = d3.drag()
+  .filter(function () {
+    return current_layers[_app.id_to_layer.get(this.parentElement.id)].draggable;
+  })
   .subject(function () {
     const t = d3.select(this);
     let prev_translate = t.attr('transform');
@@ -98,15 +101,14 @@ const drag_waffle = d3.drag()
   });
 
 function setSelected(selectNode, value) {
-  selectNode.value = value;
+  selectNode.value = value; // eslint-disable-line no-param-reassign
   selectNode.dispatchEvent(new Event('change'));
 }
 
 // Function to be called after clicking on "render" in order to close the section 2
 // and to have the section 3 opened
 function switch_accordion_section(id_elem) {
-  id_elem = id_elem || 'btn_s3';
-  document.getElementById(id_elem).dispatchEvent(new MouseEvent('click'));
+  document.getElementById(id_elem || 'btn_s3').dispatchEvent(new MouseEvent('click'));
 }
 
 function check_remove_existing_box(box_selector) {
@@ -141,7 +143,7 @@ function display_error_during_computation(msg) {
     text: `${i18next.t('app_page.common.error_message')}${msg}`,
     customClass: 'swal2_custom',
     type: 'error',
-    allowOutsideClick: false
+    allowOutsideClick: false,
   });
 }
 
@@ -324,7 +326,7 @@ function get_other_layer_names() {
 * @return {undefined}
 */
 function create_li_layer_elem(layerName, nbFt, typeGeom, typeLayer) {
-  const listDisplayName = get_display_name_on_layer_list(layerName)
+  const listDisplayName = get_display_name_on_layer_list(layerName);
   const layerId = encodeId(layerName);
   const layersListed = layer_list.node();
   const li = document.createElement('li');
@@ -399,11 +401,11 @@ const type_col = function type_col(layerName, target) {
   }
   if (target) {
     const res = [];
-    for (const k in result) {
+    Object.keys(result).forEach((k) => {
       if (result[k] === target && k !== '_uid') {
         res.push(k);
       }
-    }
+    });
     return res;
   }
   return result;
@@ -440,11 +442,11 @@ const type_col2 = function type_col2(table, _field, skip_if_empty_values = false
       tmpType = typeof val;
       if (tmpType === 'object' && isFinite(val)) {
         tmpType = 'empty';
-      } else if (tmpType === 'string' && val.length == 0) {
+      } else if (tmpType === 'string' && val.length === 0) {
         tmpType = 'empty';
       } else if ((tmpType === 'string' && !isNaN(Number(val))) || tmpType === 'number') {
         const _val = Number(table[i][field]);
-        tmpType = (_val | 0) == val ? 'stock' : 'ratio';
+        tmpType = (_val | 0) === val ? 'stock' : 'ratio';
       }
       tmp[fields[j]].push(tmpType);
     }
@@ -518,7 +520,8 @@ function make_box_type_fields(layerName) {
     };
     container.querySelector('#xclose').onclick = _onclose;
   } else { // There is already types selected and no new fields (so this is a modification) :
-      // Use the previous values if the user close the window without confirmation (cancel or X button)
+    // Use the previous values if the user close
+    // the window without confirmation (cancel or X button)
     const _onclose = () => {
       current_layers[layerName].fields_type = fields_type;
       deferred.resolve(false);
@@ -545,9 +548,9 @@ function make_box_type_fields(layerName) {
     }
     clean_up_box();
   };
-  function helper_esc_key_twbs(evt) {
-    evt = evt || window.event;
-    const isEscape = ('key' in evt) ? (evt.key == 'Escape' || evt.key == 'Esc') : (evt.keyCode == 27);
+  function helper_esc_key_twbs(_evt) {
+    const evt = _evt || window.event;
+    const isEscape = ('key' in evt) ? (evt.key === 'Escape' || evt.key === 'Esc') : (evt.keyCode === 27);
     if (isEscape) {
       evt.stopPropagation();
       current_layers[layerName].fields_type = tmp.slice();
@@ -687,8 +690,8 @@ const clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
           onClose() {
             URL.revokeObjectURL(blobUrl);
           },
-        }).then((inputValue) => { null; },
-            (dismissValue) => { null; });
+        }).then(inputValue => null,
+            dismissValue => null);
       } else {
         dlAnchorElem.style.display = 'none';
         document.body.appendChild(dlAnchorElem);
@@ -699,8 +702,8 @@ const clickLinkFromDataUrl = function clickLinkFromDataUrl(url, filename) {
     });
 };
 
-const helper_esc_key_twbs_cb = function helper_esc_key_twbs_cb(evt, callback) {
-  evt = evt || window.event;
+const helper_esc_key_twbs_cb = function helper_esc_key_twbs_cb(_event, callback) {
+  const evt = _event || window.event;
   const isEscape = ('key' in evt) ? (evt.key === 'Escape' || evt.key === 'Esc') : (evt.keyCode === 27);
   if (isEscape) {
     evt.stopPropagation();
@@ -714,9 +717,9 @@ const cloneObj = (obj) => {
   if (obj === null || typeof obj !== 'object') return obj;
   else if (obj.toString() === '[object Map]') return new Map(obj.entries());
   return Object.assign({}, obj);
-}
+};
 
-function change_layer_name(old_name, new_name){
+function change_layer_name(old_name, new_name) {
   const old_id = _app.layer_to_id.get(old_name);
   const new_id = encodeId(new_name);
   current_layers[new_name] = cloneObj(current_layers[old_name]);
@@ -751,7 +754,7 @@ function change_layer_name(old_name, new_name){
     }
   }
   if (_app.current_functionnality && _app.current_functionnality.name === 'smooth') {
-    let mask_layers = document.querySelectorAll('select#stewart_mask > option');
+    const mask_layers = document.querySelectorAll('select#stewart_mask > option');
     for (let i = 0; i < mask_layers.length; i++) {
       if (mask_layers[i].value === old_name) {
         mask_layers[i].value = new_name;

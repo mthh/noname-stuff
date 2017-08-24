@@ -1,7 +1,7 @@
 'use strict';
 
 function getBreaks(values, type, n_class) {
-  const _values = values.filter(v => v),
+  const _values = values.filter(v => v && !isNaN(+v)),
     no_data = values.length - _values.length,
     nb_class = +n_class || getOptNbClass(_values.length);
   const serie = new geostats(_values);
@@ -39,7 +39,7 @@ const discretize_to_colors = (function discretize_to_colors(values, type, nb_cla
     no_data_color = nb_no_data > 0 ? '#e7e7e7' : null,
     colors_map = [];
   for (let j = 0; j < values.length; ++j) {
-    if (values[j] != null && values[j] != '') {
+    if (values[j] != null && values[j] != '' && !isNaN(+values[j])) {
       const idx = serie.getClass(values[j]);
       colors_map.push(color_array[idx]);
     } else {
@@ -70,6 +70,7 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
     col_div.selectAll('.central_class').remove();
     col_div.selectAll('.central_color').remove();
     col_div.selectAll('#reverse_pal_btn').remove();
+    document.getElementById('button_palette_box').style.display = '';
     const sequential_color_select = col_div.insert('p')
       .attr('class', 'color_txt')
       .style('margin-left', '10px')
@@ -94,6 +95,17 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
           .styles({ 'background-image': `url(/static/img/palettes/${name}.png)` });
       });
 
+    if (_app.custom_palettes) {
+      const additional_colors = Array.from(_app.custom_palettes.entries());
+
+      for (let ixp = 0; ixp < additional_colors.length; ixp++) {
+        sequential_color_select.append('option')
+          .text(additional_colors[ixp][0])
+          .attrs({ value: `user_${additional_colors[ixp][0]}`, title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length })
+          .property('disabled', additional_colors[ixp][1].length !== nb_class);
+      }
+    }
+
     const button_reverse = d3.select('.color_txt').insert('p').style('text-align', 'center')
       .insert('button')
       .styles({ 'margin-top': '10px' })
@@ -111,6 +123,7 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
     col_div.selectAll('.color_txt').remove();
     col_div.selectAll('.color_txt2').remove();
     col_div.selectAll('#reverse_pal_btn').remove();
+    document.getElementById('button_palette_box').style.display = 'none';
     col_div.insert('p')
       .attr('class', 'central_class')
       .html(i18next.t('disc_box.break_on'))
@@ -161,6 +174,22 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
         .styles({ 'background-image': `url(/static/img/palettes/${name}.png)` })
         .text(name);
     });
+
+    // if (_app.custom_palettes) {
+    //   const additional_colors = Array.from(
+    //     _app.custom_palettes.entries());
+    //   for (let ixp = 0; ixp < additional_colors.length; ixp++) {
+    //     left_color_select.append('option')
+    //       .text(additional_colors[ixp][0])
+    //       .attrs({ value: `user_${additional_colors[ixp][0]}`, title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length })
+    //       .property('disabled', additional_colors[ixp][1].length !== nb_class);
+    //     right_color_select.append('option')
+    //       .text(additional_colors[ixp][0])
+    //       .attrs({ value: `user_${additional_colors[ixp][0]}`, title: additional_colors[ixp][0], nb_colors: additional_colors[ixp][1].length })
+    //       .property('disabled', additional_colors[ixp][1].length !== nb_class);
+    //   }
+    // }
+
     document.getElementsByClassName('color_params_right')[0].selectedIndex = 14;
 
     const central_color = col_div.insert('p').attr('class', 'central_color');
@@ -266,6 +295,26 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
     txt_nb_class.node().value = value;
     document.getElementById('nb_class_range').value = value;
     nb_class = value;
+    const color_select = document.querySelector('.color_params');
+    const selected_index = color_select.selectedIndex;
+    const select_options = color_select.querySelectorAll('option');
+    for (let ixc = 0; ixc < select_options.length; ixc++) {
+      if (select_options[ixc].value.startsWith('user_')) {
+        select_options[ixc].disabled = (nb_class !== +select_options[ixc].getAttribute('nb_colors'));
+      }
+    }
+    if (select_options[selected_index].value.startsWith('user_') && select_options[selected_index].getAttribute('nb_colors') !== nb_class) {
+      setSelected(color_select, 'Blues');
+    }
+    // const color_select_left = document.querySelectorAll('.color_params_left > option');
+    // const color_select_right = document.querySelectorAll('.color_params_right > option');
+    // for (let ixc = 0; ixc < color_select_left.length; ixc++) {
+    //   if (color_select_left[ixc].value.startsWith('user_')) {
+    //     const is_disabled = (nb_class === +color_select_left[ixc].getAttribute('nb_colors')) ? false : true;
+    //     color_select_left[ixc].disabled = is_disabled;
+    //     color_select_right[ixc].disabled = is_disabled;
+    //   }
+    // }
   };
 
   const update_axis = (group) => {
@@ -437,8 +486,12 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
             to_reverse = false;
           } else {
             const selected_palette = document.querySelector('.color_params').value;
-            color_array = getColorBrewerArray(nb_class, selected_palette);
-            color_array = color_array.slice(0, nb_class);
+            if (selected_palette.startsWith('user_')) {
+              color_array = _app.custom_palettes.get(selected_palette.slice(5));
+            } else {
+              color_array = getColorBrewerArray(nb_class, selected_palette);
+              color_array = color_array.slice(0, nb_class);
+            }
           }
         } else if (col_scheme === 'diverging') {
           const left_palette = document.querySelector('.color_params_left').value,
@@ -451,12 +504,26 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
           const class_right = nb_class - ctl_class_value + 1,
             class_left = ctl_class_value - 1,
             max_col_nb = Math.max(class_right, class_left);
-          let right_pal = getColorBrewerArray(max_col_nb, right_palette),
-            left_pal = getColorBrewerArray(max_col_nb, left_palette);
 
-          left_pal = left_pal.slice(0, class_left).reverse();
+          let right_pal = getColorBrewerArray(max_col_nb, right_palette);
+          let left_pal = getColorBrewerArray(max_col_nb, left_palette);
+
+          // Below is for the case if we have displayed the custom palette also
+          // for a diverging scheme:
+          // let right_pal,
+          //   left_pal;
+          // if (right_palette.startsWith('user_')) {
+          //   right_pal = _app.custom_palettes.get(right_palette.slice(5));
+          // } else {
+          //   right_pal = getColorBrewerArray(max_col_nb, right_palette);
+          // }
+          // if (left_palette.startsWith('user_')) {
+          //   left_pal = _app.custom_palettes.get(left_palette.slice(5));
+          // } else {
+          //   left_pal = getColorBrewerArray(max_col_nb, left_palette);
+          // }
           right_pal = right_pal.slice(0, class_right);
-
+          left_pal = left_pal.slice(0, class_left).reverse();
           color_array = [].concat(left_pal, ctl_class_color, right_pal);
         }
       } else {
@@ -543,7 +610,8 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
   let type = options.type;
 
   for (let i = 0; i < nb_values; i++) {
-    if (db_data[i][field_name] != null && db_data[i][field_name] != '') {
+    const value = db_data[i][field_name];
+    if (value != null && value !== '' && isFinite(value) && !isNaN(+value)) {
       values.push(+db_data[i][field_name]);
       indexes.push(i);
     }
@@ -694,8 +762,9 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
         update_nb_class(nb_class);
         return;
       }
-      nb_class = +this.value;
-      txt_nb_class.node().value = nb_class;
+      // nb_class = +this.value;
+      // txt_nb_class.node().value = nb_class;
+      update_nb_class(+this.value);
       const ret_val = redisplay.compute();
       if (!ret_val) {
         this.value = old_nb_class;
@@ -796,7 +865,7 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
   const accordion_colors = newBox.append('div')
     .attrs({ class: 'panel show', id: 'accordion_colors' })
     .style('width', '98%');
-  const color_scheme = d3.select('#accordion_colors')
+  const color_scheme = accordion_colors // d3.select('#accordion_colors')
     .append('div')
     .attr('id', 'color_div')
     .style('text-align', 'center');
@@ -818,6 +887,42 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
   });
   let to_reverse = false;
   document.getElementById('button_sequential').checked = true;
+  accordion_colors
+    .append('span')
+    .attr('id', 'button_palette_box')
+    .styles({
+      margin: '5px',
+      float: 'right',
+      cursor: 'pointer',
+    })
+    .html(i18next.t('app_page.palette_box.button'))
+    .on('click', () => {
+      make_box_custom_palette(nb_class)
+        .then((result) => {
+          if (result) {
+            const [colors, palette_name] = result;
+            const select_palette = document.querySelector('.color_params');
+            addNewCustomPalette(palette_name, colors);
+            if (select_palette) {
+              d3.select(select_palette)
+                .append('option')
+                .text(palette_name)
+                .attrs({ value: `user_${palette_name}`, title: palette_name, nb_colors: colors.length });
+              setSelected(select_palette, `user_${palette_name}`);
+            }
+            // else {
+            //   d3.select('.color_params_right')
+            //     .append('option')
+            //     .text(palette_name)
+            //     .attrs({ value: `user_${palette_name}`, title: palette_name, nb_colors: colors.length });
+            //   d3.select('.color_params_left')
+            //     .append('option')
+            //     .text(palette_name)
+            //     .attrs({ value: `user_${palette_name}`, title: palette_name, nb_colors: colors.length });
+            // }
+          }
+        });
+    });
 
   const b_accordion_breaks = newBox.append('button')
     .attrs({ class: 'accordion_disc', id: 'btn_acc_disc_break' })
@@ -901,7 +1006,8 @@ const display_discretization = (layer_name, field_name, nb_class, options) => {
     }
     for (let j = 0; j < db_data.length; ++j) {
       const value = db_data[j][field_name];
-      if (value !== null && isFinite(value) && value != '') {
+      if (value !== null && isFinite(value)
+            && value != '' && !isNaN(+value)) {
         const idx = serie.getClass(+value);
         colors_map.push(color_array[idx]);
       } else {
@@ -1259,3 +1365,94 @@ const prepare_ref_histo = (parent_node, serie, formatCount) => {
     }
   };
 };
+
+function make_box_custom_palette(nb_class, existing_colors) {
+  const is_hex_color = new RegExp(/^#([0-9a-f]{6}|[0-9a-f]{3})$/i);
+  const is_ok_name = new RegExp(/^[a-zA-Z0-9_]*$/);
+  const existing_palette = Array.from(_app.custom_palettes.keys());
+  let pal_name;
+  let ref_colors;
+  if (existing_colors && existing_colors.length === nb_class) {
+    ref_colors = existing_colors.slice();
+  } else {
+    ref_colors = [];
+    for (let i = 0; i < nb_class; i++) {
+      ref_colors.push(randomColor());
+    }
+  }
+
+  const verif_palette_name = (name) => {
+    if (name !== '' && is_ok_name.test(name)) {
+      if (existing_palette.indexOf(name) > -1) {
+        d3.select('#palette_box_error_zone')
+          .html(i18next.t('app_page.palette_box.error_name_existing'));
+        document.querySelector('.swal2-confirm').disabled = true;
+        return null;
+      }
+      d3.select('#palette_box_error_zone')
+        .html('');
+      document.querySelector('.swal2-confirm').disabled = false;
+      return name;
+    } else {
+      d3.select('#palette_box_error_zone')
+        .html(i18next.t('app_page.palette_box.error_name_invalid'));
+      document.querySelector('.swal2-confirm').disabled = true;
+      return null;
+    }
+  };
+
+  return swal({
+    title: i18next.t('app_page.palette_box.title'),
+    html: '<div id="palette_box_content" style="display: inline-flex;"></div><div id="palette_box_name"></div>',
+    showCancelButton: true,
+    showConfirmButton: true,
+    cancelButtonText: i18next.t('app_page.common.close'),
+    animation: 'slide-from-top',
+    onOpen: () => {
+      document.querySelector('.swal2-modal').style.width = `${nb_class * 85}px`;
+      const colors = d3.select('#palette_box_content');
+      const g = colors.selectAll('p')
+        .data(ref_colors)
+        .enter()
+        .append('p');
+
+      g.append('input')
+        .attr('id', (d, i) => i)
+        .attr('type', 'color')
+        .property('value', d => d)
+        .style('width', '60px')
+        .on('change', function (d, i) {
+          ref_colors[i] = this.value;
+          this.nextSibling.value = this.value;
+        });
+
+      g.append('input')
+        .attr('id', (d, i) => i)
+        .property('value', d => d)
+        .style('width', '60px')
+        .on('keyup', function (d, i) {
+          if (is_hex_color.test(this.value)) {
+            ref_colors[i] = this.value;
+            this.previousSibling.value = this.value;
+          }
+        });
+      const bottom = d3.select('#palette_box_name');
+      bottom.append('p')
+        .attr('id', 'palette_box_error_zone')
+        .style('background', '#e3e3e3');
+      bottom
+        .append('span')
+        .html(i18next.t('app_page.palette_box.new_name'));
+      bottom
+        .append('input')
+        .style('width', '70px')
+        .on('keyup', function () {
+          if (verif_palette_name(this.value) !== null) pal_name = this.value;
+        });
+      document.querySelector('.swal2-confirm').disabled = true;
+    },
+  }).then(
+    v => [ref_colors, pal_name],
+    dismissValue => null,
+  );
+}

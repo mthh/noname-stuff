@@ -1,9 +1,9 @@
 # Carte en gaufre (*waffle map*)
 
-Cette méthode permet de représenter plusieurs stocks comparables pour chacune des entités.
+Cette méthode permet de représenter plusieurs stocks dans des unités comparables pour chacune des entités.
 
 > ### Paramètres
-> * Nom des champs à utiliser (variables de stocks dans la même unités)
+> * Nom des champs à utiliser (variables de stocks dans la même unité)
 > * Forme du symbole (cercle ou carré)
 > * Nombre de symboles par ligne
 > * Ratio (valeur d'un symbole, dans l'unité des variables utilisées)
@@ -12,7 +12,7 @@ Cette méthode permet de représenter plusieurs stocks comparables pour chacune 
 #### Exemple :
 
 <p style="text-align: center;">
-<img src="img/waffle.png" alt="waffle_map" style="width: 480px;"/>
+<img src="img/waffle_fontaines.png" alt="waffle_map" style="width: 480px;"/>
 </p>
 
 - Champs utilisé : **HOMMES, FEMMES**

@@ -51,37 +51,35 @@ function handle_legend(layer) {
 *
 */
 function createLegend(layer, title) {
-  let renderer = current_layers[layer].renderer,
+  const renderer = current_layers[layer].renderer,
     field = current_layers[layer].rendered_field,
     field2 = current_layers[layer].rendered_field2,
-    type_layer = current_layers[layer].type,
-    el,
-    el2,
-    lgd_pos,
-    lgd_pos2;
+    type_layer = current_layers[layer].type;
+  let el,
+    el2;
 
-  lgd_pos = getTranslateNewLegend();
+  const lgd_pos = getTranslateNewLegend();
 
   if (renderer.indexOf('Choropleth') > -1 || renderer.indexOf('Gridded') > -1
             || renderer.indexOf('Stewart') > -1 || renderer.indexOf('TypoSymbols') > -1) {
     el = createLegend_choro(layer, field, title, field, 0);
   } else if (renderer.indexOf('Categorical') > -1) {
     el = createLegend_choro(layer, field, title, field, 4);
-  } else if (renderer.indexOf('Links') != -1
-          || renderer.indexOf('DiscLayer') != -1) {
+  } else if (renderer.indexOf('Links') !== -1
+          || renderer.indexOf('DiscLayer') !== -1) {
     el = createLegend_discont_links(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbolsChoro') != -1) {
+  } else if (renderer.indexOf('PropSymbolsChoro') !== -1) {
     el = createLegend_choro(layer, field2, title, field2, 0);
     el2 = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field)
                                 : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbolsTypo') != -1) {
+  } else if (renderer.indexOf('PropSymbolsTypo') !== -1) {
     el = createLegend_choro(layer, field2, title, field2, 4);
     el2 = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field)
                                 : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('PropSymbols') != -1) {
+  } else if (renderer.indexOf('PropSymbols') !== -1) {
     el = type_layer === 'Line' ? createLegend_line_symbol(layer, field, title, field)
                                : createLegend_symbol(layer, field, title, field);
-  } else if (renderer.indexOf('TwoStocksWaffle') != -1) {
+  } else if (renderer.indexOf('TwoStocksWaffle') !== -1) {
     el = createLegend_waffle(layer, field, title, '');
   } else {
     swal('Oops..',
@@ -96,11 +94,11 @@ function createLegend(layer, title) {
   }
   pos_lgds_elem.set(`${el.attr('id')} ${el.attr('class')}`, el.node().getBoundingClientRect());
   if (el2) {
-    let lgd_pos2 = getTranslateNewLegend(),
-      prev_bbox = el.node().getBoundingClientRect(),
+    const prev_bbox = el.node().getBoundingClientRect(),
       dim_h = lgd_pos.y + prev_bbox.height,
       dim_w = lgd_pos.x + prev_bbox.width;
-    if (lgd_pos2.x != lgd_pos.x || lgd_pos2.y != lgd_pos.y) {
+    const lgd_pos2 = getTranslateNewLegend();
+    if (lgd_pos2.x !== lgd_pos.x || lgd_pos2.y !== lgd_pos.y) {
       el2.attr('transform', `translate(${lgd_pos2.x},${lgd_pos2.y})`);
     } else if (dim_h < h) {
       el2.attr('transform', `translate(${lgd_pos.x},${dim_h})`);
@@ -112,57 +110,58 @@ function createLegend(layer, title) {
 }
 
 function up_legend(legend_node) {
-  let lgd_features = svg_map.querySelectorAll('.legend'),
-    nb_lgd_features = +lgd_features.length,
-    self_position;
+  const lgd_features = svg_map.querySelectorAll('.legend'),
+    nb_lgd_features = +lgd_features.length;
+  let self_position;
 
   for (let i = 0; i < nb_lgd_features; i++) {
-    if (lgd_features[i].id == legend_node.id
-          && lgd_features[i].classList == legend_node.classList) {
+    if (lgd_features[i].id === legend_node.id
+          && lgd_features[i].classList === legend_node.classList) {
       self_position = i;
     }
   }
-  if (self_position == nb_lgd_features - 1) {
-
-  } else {
+  // if (self_position === nb_lgd_features - 1) {
+  //
+  // } else {
+  //   svg_map.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
+  // }
+  if (!(self_position === nb_lgd_features - 1)) {
     svg_map.insertBefore(lgd_features[self_position + 1], lgd_features[self_position]);
   }
 }
 
 function down_legend(legend_node) {
-  let lgd_features = svg_map.querySelectorAll('.legend'),
-    nb_lgd_features = +lgd_features.length,
-    self_position;
+  const lgd_features = svg_map.querySelectorAll('.legend'),
+    nb_lgd_features = +lgd_features.length;
+  let self_position;
 
   for (let i = 0; i < nb_lgd_features; i++) {
-    if (lgd_features[i].id == legend_node.id
-        && lgd_features[i].classList == legend_node.classList) {
+    if (lgd_features[i].id === legend_node.id
+        && lgd_features[i].classList === legend_node.classList) {
       self_position = i;
     }
   }
-  if (self_position == 0) {
-
-  } else {
+  if (self_position !== 0) {
     svg_map.insertBefore(lgd_features[self_position], lgd_features[self_position - 1]);
   }
 }
 
 function make_legend_context_menu(legend_node, layer) {
-  let context_menu = new ContextMenu(),
-    getItems = () => [
-      { name: i18next.t('app_page.common.edit_style'), action: () => { createlegendEditBox(legend_node.attr('id'), layer); } },
-      { name: i18next.t('app_page.common.up_element'), action: () => { up_legend(legend_node.node()); } },
-      { name: i18next.t('app_page.common.down_element'), action: () => { down_legend(legend_node.node()); } },
-      { name: i18next.t('app_page.common.hide'),
-        action: () => {
-          if (!(legend_node.attr('display') == 'none')) legend_node.attr('display', 'none');
-          else legend_node.attr('display', null);
-        } },
-    ];
+  const context_menu = new ContextMenu();
+  const getItems = () => [
+    { name: i18next.t('app_page.common.edit_style'), action: () => { createlegendEditBox(legend_node.attr('id'), legend_node.attr('layer_name')); } },
+    { name: i18next.t('app_page.common.up_element'), action: () => { up_legend(legend_node.node()); } },
+    { name: i18next.t('app_page.common.down_element'), action: () => { down_legend(legend_node.node()); } },
+    { name: i18next.t('app_page.common.hide'),
+      action: () => {
+        if (!(legend_node.attr('display') === 'none')) legend_node.attr('display', 'none');
+        else legend_node.attr('display', null);
+      } },
+  ];
   legend_node.on('dblclick', () => {
     d3.event.stopPropagation();
     d3.event.preventDefault();
-    createlegendEditBox(legend_node.attr('id'), layer);
+    createlegendEditBox(legend_node.attr('id'), legend_node.attr('layer_name'));
   });
 
   legend_node.on('contextmenu', () => {
@@ -222,20 +221,20 @@ const drag_legend_func = function (legend_group) {
       legend_group.attr('transform', `translate(${new_value})`)
           .style('cursor', 'grabbing');
 
-      let bbox_elem = legend_group.node().getBoundingClientRect(),
-        map_offset = d3.event.subject.map_offset,
-        val_x = d3.event.x,
+      const bbox_elem = legend_group.node().getBoundingClientRect(),
+        map_offset = d3.event.subject.map_offset;
+      let val_x = d3.event.x,
         val_y = d3.event.y,
         change;
 
       if (_app.autoalign_features) {
-        let xy0 = get_map_xy0(),
+        const xy0 = get_map_xy0(),
           xmin = bbox_elem.left - xy0.x,
           xmax = bbox_elem.right - xy0.x,
           ymin = bbox_elem.top - xy0.y,
           ymax = bbox_elem.bottom - xy0.y;
 
-        let snap_lines_x = d3.event.subject.snap_lines.x,
+        const snap_lines_x = d3.event.subject.snap_lines.x,
           snap_lines_y = d3.event.subject.snap_lines.y;
         for (let i = 0; i < snap_lines_x.length; i++) {
           if (Math.abs(snap_lines_x[i][0] - xmin) < 10) {
@@ -308,7 +307,7 @@ function createLegend_waffle(layer, fields, title, subtitle, rect_fill_value, ra
     })
     .styles({
       cursor: 'grab',
-      font: '11px "Enriqueta", arial, serif'
+      font: '11px "Enriqueta", arial, serif',
     });
 
   const rect_under_legend = legend_root.insert('rect');
@@ -320,7 +319,7 @@ function createLegend_waffle(layer, fields, title, subtitle, rect_fill_value, ra
     .text(title || '');
 
   legend_root.insert('text')
-    .attrs({ 'id': 'legendsubtitle', x: xpos + space_elem, y: ypos + 15 })
+    .attrs({ id: 'legendsubtitle', x: xpos + space_elem, y: ypos + 15 })
     .style('font', 'italic 12px "Enriqueta", arial, serif')
     .text(subtitle);
 
@@ -353,7 +352,7 @@ function createLegend_waffle(layer, fields, title, subtitle, rect_fill_value, ra
     .styles({ 'alignment-baseline': 'middle', 'font-size': '10px' })
     .text(d => d[0]);
 
-  let legend_symbol_size = legend_root.append('g');
+  const legend_symbol_size = legend_root.append('g');
   if (symbol === 'rect') {
     legend_symbol_size
       .insert('rect')
@@ -390,7 +389,7 @@ function createLegend_waffle(layer, fields, title, subtitle, rect_fill_value, ra
 }
 
 function createLegend_discont_links(layer, field, title, subtitle, rect_fill_value, rounding_precision, note_bottom) {
-  let space_elem = 18,
+  const space_elem = 18,
     boxgap = 12,
     xpos = 30,
     ypos = 30,
@@ -399,7 +398,7 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
     breaks = current_layers[layer].breaks,
     nb_class = breaks.length;
 
-  if (rounding_precision == undefined) {
+  if (rounding_precision === undefined) {
     const b_val = breaks.map((v, i) => v[0][0]).concat(breaks[nb_class - 1][0][1]);
     rounding_precision = get_lgd_display_precision(b_val);
   }
@@ -423,18 +422,20 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
   // Prepare symbols for the legend, taking care of not representing values
   // under the display threshold defined by the user (if any) :
   let current_min_value = +current_layers[layer].min_display;
-  if (current_layers[layer].renderer == 'DiscLayer') {
+  if (current_layers[layer].renderer === 'DiscLayer') {
   // Todo use the same way to store the threshold for links and disclayer
   // in order to avoid theses condition
     const values = Array.prototype.map.call(
       svg_map.querySelector(`#${_app.layer_to_id.get(layer)}`).querySelectorAll('path'),
       d => +d.__data__.properties.disc_value);
-    current_min_value = current_min_value != 1
-                ? values[Math.round(current_min_value * current_layers[layer].n_features)]
-                : values[values.length - 1];
+    current_min_value = current_min_value !== 1
+      ? values[Math.round(current_min_value * current_layers[layer].n_features)]
+      : values[values.length - 1];
   }
-  for (const b_val of breaks) {
-    if (b_val[1] != 0) {
+  // for (const b_val of breaks) {
+  for (let ix = 0; ix < nb_class; ix++) {
+    const b_val = breaks[ix];
+    if (b_val[1] !== 0) {
       if (current_min_value >= +b_val[0][0] && current_min_value < +b_val[0][1]) {
         ref_symbols_params.push({ value: [current_min_value, b_val[0][1]], size: b_val[1] });
       } else if (current_min_value < +b_val[0][0] && current_min_value < +b_val[0][1]) {
@@ -448,14 +449,15 @@ function createLegend_discont_links(layer, field, title, subtitle, rect_fill_val
   const legend_elems = legend_root.selectAll('.legend')
     .append('g')
     .data(ref_symbols_params)
-    .enter().insert('g')
+    .enter()
+    .insert('g')
     .attr('class', (d, i) => `lg legend_${i}`);
 
-  let max_size = current_layers[layer].size[1],
-    last_size = 0,
-    last_pos = y_pos2,
+  const max_size = current_layers[layer].size[1],
     color = current_layers[layer].fill_color.single,
     xrect = xpos + space_elem + max_size / 2;
+  let last_size = 0,
+    last_pos = y_pos2;
 
   legend_elems
     .append('rect')
@@ -613,10 +615,10 @@ function createLegend_symbol(layer, field, title, subtitle, nested = 'false', re
     { size: propSize.scale(t[2].value) * z_scale, value: t[2].value },
     { size: propSize.scale(t[3].value) * z_scale, value: t[3].value },
   ];
-  if (ref_symbols_params[3].value == 0) {
+  if (ref_symbols_params[3].value === 0) {
     ref_symbols_params.pop();
   }
-  if (ref_symbols_params[2].value == 0) {
+  if (ref_symbols_params[2].value === 0) {
     ref_symbols_params.pop();
   }
   const legend_elems = legend_root.selectAll('.legend')
@@ -725,7 +727,7 @@ function createLegend_symbol(layer, field, title, subtitle, nested = 'false', re
     }
   }
 
-  if (current_layers[layer].break_val != undefined) {
+  if (current_layers[layer].break_val !== undefined) {
     const bottom_colors = legend_root.append('g');
     bottom_colors.insert('text').attr('id', 'col1_txt')
       .attr('x', xpos + space_elem)
@@ -775,7 +777,7 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
   const ref_symbols = document.getElementById(_app.layer_to_id.get(layer)).getElementsByTagName('path');
   const type_param = 'strokeWidth';
 
-  let non_empty = Array.prototype.filter.call(ref_symbols, d => d.style[type_param] !== '0'),
+  const non_empty = Array.prototype.filter.call(ref_symbols, d => d.style[type_param] !== '0'),
     size_max = +non_empty[0].style[type_param],
     size_min = +non_empty[non_empty.length - 1].style[type_param],
     val_max = Math.abs(+non_empty[0].__data__.properties[field]),
@@ -793,7 +795,7 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
         { size: size_min, value: val_min },
     ];
 
-  if (rounding_precision == undefined) {
+  if (rounding_precision === undefined) {
     rounding_precision = get_lgd_display_precision(ref_symbols_params.map(d => d.value));
   }
 
@@ -819,7 +821,8 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
   const legend_elems = legend_root.selectAll('.legend')
     .append('g')
     .data(ref_symbols_params)
-    .enter().insert('g')
+    .enter()
+    .insert('g')
     .attr('class', (d, i) => `lg legend_${i}`);
 
   let last_size = 0;
@@ -862,7 +865,7 @@ function createLegend_line_symbol(layer, field, title, subtitle, rect_fill_value
 
 const get_lgd_display_precision = function (breaks) {
   // Set rounding precision to 0 if they are all integers :
-  if (breaks.filter(b => (b | 0) == b).length == breaks.length) {
+  if (breaks.filter(b => (b | 0) === b).length === breaks.length) {
     return 0;
   }
   // Compute the difference between each break to set
@@ -891,18 +894,19 @@ const get_lgd_display_precision = function (breaks) {
   return undefined;
 };
 
-function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill_value, rounding_precision, no_data_txt, note_bottom) {
+function createLegend_choro(layer, field, title, subtitle, box_gap = 0, rect_fill_value, rounding_precision, no_data_txt, note_bottom) {
   const boxheight = 18,
     boxwidth = 18,
     xpos = 30,
-    ypos = 30;
-  let last_pos = null,
+    ypos = 30,
     y_pos2 = ypos + boxheight * 1.8,
-    tmp_class_name = ['legend', 'legend_feature', `lgdf_${_app.layer_to_id.get(layer)}`].join(' '),
+    tmp_class_name = ['legend', 'legend_feature', `lgdf_${_app.layer_to_id.get(layer)}`].join(' ');
+
+  const boxgap = +box_gap;
+
+  let last_pos = null,
     nb_class,
     data_colors_label;
-
-  boxgap = +boxgap;
 
   if (current_layers[layer].renderer.indexOf('Categorical') > -1 || current_layers[layer].renderer.indexOf('PropSymbolsTypo') > -1) {
     data_colors_label = [];
@@ -919,7 +923,7 @@ function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill
   } else {
     data_colors_label = current_layers[layer].colors_breaks.map(obj => ({ value: obj[0], color: obj[1] }));
     nb_class = current_layers[layer].colors_breaks.length;
-    if (rounding_precision == undefined) {
+    if (rounding_precision === undefined) {
       const breaks = current_layers[layer].options_disc.breaks;
       rounding_precision = get_lgd_display_precision(breaks);
     }
@@ -948,7 +952,8 @@ function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill
   const legend_elems = legend_root.selectAll('.legend')
     .append('g')
     .data(data_colors_label)
-    .enter().insert('g')
+    .enter()
+    .insert('g')
     .attr('class', (d, i) => `lg legend_${i}`);
 
   if (current_layers[layer].renderer.indexOf('TypoSymbols') === -1) {
@@ -1035,7 +1040,7 @@ function createLegend_choro(layer, field, title, subtitle, boxgap = 0, rect_fill
 }
 
 function display_box_value_symbol(layer_name) {
-  let symbol_type = current_layers[layer_name].symbol,
+  const symbol_type = current_layers[layer_name].symbol,
     field = current_layers[layer_name].rendered_field,
     ref_symbols = document.getElementById(_app.layer_to_id.get(layer_name)).getElementsByTagName(symbol_type),
     type_param = symbol_type === 'circle' ? 'r' : 'width',
@@ -1047,7 +1052,7 @@ function display_box_value_symbol(layer_name) {
     const rendered_field = current_layers[layer_name].rendered_field;
     const nested = legend_node.getAttribute('nested');
     const rounding_precision = legend_node.getAttribute('rounding_precision');
-    let lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
+    const lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
       lgd_subtitle = legend_node.querySelector('#legendsubtitle').innerHTML,
       note = legend_node.querySelector('#legend_bottom_note').innerHTML;
     return (values) => {
@@ -1166,7 +1171,7 @@ function createlegendEditBox(legend_id, layer_name) {
     legend_node_d3 = d3.select(legend_node);
     legend_boxes = legend_node_d3.selectAll(['#', legend_id, ' .lg'].join('')).select('text');
   }
-  var layer_id = _app.layer_to_id.get(layer_name);
+  const layer_id = _app.layer_to_id.get(layer_name);
   let box_class,
     legend_node,
     title_content,
@@ -1192,7 +1197,7 @@ function createlegendEditBox(legend_id, layer_name) {
     ratio_waffle_txt: ratio_waffle_txt != null ? ratio_waffle_txt.textContent : null,
   }; // , source_content: source_content.textContent ? source_content.textContent : ""
 
-  if (legend_node.getAttribute('visible_rect') == 'true') {
+  if (legend_node.getAttribute('visible_rect') === 'true') {
     rect_fill_value = {
       color: legend_node.querySelector('#under_rect').style.fill,
       opacity: legend_node.querySelector('#under_rect').style.fillOpacity,
@@ -1292,7 +1297,7 @@ function createlegendEditBox(legend_id, layer_name) {
       });
   }
 
-  if (legend_id == 'legend_root_symbol') {
+  if (legend_id === 'legend_root_symbol') {
     const choice_break_value_section1 = box_body.insert('p')
       .styles({ 'text-align': 'center', 'margin-top': '25px !important' });
     choice_break_value_section1.append('span')
@@ -1320,7 +1325,7 @@ function createlegendEditBox(legend_id, layer_name) {
       max_nb_decimals = get_max_nb_dec(layer_name);
       max_nb_left = get_max_nb_left_sep(layer_name);
     } else {
-      let nb_dec = [],
+      const nb_dec = [],
         nb_left = [];
       legend_boxes.each((d) => {
         nb_dec.push(get_nb_decimals(d.value));
@@ -1334,7 +1339,7 @@ function createlegendEditBox(legend_id, layer_name) {
       if (legend_node.getAttribute('rounding_precision')) {
         current_nb_dec = legend_node.getAttribute('rounding_precision');
       } else {
-        let nbs = [],
+        const nbs = [],
           nb_dec = [];
         legend_boxes.each(function () { nbs.push(this.textContent); });
         for (let i = 0; i < nbs.length; i++) {
@@ -1383,7 +1388,7 @@ function createlegendEditBox(legend_id, layer_name) {
   }
 
   if (legend_id === 'legend_root') {
-    const current_state = +legend_node.getAttribute('boxgap') == 0;
+    const current_state = +legend_node.getAttribute('boxgap') === 0;
     const gap_section = box_body.insert('p');
     gap_section.append('input')
       .style('margin-left', '0px')
@@ -1393,14 +1398,14 @@ function createlegendEditBox(legend_id, layer_name) {
         legend_node = svg_map.querySelector(['#legend_root.lgdf_', _app.layer_to_id.get(layer_name)].join(''));
         const boxgap = +legend_node.getAttribute('boxgap') == 0 ? 4 : 0;
         const rounding_precision = legend_node.getAttribute('rounding_precision');
-        let transform_param = legend_node.getAttribute('transform'),
+        const transform_param = legend_node.getAttribute('transform'),
           lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
           lgd_subtitle = legend_node.querySelector('#legendsubtitle').innerHTML,
           note = legend_node.querySelector('#legend_bottom_note').innerHTML;
-        let no_data_txt = legend_node.querySelector('#no_data_txt');
-        no_data_txt = no_data_txt != null ? no_data_txt.textContent : null;
+        let _no_data_txt = legend_node.querySelector('#no_data_txt');
+        _no_data_txt = _no_data_txt != null ? _no_data_txt.textContent : null;
         legend_node.remove();
-        createLegend_choro(layer_name, rendered_field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, no_data_txt, note);
+        createLegend_choro(layer_name, rendered_field, lgd_title, lgd_subtitle, boxgap, rect_fill_value, rounding_precision, _no_data_txt, note);
         bind_selections();
         if (transform_param) {
           svg_map.querySelector(['#legend_root.lgdf_', _app.layer_to_id.get(layer_name)].join('')).setAttribute('transform', transform_param);
@@ -1411,8 +1416,8 @@ function createlegendEditBox(legend_id, layer_name) {
         .html(i18next.t('app_page.legend_style_box.gap_boxes'));
 
     document.getElementById('style_lgd').checked = current_state;
-  } else if (legend_id == 'legend_root_symbol') {
-    const current_state = legend_node.getAttribute('nested') == 'true';
+  } else if (legend_id === 'legend_root_symbol') {
+    const current_state = legend_node.getAttribute('nested') === 'true';
     const gap_section = box_body.insert('p');
     gap_section.append('input')
       .style('margin-left', '0px')
@@ -1420,9 +1425,9 @@ function createlegendEditBox(legend_id, layer_name) {
       .on('change', () => {
         legend_node = svg_map.querySelector(['#legend_root_symbol.lgdf_', _app.layer_to_id.get(layer_name)].join(''));
         const rendered_field = current_layers[layer_name].rendered_field;
-        const nested = legend_node.getAttribute('nested') == 'true' ? 'false' : 'true';
+        const nested = legend_node.getAttribute('nested') === 'true' ? 'false' : 'true';
         const rounding_precision = legend_node.getAttribute('rounding_precision');
-        let transform_param = legend_node.getAttribute('transform'),
+        const transform_param = legend_node.getAttribute('transform'),
           lgd_title = legend_node.querySelector('#legendtitle').innerHTML,
           lgd_subtitle = legend_node.querySelector('#legendsubtitle').innerHTML,
           note = legend_node.querySelector('#legend_bottom_note').innerHTML;
@@ -1455,8 +1460,8 @@ function createlegendEditBox(legend_id, layer_name) {
     .on('change', function () {
       if (this.checked) {
         rectangle_options2.style('display', '');
-        const a = document.getElementById('choice_color_under_rect');
-        rect_fill_value = a ? { color: a.value, opacity: 1 } : { color: '#ffffff', opacity: 1 };
+        const r = document.getElementById('choice_color_under_rect');
+        rect_fill_value = r ? { color: r.value, opacity: 1 } : { color: '#ffffff', opacity: 1 };
       } else {
         rectangle_options2.style('display', 'none');
         rect_fill_value = {};
@@ -1511,7 +1516,7 @@ function move_legends() {
   }
 }
 
-var get_max_nb_dec = function (layer_name) {
+const get_max_nb_dec = function (layer_name) {
   if (!(current_layers[layer_name]) || !(current_layers[layer_name].colors_breaks)) { return; }
   let max = 0;
   current_layers[layer_name].colors_breaks.forEach((el) => {
@@ -1532,12 +1537,12 @@ function _get_max_nb_left_sep(values) {
   return max_fast(values.map(d => (`${d}`).split('.')[0].length));
 }
 
-var get_max_nb_left_sep = function (layer_name) {
+const get_max_nb_left_sep = function (layer_name) {
   if (!(current_layers[layer_name]) || !(current_layers[layer_name].colors_breaks)) { return; }
   const nb_left = [];
   current_layers[layer_name].colors_breaks.forEach((el) => {
     const tmp = el[0].split(' - ');
-    let p1 = tmp[0].indexOf('.'),
+    const p1 = tmp[0].indexOf('.'),
       p2 = tmp[1].indexOf('.');
     nb_left.push(p1);
     nb_left.push(p2);

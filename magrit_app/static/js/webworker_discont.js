@@ -5,7 +5,7 @@ onmessage = function (e) {
     topo_mesh = topojson.mesh,
     math_max = Math.max;
 
-  const getId = id_field != undefined
+  const getId = id_field !== undefined
       ? (a, b) => [[a.properties[id_field], b.properties[id_field]].join('_'), [b.properties[id_field], a.properties[id_field]].join('_')]
       : (a, b) => [[a.id, b.id].join('_'), [b.id, a.id].join('_')];
 
@@ -41,7 +41,9 @@ onmessage = function (e) {
 
   let arr_disc = [],
     arr_tmp = [];
-  for (const kv of result_value.entries()) {
+  let entries = Array.from(result_value.entries());
+  for (let i = 0, n = entries.length; i < n; i++) {
+    let kv = entries[i];
     if (!isNaN(kv[1])) {
       arr_disc.push(kv);
       arr_tmp.push(kv[1]);
@@ -61,7 +63,7 @@ onmessage = function (e) {
           b_id = id_ft.split('_')[1];
         const [ref_a_id, ref_b_id] = getId(a, b)[0].split('_');
         return a != b
-                  && (ref_a_id == a_id && ref_b_id == b_id || ref_a_id == b_id && ref_b_id == a_id);
+                  && (ref_a_id === a_id && ref_b_id === b_id || ref_a_id === b_id && ref_b_id === a_id);
       });
     d_res.push([val, { id: id_ft, disc_value: val }, datum]);
   }

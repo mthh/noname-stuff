@@ -14,7 +14,7 @@ class UserArrow {
     this.id = id;
     this.stroke_width = 4;
     this.color = 'rgb(0, 0, 0)';
-
+    this.hide_head = undefined;
     if (!untransformed) {
       const zoom_param = svg_map.__zoom;
       this.pt1 = [(origin_pt[0] - zoom_param.x) / zoom_param.k, (origin_pt[1] - zoom_param.y) / zoom_param.k],
@@ -50,7 +50,7 @@ class UserArrow {
       })
       .on('drag', function () {
         d3.event.sourceEvent.preventDefault();
-        let _t = this.querySelector('line'),
+        const _t = this.querySelector('line'),
           arrow_head_size = +_t.style.strokeWidth.replace('px', ''),
           subject = d3.event.subject,
           tx = (+d3.event.x - +subject.x) / svg_map.__zoom.k,
@@ -97,10 +97,9 @@ class UserArrow {
         _t.y2.baseVal.value = self.pt2[1];
       });
 
-    let defs = parent.querySelector('defs'),
-      markers = defs ? defs.querySelector('marker') : null;
+    const markers_exists = (defs ? defs.node().querySelector('marker') : null);
 
-    if (!markers) {
+    if (!markers_exists) {
       this.add_defs_marker();
     }
     this.draw();
@@ -116,16 +115,16 @@ class UserArrow {
         markerWidth: 4,
         markerHeight: 4 })
       .style('stroke-width', 1)
-  	.append('path')
-  	.attr('d', 'M0,-5L10,0L0,5')
-  	.attr('class', 'arrowHead');
-    if (this.parent.childNodes[0].tagName != 'defs') {
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('class', 'arrowHead');
+    if (this.parent.childNodes[0].tagName !== 'defs') {
       this.parent.insertBefore(defs.node(), this.parent.childNodes[0]);
     }
   }
 
   draw() {
-    let context_menu = new ContextMenu(),
+    const context_menu = new ContextMenu(),
       getItems = () => [
         { name: i18next.t('app_page.common.edit_style'), action: () => { this.editStyle(); } },
         { name: i18next.t('app_page.common.up_element'), action: () => { this.up_element(); } },
@@ -138,11 +137,12 @@ class UserArrow {
       .attrs({ class: 'arrow legend scalable-legend', id: this.id, transform: svg_map.__zoom.toString() });
 
     this.arrow.insert('line')
-  		.attrs({ 'marker-end': 'url(#arrow_head)',
-        			  x1: this.pt1[0],
-                y1: this.pt1[1],
-        			  x2: this.pt2[0],
-                y2: this.pt2[1] })
+      .attrs({
+        'marker-end': this.hide_head ? null : 'url(#arrow_head)',
+        x1: this.pt1[0],
+        y1: this.pt1[1],
+        x2: this.pt2[0],
+        y2: this.pt2[1] })
       .styles({ 'stroke-width': this.stroke_width, stroke: 'rgb(0, 0, 0)' });
 
     this.arrow.call(this.drag_behavior);
@@ -173,7 +173,7 @@ class UserArrow {
   }
 
   handle_ctrl_pt() {
-    let self = this,
+    const self = this,
       line = self.arrow.node().querySelector('line'),
       zoom_params = svg_map.__zoom,
       map_locked = !!map_div.select('#hand_button').classed('locked'),
@@ -227,7 +227,7 @@ class UserArrow {
       .attrs({ x: self.pt1[0] * zoom_params.k + zoom_params.x - 3, y: self.pt1[1] * zoom_params.k + zoom_params.y - 3, height: 6, width: 6, id: 'arrow_start_pt' })
       .styles({ fill: 'red', cursor: 'grab' })
       .call(d3.drag().on('drag', function () {
-        let t = d3.select(this),
+        const t = d3.select(this),
           nx = d3.event.x,
           ny = d3.event.y;
         t.attrs({ x: nx - 3, y: ny - 3 });
@@ -238,7 +238,7 @@ class UserArrow {
       .attrs({ x: self.pt2[0] * zoom_params.k + zoom_params.x - 3, y: self.pt2[1] * zoom_params.k + zoom_params.y - 3, height: 6, width: 6, id: 'arrow_end_pt' })
       .styles({ fill: 'red', cursor: 'grab' })
       .call(d3.drag().on('drag', function () {
-        let t = d3.select(this),
+        const t = d3.select(this),
           nx = d3.event.x,
           ny = d3.event.y;
         t.attrs({ x: nx - 3, y: ny - 3 });
@@ -255,13 +255,13 @@ class UserArrow {
   }
 
   calcAngle() {
-    let dx = this.pt2[0] - this.pt1[0],
+    const dx = this.pt2[0] - this.pt1[0],
       dy = this.pt2[1] - this.pt1[1];
     return atan2(dy, dx) * (180 / PI);
   }
 
   calcDestFromOAD(origin, angle, distance) {
-    let theta = angle / (180 / PI),
+    const theta = angle / (180 / PI),
       dx = distance * cos(theta),
       dy = distance * sin(theta);
     return [origin[0] + dx, origin[1] + dy];
@@ -270,7 +270,7 @@ class UserArrow {
   editStyle() {
     const current_options = { pt1: this.pt1.slice(),
       pt2: this.pt2.slice() };
-    let self = this,
+    const self = this,
       line = self.arrow.node().querySelector('line'),
       angle = (-this.calcAngle()).toFixed(0),
       map_locked = !!map_div.select('#hand_button').classed('locked');
@@ -303,7 +303,11 @@ class UserArrow {
         if (!map_locked) handle_click_hand('unlock');
       });
 
-    const box_content = d3.select('.styleBoxArrow').select('.modal-body').style('width', '295px').insert('div').attr('id', 'styleBoxArrow');
+    const box_content = d3.select('.styleBoxArrow')
+      .select('.modal-body')
+      .style('width', '295px')
+      .insert('div')
+      .attr('id', 'styleBoxArrow');
     const s1 = box_content.append('p').attr('class', 'line_elem2');
     s1.append('span').html(i18next.t('app_page.arrow_edit_box.arrowWeight'));
     s1.insert('span').styles({ float: 'right', width: '13px' }).html('px');
@@ -339,12 +343,31 @@ class UserArrow {
       .attrs({ id: 'arrow_angle', type: 'range', value: angle, min: 0, max: 360, step: 1 })
       .styles({ width: '80px', 'vertical-align': 'middle', float: 'right' })
       .on('change', function () {
-        const distance = sqrt((self.pt1[0] - self.pt2[0]) * (self.pt1[0] - self.pt2[0]) + (self.pt1[1] - self.pt2[1]) * (self.pt1[1] - self.pt2[1]));
-        const angle = -(+this.value);
-        const [nx, ny] = self.calcDestFromOAD(self.pt1, angle, distance);
+        const distance = sqrt(
+          (self.pt1[0] - self.pt2[0]) * (self.pt1[0] - self.pt2[0])
+          + (self.pt1[1] - self.pt2[1]) * (self.pt1[1] - self.pt2[1]));
+        const _angle = -(+this.value);
+        const [nx, ny] = self.calcDestFromOAD(self.pt1, _angle, distance);
         line.x2.baseVal.value = nx;
         line.y2.baseVal.value = ny;
         document.getElementById('arrow_angle_text').value = +this.value;
+      });
+    const s3 = box_content.append('p').attr('class', 'line_elem2');
+    s3.append('label')
+      .attrs({ for: 'checkbox_head_arrow' })
+      .html(i18next.t('app_page.arrow_edit_box.arrowHead'));
+    s3.append('input')
+      .attrs({ type: 'checkbox', id: 'checkbox_head_arrow' })
+      .styles({ 'margin-left': '45px', 'vertical-align': 'middle' })
+      .property('checked', self.hide_head === true)
+      .on('change', function () {
+        if (this.checked) {
+          self.hide_head = true;
+          self.arrow.select('line').attr('marker-end', null);
+        } else {
+          self.hide_head = false;
+          self.arrow.select('line').attr('marker-end', 'url(#arrow_head)');
+        }
       });
   }
 }
@@ -392,8 +415,8 @@ class Textbox {
         elem.selectAll('tspan').attr('x', +d3.event.x);
 
         if (_app.autoalign_features) {
-          let t = elem.node();
-          let bbox = t.getBoundingClientRect(),
+          const t = elem.node();
+          const bbox = t.getBoundingClientRect(),
             xmin = t.x.baseVal.value,
             xmax = xmin + bbox.width,
             ymin = t.y.baseVal.value,
@@ -517,7 +540,10 @@ class Textbox {
     this.width = bbox.width;
     this.height = bbox.height;
     this.group.select('rect')
-      .attrs({ x: bbox.left - x0 - 10, y: bbox.top - y0 - 10, height: this.height + 20, width: this.width + 20 });
+      .attrs({ x: bbox.left - x0 - 10,
+        y: bbox.top - y0 - 10,
+        height: this.height + 20,
+        width: this.width + 20 });
   }
 
   editStyle() {
@@ -575,7 +601,7 @@ class Textbox {
       current_rotate = 0;
     }
 
-    let bbox = text_elem.node().getBoundingClientRect(),
+    const bbox = text_elem.node().getBoundingClientRect(),
       nx = bbox.left - map_xy0.x,
       ny = bbox.top - map_xy0.y,
       x_center = nx + bbox.width / 2,
@@ -624,7 +650,7 @@ class Textbox {
     available_fonts.forEach((font) => {
       font_select.append('option').text(font[0]).attr('value', font[1]);
     });
-    font_select.node().selectedIndex = available_fonts.map(d => d[1] === self.fontFamily ? '1' : '0').indexOf('1');
+    font_select.node().selectedIndex = available_fonts.map(d => (d[1] === self.fontFamily ? '1' : '0')).indexOf('1');
 
     options_font.append('input')
       .attrs({ type: 'number', id: 'font_size', min: 0, max: 34, step: 0.1, value: self.fontSize })
@@ -650,15 +676,15 @@ class Textbox {
     const options_format = box_content.append('p').style('text-align', 'center');
     const btn_bold = options_format
       .insert('span')
-      .attr('class', current_options.font_weight == 'bold' ? 'active button_disc' : 'button_disc')
+      .attr('class', current_options.font_weight === 'bold' ? 'active button_disc' : 'button_disc')
       .html('<img title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=">');
     const btn_italic = options_format
       .insert('span')
-      .attr('class', current_options.font_style == 'italic' ? 'active button_disc' : 'button_disc')
+      .attr('class', current_options.font_style === 'italic' ? 'active button_disc' : 'button_disc')
       .html('<img title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==">');
     const btn_underline = options_format
       .insert('span')
-      .attr('class', current_options.text_decoration == 'underline' ? 'active button_disc' : 'button_disc')
+      .attr('class', current_options.text_decoration === 'underline' ? 'active button_disc' : 'button_disc')
       .html('<img title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7">');
 
     const content_modif_zone = box_content.append('p');
@@ -746,7 +772,7 @@ class Textbox {
       .attrs({ type: 'color', value: current_options.buffer !== undefined ? current_options.buffer.color : '#FFFFFF' })
       .on('change', function () {
         self.buffer.color = this.value;
-        let color = self.buffer.color,
+        const color = self.buffer.color,
           size = self.buffer.size;
         text_elem
           .style('text-shadow',
@@ -809,7 +835,7 @@ const scaleBar = {
     //   }).then(() => { null; }, () => { null; });
     //   return;
     // }
-    let scale_gp = map.append('g').attr('id', 'scale_bar').attr('class', 'legend scale'),
+    const scale_gp = map.append('g').attr('id', 'scale_bar').attr('class', 'legend scale'),
       x_pos = 40,
       y_pos = h - 100,
       bar_size = 50,
@@ -882,7 +908,7 @@ const scaleBar = {
     pos_lgds_elem.set(`${scale_gp.attr('id')} ${scale_gp.attr('class')}`, scale_gp.node().getBoundingClientRect());
   },
   getDist() {
-    let x_pos = w / 2,
+    const x_pos = w / 2,
       y_pos = h / 2,
       transform = d3.zoomTransform(svg_map),
       z_trans = [transform.x, transform.y],
@@ -893,7 +919,7 @@ const scaleBar = {
       this.bar_size = 50;
     }
 
-    let pt1 = proj.invert([(x_pos - z_trans[0]) / z_scale, (y_pos - z_trans[1]) / z_scale]),
+    const pt1 = proj.invert([(x_pos - z_trans[0]) / z_scale, (y_pos - z_trans[1]) / z_scale]),
       pt2 = proj.invert([(x_pos + this.bar_size - z_trans[0]) / z_scale, (y_pos - z_trans[1]) / z_scale]);
     if (!pt1 || !pt2) {
       this.remove();
@@ -960,8 +986,8 @@ const scaleBar = {
     }
   },
   editStyle() {
-    let new_val,
-      self = this,
+    let new_val;
+    const self = this,
       redraw_now = () => {
         if (new_val) { self.resize(new_val); } else {
           self.fixed_size = false;
@@ -1034,8 +1060,8 @@ const scaleBar = {
     e.append('input')
       .style('float', 'right')
       .attrs({ id: 'checkbox_start_end_bar', type: 'checkbox' })
-      .on('change', (a) => {
-        self.start_end_bar = self.start_end_bar != true;
+      .on('change', (_) => {
+        self.start_end_bar = self.start_end_bar !== true;
         self.handle_start_end_bar();
       });
     document.getElementById('checkbox_start_end_bar').checked = self.start_end_bar;
@@ -1096,7 +1122,7 @@ const northArrow = {
         self.x_center = tx - 7.5 + dim;
         self.y_center = ty - 7.5 + dim;
         if (_app.autoalign_features) {
-          let bbox = t2.getBoundingClientRect(),
+          const bbox = t2.getBoundingClientRect(),
             xy0_map = get_map_xy0(),
             xmin = t2.x.baseVal.value,
             xmax = xmin + bbox.width,
@@ -1148,7 +1174,7 @@ const northArrow = {
 
     const arrow_context_menu = new ContextMenu();
 
-    let bbox = document.getElementById('north_arrow').getBoundingClientRect(),
+    const bbox = document.getElementById('north_arrow').getBoundingClientRect(),
       xy0_map = get_map_xy0();
 
     this.under_rect = arrow_gp.append('g')
@@ -1186,7 +1212,7 @@ const northArrow = {
     this.displayed = false;
   },
   editStyle() {
-    let self = this,
+    const self = this,
       old_dim = +self.under_rect.attr('width'),
       old_rotate = !isNaN(+self.svg_node.attr('rotate')) ? +self.svg_node.attr('rotate') : 0,
       x_pos = +self.x_center - old_dim / 2,

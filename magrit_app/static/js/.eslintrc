@@ -15,6 +15,7 @@
     "object-shorthand": 1,
     "one-var": ["warn", "never"],
     "no-mixed-operators": 0,
+    "no-prototype-builtins": 0,
     "no-undef": 1,
     "no-unused-vars": 0,
     "no-use-before-define": 1,

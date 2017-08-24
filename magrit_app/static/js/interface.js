@@ -65,8 +65,8 @@ function handle_upload_files(files, target_layer_on_add, elem) {
       allowOutsideClick: false });
   }
   if (!(files.length === 1)) {
-    var files_to_send = [];
-    Array.prototype.forEach.call(files, f =>
+    const files_to_send = [];
+    Array.prototype.forEach.call(files, (f) =>
         f.name.indexOf('.shp') > -1
             || f.name.indexOf('.dbf') > -1
             || f.name.indexOf('.shx') > -1
@@ -75,24 +75,28 @@ function handle_upload_files(files, target_layer_on_add, elem) {
             ? files_to_send.push(f) : null)
     elem.style.border = '';
     if (target_layer_on_add && _app.targeted_layer_added) {
-            swal({title: i18next.t('app_page.common.error') + '!',
-                  text: i18next.t('app_page.common.error_only_one'),
-                  customClass: 'swal2_custom',
-                  type: 'error',
-                  allowEscapeKey: false,
-                  allowOutsideClick: false});
+      swal({
+        title: i18next.t('app_page.common.error') + '!',
+        text: i18next.t('app_page.common.error_only_one'),
+        customClass: 'swal2_custom',
+        type: 'error',
+        allowEscapeKey: false,
+        allowOutsideClick: false,
+      });
     } else if (files_to_send.length >= 4 && files_to_send.length <= 6) {
-        handle_shapefile(files_to_send, target_layer_on_add);
-        elem.style.border = '';
+      handle_shapefile(files_to_send, target_layer_on_add);
+      elem.style.border = '';
     } else {
-        // elem.style.border = '3px dashed red';
-        elem.style.border = '';
-        return swal({title: i18next.t('app_page.common.error') + '!',
-              text: i18next.t('app_page.common.alert_upload1'),
-              customClass: 'swal2_custom',
-              type: 'error',
-              allowEscapeKey: false,
-              allowOutsideClick: false});
+      // elem.style.border = '3px dashed red';
+      elem.style.border = '';
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
+        text: i18next.t('app_page.common.alert_upload1'),
+        customClass: 'swal2_custom',
+        type: 'error',
+        allowEscapeKey: false,
+        allowOutsideClick: false,
+      });
     }
   } else if (files[0].name.toLowerCase().indexOf('json') > -1 ||
           files[0].name.toLowerCase().indexOf('zip') > -1 ||
@@ -142,15 +146,15 @@ function handle_upload_files(files, target_layer_on_add, elem) {
               type: 'error',
               customClass: 'swal2_custom',
               allowOutsideClick: false,
-              allowEscapeKey: false
+              allowEscapeKey: false,
             });
           }
         };
         rd.readAsText(files[0]);
       }
     }
-  } else if (files[0].name.toLowerCase().indexOf('.csv')  > -1
-              || files[0].name.toLowerCase().indexOf('.tsv')  > -1) {
+  } else if (files[0].name.toLowerCase().indexOf('.csv') > -1
+              || files[0].name.toLowerCase().indexOf('.tsv') > -1) {
     elem.style.border = '';
     if (target_layer_on_add) {
       handle_dataset(files[0], target_layer_on_add);
@@ -161,11 +165,10 @@ function handle_upload_files(files, target_layer_on_add, elem) {
         type: 'error',
         customClass: 'swal2_custom',
         allowEscapeKey: false,
-        allowOutsideClick: false
+        allowOutsideClick: false,
       });
     }
-  } else if (files[0].name.toLowerCase().indexOf('.xls')  > -1
-            || files[0].name.toLowerCase().indexOf('.ods')  > -1) {
+  } else if (files[0].name.toLowerCase().indexOf('.xls') > -1 || files[0].name.toLowerCase().indexOf('.ods') > -1) {
     elem.style.border = '';
     if (target_layer_on_add) {
       convert_dataset(files[0]);
@@ -176,32 +179,37 @@ function handle_upload_files(files, target_layer_on_add, elem) {
         type: 'error',
         customClass: 'swal2_custom',
         allowEscapeKey: false,
-        allowOutsideClick: false
+        allowOutsideClick: false,
       });
     }
   } else {
     elem.style.border = '';
     let shp_part;
-    Array.prototype.forEach.call(files, (f) =>
+    Array.prototype.forEach.call(files, f =>
         f.name.indexOf('.shp') > -1
             || f.name.indexOf('.dbf') > -1
             || f.name.indexOf('.shx') > -1
             || f.name.indexOf('.prj') > -1
             ? shp_part = true : null);
     if (shp_part) {
-      return swal({title: i18next.t('app_page.common.error') + '!',
-            text: i18next.t('app_page.common.alert_upload_shp'),
-            type: 'error',
-            customClass: 'swal2_custom',
-            allowOutsideClick: false,
-            allowEscapeKey: false}).then(valid => { null; }, dismiss => { null; });
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
+        text: i18next.t('app_page.common.alert_upload_shp'),
+        type: 'error',
+        customClass: 'swal2_custom',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      })
+      .then(valid => null, dismiss => null);
     } else {
-      return swal({title: i18next.t('app_page.common.error') + '!',
-            text: i18next.t('app_page.common.alert_upload_invalid'),
-            type: 'error',
-            customClass: 'swal2_custom',
-            allowOutsideClick: false,
-            allowEscapeKey: false});
+      return swal({
+        title: i18next.t('app_page.common.error') + '!',
+        text: i18next.t('app_page.common.alert_upload_invalid'),
+        type: 'error',
+        customClass: 'swal2_custom',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      });
     }
   }
 }
@@ -254,8 +262,8 @@ function handleOneByOneShp(files, target_layer_on_add) {
       }, 50);
     }),
   }).then(() => {
-    let file_list = [shp_slots.get('.shp'), shp_slots.get('.shx'), shp_slots.get('.dbf'), shp_slots.get('.prj')];
-    if (shp_slots.has('.cpg')){
+    const file_list = [shp_slots.get('.shp'), shp_slots.get('.shx'), shp_slots.get('.dbf'), shp_slots.get('.prj')];
+    if (shp_slots.has('.cpg')) {
       file_list.push(shp_slots.get('.cpg'));
     }
     for (let i = 0; i < file_list.length; i++) {
@@ -290,17 +298,16 @@ function handleOneByOneShp(files, target_layer_on_add) {
         input: 'select',
         inputPlaceholder: i18next.t('app_page.common.layer_type_selection'),
         inputOptions: opts,
-        inputValidator: function(value) {
+        inputValidator: (value) => {
           return new Promise(function(resolve, reject) {
             if (value.indexOf('target') < 0 && value.indexOf('layout') < 0) {
               reject(i18next.t('app_page.common.no_value'));
             } else {
               resolve();
-              // let file_list = [shp_slots.get(".shp"), shp_slots.get(".shx"), shp_slots.get(".dbf"), shp_slots.get(".prj")];
               handle_shapefile(file_list, value === 'target');
             }
-          })
-        }
+          });
+        },
       }).then((val) => {
         overlay_drop.style.display = 'none';
       }, (dismiss) => {
@@ -314,17 +321,20 @@ function handleOneByOneShp(files, target_layer_on_add) {
   });
   let shp_slots = new Map();
   populate_shp_slot(shp_slots, files[0]);
-  document.getElementById('dv_drop_shp').addEventListener('drop', function(event) {
-    event.preventDefault(); event.stopPropagation();
-    let next_files = event.dataTransfer.files;
-    for (let f_ix=0; f_ix < next_files.length; f_ix++) {
+  document.getElementById('dv_drop_shp').addEventListener('drop', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const next_files = event.dataTransfer.files;
+    for (let f_ix = 0; f_ix < next_files.length; f_ix++) {
       // let file = next_files[f_ix];
       populate_shp_slot(shp_slots, next_files[f_ix]);
     }
     if ((shp_slots.size === 4 && !shp_slots.has('.cpg')) || shp_slots.size === 5) {
-      document.getElementById('dv_drop_shp').innerHTML = document.getElementById('dv_drop_shp').innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg')
+      // const elem = document.getElementById('dv_drop_shp');
+      // elem.innerHTML = elem.innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg');
+      this.innerHTML = this.innerHTML.replace('Ic_file_download_48px.svg', 'Ic_check_36px.svg');
     }
-  })
+  });
   document.getElementById('dv_drop_shp').addEventListener('dragover', function (event) {
     this.style.border = 'dashed 2.5px green';
     event.preventDefault(); event.stopPropagation();
@@ -343,7 +353,7 @@ function prepare_drop_section() {
   let timeout;
   Array.prototype.forEach.call(
     document.querySelectorAll('#map,.overlay_drop'),
-    elem => {
+    (elem) => {
         elem.addEventListener('dragenter', (e) => {
           e.preventDefault(); e.stopPropagation();
           if (document.body.classList.contains('no-drop')) return;
@@ -502,15 +512,15 @@ function convert_dataset(file) {
     ajaxData.append('action', 'submit_form');
     ajaxData.append('file[]', file);
     xhrequest('POST', 'convert_tabular', ajaxData, true)
-      .then((data) => {
-        data = JSON.parse(data);
+      .then((raw_data) => {
+        const data = JSON.parse(raw_data);
         dataset_name = data.name;
         swal({
           title: '',
           text: i18next.t('app_page.common.warn_xls_sheet') + (data.message ? '\n' + i18next.t(data.message[0], { sheet_name: data.message[1][0] }) : ''),
           type: 'info',
           allowOutsideClick: false,
-          allowEscapeKey: false
+          allowEscapeKey: false,
         }).then(() => {
           add_dataset(d3.csvParse(data.file));
         }, dismiss => null);
@@ -520,10 +530,10 @@ function convert_dataset(file) {
   };
 
   if (joined_dataset.length !== 0) {
-    ask_replace_dataset().then(_ => {
+    ask_replace_dataset().then(() => {
       remove_ext_dataset_cleanup();
       do_convert();
-    }, _ => { null; });
+    }, () => null);
   } else {
     do_convert();
   }
@@ -562,7 +572,7 @@ function handle_TopoJSON_files(files, target_layer_on_add) {
     }, (error) => {
       display_error_during_computation();
     });
-};
+}
 
 function handle_reload_TopoJSON(text, param_add_func) {
   const ajaxData = new FormData();
@@ -608,7 +618,7 @@ function handle_dataset(f, target_layer_on_add) {
       let data = e.target.result;
       const encoding = jschardet.detect(data).encoding;
       const new_reader = new FileReader();
-      new_reader.onload = function(ev) {
+      new_reader.onload = function (ev) {
         data = ev.target.result;
         let sep = data.split('\n')[0];
         if (sep.indexOf('\t') > -1) {
@@ -619,8 +629,8 @@ function handle_dataset(f, target_layer_on_add) {
           sep = ',';
         }
 
-        let tmp_dataset = d3.dsvFormat(sep).parse(data);
-        let field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(el => el.toLowerCase ? el.toLowerCase() : el);
+        const tmp_dataset = d3.dsvFormat(sep).parse(data);
+        const field_names = Object.getOwnPropertyNames(tmp_dataset[0]).map(el => (el.toLowerCase ? el.toLowerCase() : el));
         if (field_names.indexOf('x') > -1 || field_names.indexOf('lat') > -1 || field_names.indexOf('latitude') > -1) {
           if (field_names.indexOf('y') > -1 || field_names.indexOf('lon') > -1 || field_names.indexOf('longitude') > -1 || field_names.indexOf('long') > -1 || field_names.indexOf('lng') > -1) {
             if (target_layer_on_add && _app.targeted_layer_added) {
@@ -639,7 +649,7 @@ function handle_dataset(f, target_layer_on_add) {
         }
         dataset_name = name.substring(0, name.indexOf('.csv'));
         add_dataset(tmp_dataset);
-      }
+      };
       new_reader.readAsText(f, encoding);
     };
     reader.readAsBinaryString(f);
@@ -647,9 +657,9 @@ function handle_dataset(f, target_layer_on_add) {
 
   if (joined_dataset.length !== 0) {
     ask_replace_dataset().then(() => {
-        remove_ext_dataset_cleanup();
-        check_dataset();
-      }, dismiss => null);
+      remove_ext_dataset_cleanup();
+      check_dataset();
+    }, dismiss => null);
   } else {
     check_dataset();
   }
@@ -704,9 +714,10 @@ function update_menu_dataset() {
   const d_name = dataset_name.length > 20 ? [dataset_name.substring(0, 17), '(...)'].join('') : dataset_name,
     nb_features = joined_dataset[0].length,
     field_names = Object.getOwnPropertyNames(joined_dataset[0][0]),
-    data_ext = document.getElementById('data_ext');
+    data_ext = document.getElementById('data_ext'),
+    parent_elem = data_ext.parentElement;
 
-  d3.select(data_ext.parentElement.firstChild)
+  d3.select(parent_elem.firstChild)
     .attrs({
       id: 'img_data_ext',
       class: 'user_panel',
@@ -721,11 +732,13 @@ function update_menu_dataset() {
     .html([' <b>', d_name, '</b> - <i><span style="font-size:9px;">',
       nb_features, ' ', i18next.t('app_page.common.feature', { count: +nb_features }), ' - ',
       field_names.length, ' ', i18next.t('app_page.common.field', { count: +field_names.length }),
-      '</i></span>'].join(''));
-  data_ext.parentElement.innerHTML = data_ext.parentElement.innerHTML + '<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_dataset" style="float:right;margin-top:10px;opacity:0.5">';
+      '</i></span>'].join(''))
+    .on('click', null);
+  parent_elem.innerHTML += `<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_dataset" style="float:right;margin-top:10px;opacity:0.5">
+<img width="14" height="14" src="static/img/dataset.png" id="table_dataset_s1" style="float:right;margin:10px 5px 0 0;opacity:1">`;
 
   document.getElementById('remove_dataset').onclick = () => {
-    remove_ext_dataset()
+    remove_ext_dataset();
   };
   document.getElementById('remove_dataset').onmouseover = function () {
     this.style.opacity = 1;
@@ -736,6 +749,9 @@ function update_menu_dataset() {
   if (_app.targeted_layer_added) {
     valid_join_check_display(false);
   }
+  document.getElementById('table_dataset_s1').onclick = () => {
+    boxExplore2.create(dataset_name);
+  };
 }
 
 
@@ -746,14 +762,14 @@ function update_menu_dataset() {
 function add_dataset(readed_dataset) {
   // Check if their is an empty name in the columns name (typically the first one) and replace it by UID:
   if (readed_dataset[0].hasOwnProperty('')) {
-    let new_col_name = !readed_dataset[0].hasOwnProperty('UID') ? 'UID' :'Undefined_Name';
+    const new_col_name = !readed_dataset[0].hasOwnProperty('UID') ? 'UID' : 'Undefined_Name';
     for (let i = 0; i < readed_dataset.length; ++i) {
-      readed_dataset[i][new_col_name] = readed_dataset[i]['']
+      readed_dataset[i][new_col_name] = readed_dataset[i][''];
       delete readed_dataset[i][''];
     }
   }
 
-  let cols = Object.getOwnPropertyNames(readed_dataset[0]);
+  const cols = Object.getOwnPropertyNames(readed_dataset[0]);
 
   // Test if there is an empty last line and remove it if its the case :
   if (cols.map(f => readed_dataset[readed_dataset.length - 1][f]).every(f => f === '' || f === undefined)) {
@@ -769,7 +785,7 @@ function add_dataset(readed_dataset) {
             (!isNaN(+readed_dataset[j][cols[i]].replace(',', '.')) || !isNaN(+readed_dataset[j][cols[i]].split(' ').join(''))))
          || !isNaN(+readed_dataset[j][cols[i]])) {
         // Add the converted value to temporary field if its ok ...
-        let t_val = readed_dataset[j][cols[i]].replace(',', '.').split(' ').join('');
+        const t_val = readed_dataset[j][cols[i]].replace(',', '.').split(' ').join('');
         tmp.push(isFinite(t_val) && t_val !== '' && t_val != null ? +t_val : t_val);
       } else {
         // Or break early if a value can't be coerced :
@@ -792,7 +808,7 @@ function add_dataset(readed_dataset) {
   }
 
   if (_app.targeted_layer_added) {
-    let layer_name = Object.getOwnPropertyNames(user_data)[0];
+    const layer_name = Object.getOwnPropertyNames(user_data)[0];
     ask_join_now(layer_name, 'dataset');
   }
 }
@@ -837,17 +853,20 @@ function update_section1(type, nb_fields, nb_ft, lyr_name_to_add) {
 
   _input_geom.classList.remove('i18n');
   _input_geom.removeAttribute('data-i18n');
-  _input_geom.innerHTML = `<b>${_lyr_name_display}</b> - <i><span style="font-size:9px;">${nb_ft} ${i18next.t('app_page.common.feature', { count: +nb_ft })} - ${nb_fields} ${i18next.t('app_page.common.field', { count: +nb_fields })}</i></span>`;
+  // _input_geom.innerHTML = `<b>${_lyr_name_display}</b> - <i><span style="font-size:9px;">${nb_ft} ${i18next.t('app_page.common.feature', { count: +nb_ft })} - ${nb_fields} ${i18next.t('app_page.common.field', { count: +nb_fields })}</i></span>`;
   d3.select(_input_geom)
     .attrs({ src: _button, width: '26', height: '26' })
     .html(`<b>${_lyr_name_display}</b> - <i><span style="font-size:9px;">${nb_ft} ${i18next.t('app_page.common.feature', { count: +nb_ft })} - ${nb_fields} ${i18next.t('app_page.common.field', { count: +nb_fields })}</i></span>`)
     .on('click', null);
-  _input_geom.parentElement.innerHTML = `${_input_geom.parentElement.innerHTML}<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_target" style="float:right;margin-top:10px;opacity:0.5">`;
-
+  _input_geom.parentElement.innerHTML = `${_input_geom.parentElement.innerHTML}
+<img width="13" height="13" src="static/img/Trash_font_awesome.png" id="remove_target" style="float:right;margin-top:10px;opacity:0.5">
+<img width="14" height="14" src="static/img/dataset.png" id="table_layer_s1" style="float:right;margin:10px 5px 0 0;opacity:1">`;
   const remove_target = document.getElementById('remove_target');
   remove_target.onclick = () => { remove_layer(Object.getOwnPropertyNames(user_data)[0]); };
   remove_target.onmouseover = function () { this.style.opacity = 1; };
   remove_target.onmouseout = function () { this.style.opacity = 0.5; };
+  const table_target = document.getElementById('table_layer_s1');
+  table_target.onclick = display_table_target_layer;
 }
 
 function get_display_name_on_layer_list(layer_name_to_add) {
@@ -888,6 +907,11 @@ function ask_existing_feature(feature_name) {
   });
 }
 
+const display_table_target_layer = () => {
+  const layer_name = Object.keys(user_data)[0];
+  boxExplore2.create(layer_name);
+};
+
 // Add the TopoJSON to the 'svg' element :
 function add_layer_topojson(text, options = {}) {
   let parsedJSON;
@@ -915,7 +939,8 @@ function add_layer_topojson(text, options = {}) {
   const nb_ft = topoObj.objects[lyr_name].geometries.length;
   const topoObj_objects = topoObj.objects[lyr_name];
   let data_to_load = false;
-  let type, _proj;
+  let type,
+    _proj;
 
   if (layers_names.length > 1) {
     swal('', i18next.t('app_page.common.warning_multiple_layers'), 'warning');
@@ -945,12 +970,13 @@ function add_layer_topojson(text, options = {}) {
 
   if (_app.first_layer) {
     // remove_layer_cleanup('World');
-    let q = document.querySelector('.sortable.World > .layer_buttons > #eye_open');
+    const world_id = _app.layer_to_id.get('World');
+    const q = document.querySelector(`.sortable.${world_id} > .layer_buttons > #eye_open`);
     if (q) q.click();
     delete _app.first_layer;
     if (parsedJSON.proj) {
       try {
-        _proj = proj4(parsedJSON.proj)
+        _proj = proj4(parsedJSON.proj);
       } catch (e) {
         _proj = undefined;
         console.log(e);
@@ -1036,14 +1062,14 @@ function add_layer_topojson(text, options = {}) {
   if (target_layer_on_add) {
     current_layers[lyr_name_to_add].original_fields = new Set(Object.getOwnPropertyNames(user_data[lyr_name_to_add][0]));
     if (joined_dataset.length !== 0) {
-      valid_join_check_display(false)
+      valid_join_check_display(false);
     }
 
     document.getElementById('sample_zone').style.display = 'none';
 
     update_section1(type, nb_fields, nb_ft, lyr_name_to_add);
     _app.targeted_layer_added = true;
-    li.innerHTML = [_lyr_name_display_menu, '<div class="layer_buttons">', button_trash, sys_run_button_t2, button_zoom_fit, button_table, eye_open0, button_type.get(type), '</div>'].join('')
+    li.innerHTML = [_lyr_name_display_menu, '<div class="layer_buttons">', button_trash, sys_run_button_t2, button_zoom_fit, button_table, eye_open0, button_type.get(type), '</div>'].join('');
 
     window._target_layer_file = topoObj;
     if (!skip_rescale) {
@@ -1061,10 +1087,10 @@ function add_layer_topojson(text, options = {}) {
       center_map(lyr_name_to_add);
     }
   } else {
-    li.innerHTML = [_lyr_name_display_menu, '<div class="layer_buttons">', button_trash, sys_run_button_t2, button_zoom_fit, button_table, eye_open0, button_type.get(type), '</div>'].join('')
+    li.innerHTML = [_lyr_name_display_menu, '<div class="layer_buttons">', button_trash, sys_run_button_t2, button_zoom_fit, button_table, eye_open0, button_type.get(type), '</div>'].join('');
   }
 
-  if (!target_layer_on_add && _app.current_functionnality != undefined && _app.current_functionnality.name === "smooth") {
+  if (!target_layer_on_add && _app.current_functionnality != undefined && _app.current_functionnality.name === 'smooth') {
     fields_handler.fill();
   }
 
@@ -1157,21 +1183,21 @@ function get_bbox_layer_path(name) {
   const selec = svg_map.querySelector('#' + _app.layer_to_id.get(name)).childNodes;
   let bbox_layer_path = [[Infinity, Infinity], [-Infinity, -Infinity]];
   for (let i = 0, len_i = selec.length; i < len_i; i++) {
-    let bbox_path = path.bounds(selec[i].__data__);
+    const bbox_path = path.bounds(selec[i].__data__);
     bbox_layer_path[0][0] = bbox_path[0][0] < bbox_layer_path[0][0] ? bbox_path[0][0] : bbox_layer_path[0][0];
     bbox_layer_path[0][1] = bbox_path[0][1] < bbox_layer_path[0][1] ? bbox_path[0][1] : bbox_layer_path[0][1];
     bbox_layer_path[1][0] = bbox_path[1][0] > bbox_layer_path[1][0] ? bbox_path[1][0] : bbox_layer_path[1][0];
     bbox_layer_path[1][1] = bbox_path[1][1] > bbox_layer_path[1][1] ? bbox_path[1][1] : bbox_layer_path[1][1];
   }
   if (current_proj_name === 'ConicConformal') {
-    let s1 = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
-    let bbox_layer_path2 = path.bounds({ type: 'MultiPoint', coordinates: [ [ -69.3, -55.1 ], [ 20.9, -36.7 ], [ 147.2, -42.2 ], [ 162.1, 67.0 ], [ -160.2, 65.7 ] ] });
-    let s2 = Math.max((bbox_layer_path2[1][0] - bbox_layer_path2[0][0]) / w, (bbox_layer_path2[1][1] - bbox_layer_path2[0][1]) / h);
+    const s1 = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
+    const bbox_layer_path2 = path.bounds({ type: 'MultiPoint', coordinates: [ [ -69.3, -55.1 ], [ 20.9, -36.7 ], [ 147.2, -42.2 ], [ 162.1, 67.0 ], [ -160.2, 65.7 ] ] });
+    const s2 = Math.max((bbox_layer_path2[1][0] - bbox_layer_path2[0][0]) / w, (bbox_layer_path2[1][1] - bbox_layer_path2[0][1]) / h);
     if (s2 < s1) bbox_layer_path = bbox_layer_path2;
   } else if (current_proj_name === 'Armadillo') {
-    let s1 = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
-    let bbox_layer_path2 = path.bounds({ type: 'MultiPoint', coordinates: [ [ -69.3, -35.0 ], [ 20.9, -35.0 ], [ 147.2, -35.0 ], [ 175.0, 75.0 ], [ -175.0, 75.0 ] ] });
-    let s2 = Math.max((bbox_layer_path2[1][0] - bbox_layer_path2[0][0]) / w, (bbox_layer_path2[1][1] - bbox_layer_path2[0][1]) / h);
+    const s1 = Math.max((bbox_layer_path[1][0] - bbox_layer_path[0][0]) / w, (bbox_layer_path[1][1] - bbox_layer_path[0][1]) / h);
+    const bbox_layer_path2 = path.bounds({ type: 'MultiPoint', coordinates: [ [ -69.3, -35.0 ], [ 20.9, -35.0 ], [ 147.2, -35.0 ], [ 175.0, 75.0 ], [ -175.0, 75.0 ] ] });
+    const s2 = Math.max((bbox_layer_path2[1][0] - bbox_layer_path2[0][0]) / w, (bbox_layer_path2[1][1] - bbox_layer_path2[0][1]) / h);
     if (s2 < s1) bbox_layer_path = bbox_layer_path2;
   }
   return bbox_layer_path;
@@ -1192,7 +1218,7 @@ function scale_to_lyr(name) {
   proj.scale(s).translate(t);
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
-};
+}
 
 /**
 * Center and zoom to a layer (using zoom scale and translate properties).
@@ -1212,7 +1238,7 @@ function center_map(name) {
 }
 
 function fitLayer(layer_name) {
-  proj.scale(1).translate([0, 0])
+  proj.scale(1).translate([0, 0]);
   const b = get_bbox_layer_path(layer_name);
   const s = 0.95 / Math.max((b[1][0] - b[0][0]) / w, (b[1][1] - b[0][1]) / h);
   const t = [(w - s * (b[1][0] + b[0][0])) / 2, (h - s * (b[1][1] + b[0][1])) / 2];
@@ -1278,7 +1304,7 @@ function add_layout_feature(selected_feature, options = {}) {
       .datum({ type: 'Sphere' })
       .styles({ fill: fill, 'fill-opacity': fill_opacity, 'stroke-opacity': stroke_opacity, stroke: stroke })
       .attrs({ d: path });
-    if (isInterrupted(current_proj_name)) {
+    if (isInterrupted(current_proj_name.toLowerCase())) {
       map.select(`g#${layer_id}`).attr('clip-path', 'url(#clip)');
     }
     create_li_layer_elem(layer_to_add, null, 'Polygon', 'sample');
@@ -1301,8 +1327,12 @@ function add_layout_feature(selected_feature, options = {}) {
       graticule = graticule.extent(extent);
       current_layers.Graticule.extent = extent;
     }
+    const layer_to_add = 'Graticule';
+    const layer_id = encodeId(layer_to_add);
+    _app.layer_to_id.set(layer_to_add, layer_id);
+    _app.id_to_layer.set(layer_id, layer_to_add);
     map.insert('g', '.legend')
-      .attrs({ id: 'Graticule', class: 'layer' })
+      .attrs({ id: layer_id, class: 'layer' })
       .styles({ 'stroke-width': stroke_width })
       .append('path')
       .datum(graticule)
@@ -1318,7 +1348,7 @@ function add_layout_feature(selected_feature, options = {}) {
       step: step,
       dasharray: stroke_dasharray,
     };
-    if (isInterrupted(current_proj_name)) {
+    if (isInterrupted(current_proj_name.toLowerCase())) {
       map.select(`g#${layer_id}`).attr('clip-path', 'url(#clip)');
     }
     create_li_layer_elem('Graticule', null, 'Line', 'sample');
@@ -1333,19 +1363,18 @@ function add_layout_feature(selected_feature, options = {}) {
         .then(() => {
           scaleBar.remove();
           handleClickAddOther('scalebar');
-        }, (dismiss) => { null; });
+        }, dismiss => null);
     }
   } else if (selected_feature === 'north_arrow') {
     if (!(northArrow.displayed)) {
       handleClickAddOther('north_arrow');
     } else {
       ask_existing_feature('north_arrow')
-        .then( _ => {
+        .then(() => {
           northArrow.remove();
           handleClickAddOther('north_arrow');
-        }, dismiss => { null; });
+        }, dismiss => null);
     }
-
   } else if (selected_feature === 'arrow') {
     handleClickAddArrow();
   } else if (selected_feature === 'ellipse') {
@@ -1412,21 +1441,19 @@ function add_layout_feature(selected_feature, options = {}) {
 
 function add_single_symbol(symbol_dataurl, x, y, width = '30', height = '30', symbol_id = null) {
   const context_menu = new ContextMenu();
-  const getItems = (self_parent) => [
+  const getItems = self_parent => [
     { name: i18next.t('app_page.common.options'), action: () => { make_style_box_indiv_symbol(self_parent); } },
     { name: i18next.t('app_page.common.up_element'), action: () => { up_legend(self_parent.parentElement); } },
     { name: i18next.t('app_page.common.down_element'), action: () => { down_legend(self_parent.parentElement); } },
-    { name: i18next.t('app_page.common.delete'), action: () => { self_parent.parentElement.remove(); } }
+    { name: i18next.t('app_page.common.delete'), action: () => { self_parent.parentElement.remove(); } },
   ];
 
-  x = x || w / 2;
-  y = y || h / 2;
   return map.append('g')
     .attrs({ class: 'legend single_symbol', id: symbol_id })
     .insert('image')
     .attrs({
-      x: x,
-      y: y,
+      x: x || w / 2,
+      y: y || h / 2,
       width: width,
       height: height,
       'xlink:href': symbol_dataurl })
@@ -1447,9 +1474,9 @@ function add_layout_layers() {
     [i18next.t('app_page.layout_layer_box.brazil'), 'brazil'],
     [i18next.t('app_page.layout_layer_box.world_countries'), 'world_country'],
     [i18next.t('app_page.layout_layer_box.world_capitals'), 'world_cities'],
-    [i18next.t('app_page.layout_layer_box.tissot'), 'tissot']
+    [i18next.t('app_page.layout_layer_box.tissot'), 'tissot'],
   ];
-  let selec = { layout: null };
+  const selec = { layout: null };
 
   make_confirm_dialog2('sampleLayoutDialogBox', i18next.t('app_page.layout_layer_box.title'))
     .then((confirmed) => {
@@ -1478,12 +1505,12 @@ function add_layout_layers() {
     layout_layer_selec.append('option').html(layer_info[0]).attr('value', layer_info[1]);
   });
   layout_layer_selec.on('change', function () {
-    let selected_asArray = Array.prototype.slice.call(this.selectedOptions);
-    selec.layout = selected_asArray.map(elem => elem.value)
+    const selected_asArray = Array.prototype.slice.call(this.selectedOptions);
+    selec.layout = selected_asArray.map(elem => elem.value);
   });
   box_body.append('span')
     .style('font-size', '0.65rem')
-    .html(i18next.t('app_page.layout_layer_box.disclamer_nuts'))
+    .html(i18next.t('app_page.layout_layer_box.disclamer_nuts'));
 }
 
 function add_sample_layer() {
@@ -1494,7 +1521,7 @@ function add_sample_layer() {
   };
   check_remove_existing_box('.sampleDialogBox');
   if (!_app.list_extrabasemaps) {
-      prepare_extra_dataset_availables();
+    prepare_extra_dataset_availables();
   }
   const fields_type_sample = new Map([
     ['GrandParisMunicipalities', [{"name":"DEP","type":"category","has_duplicate":true},{"name":"IDCOM","type":"id"},{"name":"EPT","type":"category","has_duplicate":true},{"name":"INC","type":"stock"},{"name":"LIBCOM","type":"id"},{"name":"LIBEPT","type":"category","has_duplicate":true},{"name":"TH","type":"stock"},{"name":"UID","type":"id"},{"name":"IncPerTH","type":"ratio"}]],
@@ -1519,7 +1546,9 @@ function add_sample_layer() {
    [i18next.t('app_page.sample_layer_box.world_countries'), 'world_countries_data'],
   ];
   const dialog_res = [];
-  let selec, selec_url, content;
+  let selec,
+    selec_url,
+    content;
 
   make_confirm_dialog2('sampleDialogBox', i18next.t('app_page.sample_layer_box.title'))
     .then((confirmed) => {
@@ -1556,18 +1585,22 @@ function add_sample_layer() {
     const select_extrabasemap = content.append('p')
       .insert('select')
       .on('change', function () {
-        let id_elem = this.value;
-        selec_url = [_app.list_extrabasemaps[id_elem][0], _app.list_extrabasemaps[id_elem][1], id_elem];
+        const id_elem = this.value;
+        selec_url = [
+          _app.list_extrabasemaps[id_elem][0],
+          _app.list_extrabasemaps[id_elem][1],
+          id_elem
+        ];
       });
     for (let i = 0, len_i = _app.list_extrabasemaps.length; i < len_i; i++) {
       select_extrabasemap.append('option').attr('value', i).html(_app.list_extrabasemaps[i][0]);
     }
     content.append('p')
-      .styles({margin: 'auto', 'text-align': 'right', cursor: 'pointer'})
+      .styles({ margin: 'auto', 'text-align': 'right', cursor: 'pointer' })
       .append('span')
       .html(i18next.t('app_page.sample_layer_box.back_sample'))
       .on('click', () => {
-          make_panel1();
+        make_panel1();
       });
     if (selec_url) {
       setSelected(select_extrabasemap.node(), selec_url[2]);
@@ -1580,7 +1613,7 @@ function add_sample_layer() {
     content.select('#link2').on('click', () => {
       window.open('https://github.com/riatelab/basemaps/tree/master/Countries', 'riatelab/basemaps', 'toolbar=yes,menubar=yes,resizable=yes,scrollbars=yes,status=yes').focus();
     });
-  };
+  }
 
   function make_panel1() {
     box_body.selectAll('div').remove();
@@ -1599,7 +1632,8 @@ function add_sample_layer() {
       });
     if (selec) setSelected(t_layer_selec.node(), selec);
   }
-  const box_body = d3.select('.sampleDialogBox').select('.modal-body')
+
+  const box_body = d3.select('.sampleDialogBox').select('.modal-body');
   setTimeout((_) => { document.querySelector('select.sample_target').focus(); }, 500);
   make_panel1();
 }
@@ -1614,42 +1648,41 @@ function add_simplified_land_layer(options = {}) {
   const visible = !(options.visible === false);
   const drop_shadow = options.drop_shadow || false;
 
-  // d3.json('static/data_sample/World.topojson', (error, json) => {
-    _app.layer_to_id.set('World', 'World');
-    _app.id_to_layer.set('World', 'World');
-    current_layers['World'] = {
-      type: 'Polygon',
-      n_features: 125,
-      'stroke-width-const': +stroke_width.slice(0, -2),
-      fill_color: { single: fill },
-    };
-    map.insert('g', '.legend')
-      .attrs({ id: 'World', class: 'layer', 'clip-path': 'url(#clip)' })
-      .style('stroke-width', stroke_width)
-      .selectAll('.subunit')
-      .data(topojson.feature(world_topology, world_topology.objects.World).features)
-      .enter()
-      .append('path')
-      .attr('d', path)
-      .styles({
-        stroke: stroke,
-        fill: fill,
-        'stroke-opacity': stroke_opacity,
-        'fill-opacity': fill_opacity
-      });
-    create_li_layer_elem('World', null, 'Polygon', 'sample');
-    if (drop_shadow) {
-      createDropShadow('World');
-    }
-    if (!skip_rescale) {
-      scale_to_lyr('World');
-      center_map('World');
-    }
-    if (!visible) {
-      handle_active_layer('World');
-    }
-    zoom_without_redraw();
-  // });
+  const world_id = encodeId('World');
+  _app.layer_to_id.set('World', world_id);
+  _app.id_to_layer.set(world_id, 'World');
+  current_layers.World = {
+    type: 'Polygon',
+    n_features: 125,
+    'stroke-width-const': +stroke_width.slice(0, -2),
+    fill_color: { single: fill },
+  };
+  map.insert('g', '.legend')
+    .attrs({ id: world_id, class: 'layer', 'clip-path': 'url(#clip)' })
+    .style('stroke-width', stroke_width)
+    .selectAll('.subunit')
+    .data(topojson.feature(world_topology, world_topology.objects.World).features)
+    .enter()
+    .append('path')
+    .attr('d', path)
+    .styles({
+      stroke: stroke,
+      fill: fill,
+      'stroke-opacity': stroke_opacity,
+      'fill-opacity': fill_opacity,
+    });
+  create_li_layer_elem('World', null, 'Polygon', 'sample');
+  if (drop_shadow) {
+    createDropShadow('World');
+  }
+  if (!skip_rescale) {
+    scale_to_lyr('World');
+    center_map('World');
+  }
+  if (!visible) {
+    handle_active_layer('World');
+  }
+  zoom_without_redraw();
 }
 
 function add_sample_geojson(name, options) {
@@ -1669,13 +1702,19 @@ function send_remove_server(layer_name) {
   formToSend.append('layer_name', current_layers[layer_name].key_name);
   xhrequest('POST', 'layers/delete', formToSend, true)
     .then((data) => {
-      let parsed = JSON.parse(data);
+      const parsed = JSON.parse(data);
       if (!parsed.code || parsed.code !== 'Ok') console.log(data);
     }).catch((err) => {
       console.log(err);
     });
 }
 
+/**
+* Return the x and y position where the svg element is located
+* in the browser window.
+*
+* @return {Object} - An object with x and y properties.
+*/
 function get_map_xy0() {
   const bbox = svg_map.getBoundingClientRect();
   return { x: bbox.left, y: bbox.top };
@@ -1711,7 +1750,7 @@ const getIdLayoutFeature = (type) => {
   }
   const ids = [];
   for (let i = 0; i < features.length; i++) {
-    ids.push(+features[i].id.split(id_prefix)[1])
+    ids.push(+features[i].id.split(id_prefix)[1]);
   }
   if (ids.indexOf(features.length) === -1) {
     return features.length;
@@ -1748,7 +1787,7 @@ function handleClickAddRectangle() {
       document.body.style.cursor = '';
       new UserRectangle(`user_rectangle_${rectangle_id}`, start_point, svg_map);
     });
-  }
+}
 
 function handleClickAddOther(type) {
   const msg = alertify.notify(i18next.t('app_page.notification.instruction_click_map'), 'warning', 0);

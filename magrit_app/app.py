@@ -796,7 +796,7 @@ async def call_stewart(posted_data, user_id, app):
     os.remove(filenames['point_layer'])
     if filenames['mask_layer']:
         os.remove(filenames['mask_layer'])
-    new_name = '_'.join(['StewartPot', n_field_name1])
+    new_name = '_'.join(['Smoothed', n_field_name1])
     res = await geojson_to_topojson2(res, new_name)
     hash_val = str(mmh3_hash(res))
 

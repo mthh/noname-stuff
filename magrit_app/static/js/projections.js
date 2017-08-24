@@ -180,7 +180,7 @@ const removeTooltipProj4 = function removeTooltipProj4(ev) {
 };
 
 const makeTooltipProj4 = (proj_select, proj4string) => {
-  proj_select.tooltip = proj4string;
+  proj_select.tooltip = proj4string; // eslint-disable-line no-param-reassign
   proj_select.addEventListener('mouseover', displayTooltipProj4);
   proj_select.addEventListener('mouseout', removeTooltipProj4);
 };
@@ -221,11 +221,12 @@ const createBoxCustomProjection = function createBoxCustomProjection() {
       .attr('id', 'select_proj')
       .attr('size', 18);
     if (!filter_in && !filter_ex) {
-      for (const proj_name of available_projections.keys()) {
+      // for (const proj_name of available_projections.keys()) { .. }
+      Array.from(available_projections.keys()).forEach((proj_name) => {
         display_select_proj.append('option')
           .attrs({ class: 'i18n', value: proj_name, 'data-i18n': `app_page.projection_name.${proj_name}` })
           .text(i18next.t(`app_page.projection_name.${proj_name}`));
-      }
+      });
     } else if (!filter_ex) {
       available_projections.forEach((v, k) => {
         if (v.param_in === filter_in) {
@@ -374,7 +375,7 @@ const createBoxCustomProjection = function createBoxCustomProjection() {
 
   Array.prototype.forEach.call(
     document.querySelectorAll('.filter1,.filter2'),
-    (el) => { el.onclick = onClickFilter; });
+    (el) => { el.onclick = onClickFilter; }); // eslint-disable-line no-param-reassign
 
   const p = column3.append('p').style('margin', 'auto');
   let display_select_proj = p.append('select')
@@ -531,8 +532,13 @@ const createBoxCustomProjection = function createBoxCustomProjection() {
 };
 
 
-// Function to change (one of more of) the three rotations axis of a d3 projection
-// and redraw all the path (+ move symbols layers) in respect to that
+/**
+* Function to change (one of more of) the three rotations axis of a d3 projection
+* and redraw all the path (+ move symbols layers) in respect to that.
+*
+* @param {Array} param - The new [lambda, phi, gamma] properties to be used.
+* @return {void}
+*/
 function handle_proj_center_button(param) {
   // Fetch the current rotation params :
   const current_rotation = proj.rotate();
@@ -556,3 +562,40 @@ function handle_parallel_change(parallel) {
   map.selectAll('.layer').selectAll('path').attr('d', path);
   reproj_symbol_layer();
 }
+
+
+// const getD3ProjFromProj4 = function getD3ProjFromProj4(_proj) {
+//   // Create the custom d3 projection using proj 4 forward and inverse functions:
+//   const projRaw = function (lambda, phi) {
+//     return _proj.forward([lambda, phi].map(radiansToDegrees));
+//   };
+//   projRaw.invert = function (x, y) {
+//     return _proj.inverse([x, y]).map(degreesToRadians);
+//   };
+//   return d3.geoProjection(projRaw);
+// };
+// const pidegrad = 0.017453292519943295;
+// const piraddeg = 57.29577951308232;
+// const degreesToRadians = function degreesToRadians(degrees) { return degrees * pidegrad; };
+// const radiansToDegrees = function radiansToDegrees(radians) { return radians * piraddeg; };
+
+/**
+* Return a d3.geoProjection from a proj4 projection.
+* (code below should avoid some function calls compared to the previous commented
+* section but achieve exactly the same job).
+*
+* @param {Object} _proj - The valid proj4 object returned by proj4.
+* @return {Object} - The projection as a d3.geoProjection.
+*
+*/
+const getD3ProjFromProj4 = function getD3ProjFromProj4(_proj) {
+  // Create the custom d3 projection using proj 4 forward and inverse functions:
+  const projRaw = function (lambda, phi) {
+    return _proj.forward([lambda * 57.29577951308232, phi * 57.29577951308232]);
+  };
+  projRaw.invert = function (x, y) {
+    const p = _proj.inverse([x, y]);
+    return [p[0] * 0.017453292519943295, p[1] * 0.017453292519943295];
+  };
+  return d3.geoProjection(projRaw);
+};
