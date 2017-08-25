@@ -32,6 +32,12 @@ import pandas as pd
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
 
+from cefpython3 import cefpython as cef
+import multiprocessing
+from multiprocessing import Process
+import platform
+import signal
+
 from base64 import b64encode, urlsafe_b64decode
 from contextlib import closing
 from zipfile import ZipFile
@@ -1133,6 +1139,7 @@ async def on_shutdown(app):
 
 async def init(loop, port=None, watch_change=False, use_redis=True):
     logging.basicConfig(level=logging.INFO)
+    print('logging.getLogger')
     logger = logging.getLogger("magrit_app.main")
     if use_redis:
         redis_cookie = await create_pool(
@@ -1148,6 +1155,7 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
         app['redis_conn'] = redis_conn
     else:
         from helpers.fakeredis import FakeAioRedisConnection
+        print('fernet.Fernet.generate_key')
         fernet_key = fernet.Fernet.generate_key()
         secret_key = urlsafe_b64decode(fernet_key)
         app = web.Application(
@@ -1197,6 +1205,7 @@ async def init(loop, port=None, watch_change=False, use_redis=True):
         app['FileWatcher'] = JsFileWatcher()
 #    app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
+    print('prepare_list_symbols')
     prepare_list_svg_symbols()
     if not port:
         return app
@@ -1255,12 +1264,16 @@ def main():
         sys.exit("Error : Selected port is already in use")
 
     watch_change = True if arguments['--dev'] else False
-    use_redis = False if arguments['--no-redis'] else True
-    loop = asyncio.get_event_loop()
+    use_redis = False if arguments['--no-redis'] or sys.platform.startswith('win') else True
+    #loop = asyncio.get_event_loop()
+    loop = asyncio.ProactorEventLoop()
     asyncio.set_event_loop(loop)
     srv, app, handler = loop.run_until_complete(init(loop, port, watch_change, use_redis))
     app['app_name'] = arguments["--name-app"]
     app['logger'].info('serving on' + str(srv.sockets[0].getsockname()))
+    pgui = app.loop.run_in_executor(app['ThreadPool'], run_gui)
+    asyncio.ensure_future(periodic(pgui, app, srv))
+##    GuiProcess()
     try:
         loop.run_forever()
     except KeyboardInterrupt:
@@ -1273,6 +1286,66 @@ def main():
         loop.run_until_complete(app.cleanup())
     loop.close()
 
+def run_gui():
+    check_versions()
+    sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
+    cef.Initialize()
+    cef.CreateBrowserSync(url="http://localhost:9999/",
+                          window_title="Magrit Desktop")
+    cef.MessageLoop()
+    cef.Shutdown()
+
+def check_versions():
+    print("[hello_world.py] CEF Python {ver}".format(ver=cef.__version__))
+    print("[hello_world.py] Python {ver} {arch}".format(
+          ver=platform.python_version(), arch=platform.architecture()[0]))
+    assert cef.__version__ >= "55.3", "CEF Python v55.3+ required to run this"
+
+async def periodic(process, app, srv):
+    while True:
+        if process.done():
+            srv.close()
+            app.loop.call_soon_threadsafe(app.shutdown)  
+            app.loop.call_soon_threadsafe(app.loop.stop)
+            sys.exit(0)
+        await asyncio.sleep(1)
+
+##class GuiProcess(Process):
+##    def __init__(self):
+##        Process.__init__(self)
+##        self.start()
+##
+##    def run(self):
+##        run_gui()
+##
+##if sys.platform.startswith('win'):
+##    import multiprocessing.popen_spawn_win32 as forking
+##else:
+##    import multiprocessing.popen_fork as forking
+##if sys.platform.startswith('win'):
+##    # First define a modified version of Popen.
+##    class _Popen(forking.Popen):
+##        def __init__(self, *args, **kw):
+##            if hasattr(sys, 'frozen'):
+##                # We have to set original _MEIPASS2 value from sys._MEIPASS
+##                # to get --onefile mode working.
+##                os.putenv('_MEIPASS2', sys._MEIPASS)
+##            try:
+##                super(_Popen, self).__init__(*args, **kw)
+##            finally:
+##                if hasattr(sys, 'frozen'):
+##                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+##                    # available. In those cases we cannot delete the variable
+##                    # but only set it to the empty string. The bootloader
+##                    # can handle this case.
+##                    if hasattr(os, 'unsetenv'):
+##                        os.unsetenv('_MEIPASS2')
+##                    else:
+##                        os.putenv('_MEIPASS2', '')
+##
+##    # Second override 'Popen' class with our modified version.
+##    forking.Popen = _Popen
 
 if __name__ == '__main__':
+##    multiprocessing.freeze_support()
     main()

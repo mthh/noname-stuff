@@ -1,0 +1,7 @@
+python pyinstaller.py --clean ..\magrit\magrit_app\app.py --hidden-import helpers -p ..\magrit\magrit_app\ --console --name Magrit
+&& cp -r ..\\magrit\\magrit_app\\a_coller\\. Magrit\\dist\\Magrit\\
+&& cp -r ..\\magrit\\magrit_app\\helpers\\ Magrit\\dist\\Magrit\\
+&& cp -r ..\magrit\\magrit_app\\static Magrit\\dist\\Magrit\\
+&& cp -r ..\\magrit\\magrit_app\\templates Magrit\\dist\\Magrit\\
+&& cp -r ..\\magrit\\magrit_app\\node Magrit\\dist\\Magrit\\
+&& cp -r ..\\magrit\\magrit_app\\__init__.py Magrit\\dist\\Magrit\\
