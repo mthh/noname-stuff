@@ -109,9 +109,14 @@ async def index_handler(request):
 async def geojson_to_topojson2(data, layer_name):
     # Todo : Rewrite using asyncio.subprocess methods
     # Todo : Use topojson python port if possible to avoid writing a temp. file
-    process = Popen(["node\\geo2topo", "{}=-".format(layer_name), "--bbox"],
-                    shell=True if 'win' in os.sys.platform else False,
-                    stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    if sys.platform.startswith('win'):
+        process = Popen(["node_win-x64\\geo2topo", "{}=-".format(layer_name), "--bbox"],
+                        shell=True if 'win' in os.sys.platform else False,
+                        stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    else:
+        process = Popen(["node_linux-x64/geo2topo", "{}=-".format(layer_name), "--bbox"],
+                        shell=False,
+                        stdout=PIPE, stderr=PIPE, stdin=PIPE)
     stdout, _ = process.communicate(input=data)
     stdout = stdout.decode()
     return stdout
@@ -1264,9 +1269,9 @@ def main():
     app['app_name'] = arguments["--name-app"]
     app['logger'].info('serving on' + str(srv.sockets[0].getsockname()))
     if sys.platform.startswith('win'):
-        pgui = Popen(['node\\nwjs-v0.24.4-win-x64\\nw.exe', 'node\\gui'])
+        pgui = Popen(['node_win-x64\\nwjs-v0.24.4-win-x64\\nw.exe', 'gui'])
     else:
-        pgui = Popen(['node\\nwjs-v0.24.4-linux-x64\\nw.exe', 'node\\gui'])
+        pgui = Popen(['node_linux-x64/nwjs-v0.24.4-linux-x64/nw', 'gui'])
 ##    asyncio.ensure_future(periodic(pgui, app, srv, handler))
     try:
         #loop.run_forever()
