@@ -1067,9 +1067,9 @@ class MainFunctionnalitiesTest(TestBase):
         Select(driver.find_element_by_id("type_content_select")
             ).select_by_value("string_field")
         time.sleep(0.3)
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
+        driver.find_element_by_css_selector("#field_div1 > p > input").clear()
         driver.find_element_by_css_selector(
-            "input[value=\"NewFieldName\"]").send_keys("Pays")
+            "#field_div1 > p > input").send_keys("Pays")
 
         # One categorical field (country) obtained by truncating ids of nuts2 features :
         Select(driver.find_element_by_css_selector(
@@ -1319,9 +1319,9 @@ class MainFunctionnalitiesTest(TestBase):
         # and the stock of empty dwellings (P13_LOGVAC)
         # to obtain the stock of non empty dwellings (P13_LOGNONVAC) :
         self.clickWaitTransition("#add_field_button")
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
+        driver.find_element_by_css_selector("#field_div1 > p > input").clear()
         driver.find_element_by_css_selector(
-            "input[value=\"NewFieldName\"]").send_keys("P13_LOGNONVAC")
+            "#field_div1 > p > input").send_keys("P13_LOGNONVAC")
         Select(driver.find_element_by_css_selector(
             "#field_div1 > select")).select_by_visible_text("P13_LOG")
         Select(driver.find_element_by_xpath(
@@ -1384,9 +1384,9 @@ class MainFunctionnalitiesTest(TestBase):
         # Test adding fields to the existing table :
         self.clickWaitTransition("#add_field_button")
 
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
+        driver.find_element_by_css_selector("#field_div1 > p > input").clear()
         driver.find_element_by_css_selector(
-            "input[value=\"NewFieldName\"]").send_keys("NewFieldName3")
+            "#field_div1 > p > input").send_keys("NewFieldName3")
 
         # One field based on an operation betweeen two numerical variables :
         Select(driver.find_element_by_css_selector(
@@ -1401,8 +1401,8 @@ class MainFunctionnalitiesTest(TestBase):
         time.sleep(0.4)
 
         self.clickWaitTransition("#add_field_button")
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").send_keys("NewFieldName2")
+        driver.find_element_by_css_selector("#field_div1 > p > input").clear()
+        driver.find_element_by_css_selector("#field_div1 > p > input").send_keys("NewFieldName2")
 
         # One field based on an operation betweeen a numerical variable and a constant :
         Select(driver.find_element_by_css_selector(
@@ -1421,8 +1421,8 @@ class MainFunctionnalitiesTest(TestBase):
         time.sleep(0.4)
 
         self.clickWaitTransition("#add_field_button")
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").clear()
-        driver.find_element_by_css_selector("input[value=\"NewFieldName\"]").send_keys("NewFieldName1")
+        driver.find_element_by_css_selector("#field_div1 > p > input").clear()
+        driver.find_element_by_css_selector("#field_div1 > p > input").send_keys("NewFieldName1")
 
         # One field based on an operation on a char string field
         Select(driver.find_element_by_id(
@@ -1508,9 +1508,9 @@ class MainFunctionnalitiesTest(TestBase):
         Select(driver.find_element_by_xpath("//div[@id='field_div1']/select[3]")
                 ).select_by_visible_text("P13_POP")
         driver.find_element_by_css_selector(
-            "input[value=\"NewFieldName\"]").clear()
+            "#field_div1 > p > input").clear()
         driver.find_element_by_css_selector(
-            "input[value=\"NewFieldName\"]").send_keys("Ratio")
+            "#field_div1 > p > input").send_keys("Ratio")
         driver.find_element_by_css_selector(
             ".addFieldBox").find_elements_by_css_selector(
             ".btn_ok")[0].click()

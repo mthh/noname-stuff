@@ -144,10 +144,11 @@ function setUpInterface(reload_project) {
       return;
     } else if (val === 'last_projection') {
       val = tmp.name;
-    } else if (val === 'ConicConformalFrance') {
-      val = 'def_proj4';
-      _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
     }
+    // else if (val === 'ConicConformalFrance') {
+    //   val = 'def_proj4';
+    //   _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
+    // }
 
     if (val === 'def_proj4') {
       current_proj_name = val;
@@ -1129,7 +1130,7 @@ function parseQuery(search) {
     lng: lang,
     fallbackLng: _app.existing_lang[0],
     backend: {
-      loadPath: 'static/locales/{{lng}}/translation.794ede8e4fe4.json'
+      loadPath: 'static/locales/{{lng}}/translation.1f47989ca1aa.json'
     }
   }, function (err, tr) {
     if (err) {
@@ -1642,14 +1643,9 @@ function zoom_without_redraw() {
   }
   window.legendRedrawTimeout = setTimeout(redraw_legends_symbols, 650);
   var zoom_params = svg_map.__zoom;
-  // let zoom_k_scale = proj.scale() * zoom_params.k;
   document.getElementById('input-center-x').value = round_value(zoom_params.x, 2);
   document.getElementById('input-center-y').value = round_value(zoom_params.y, 2);
   document.getElementById('input-scale-k').value = round_value(proj.scale() * zoom_params.k, 2);
-  // let a = document.getElementById('form_projection'),
-  //   disabled_val = (zoom_k_scale > 200) && (window._target_layer_file != undefined || result_data.length > 1)? '' : 'disabled';
-  // a.querySelector('option[value="ConicConformalSec"]').disabled = disabled_val;
-  // a.querySelector('option[value="ConicConformalTangent"]').disabled = disabled_val;
 }
 
 function redraw_legends_symbols(targeted_node) {
@@ -1813,7 +1809,21 @@ function handleClipPath() {
     map.selectAll('.layer:not(.no_clip)').attr('clip-path', 'url(#clip)');
 
     svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
-  } else if (proj_name_lower.indexOf('conicconformal') > -1) {
+  } else if (proj_name_lower === 'conicconformalfrance') {
+    var ref_polygon = { type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString', coordinates: [[-20.00, 34.50], [20.00, 34.50], [45.00, 61.00], [-45.00, 61.00], [-20.00, 34.50]] }
+      // type: 'LineString', coordinates: [[-9.86, 41.15], [10.38, 41.15], [10.38, 51.56], [-9.86, 51.56], [-9.86, 41.15]] }
+    };
+    defs.append('path').datum(ref_polygon).attrs({ id: 'sphereClipPath', d: path });
+
+    defs.append('clipPath').attr('id', 'clip').append('use').attr('xlink:href', '#sphereClipPath');
+
+    map.selectAll('.layer:not(.no_clip)').attr('clip-path', 'url(#clip)');
+
+    svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
+  } else if (proj_name_lower === 'conicconformal') {
     var outline = d3.geoGraticule().extentMajor([[-180, -60], [180, 90]]).outline();
 
     // proj.fitSize([w, h], outline);
@@ -1852,6 +1862,9 @@ function change_projection(new_proj_name) {
   proj = d3[def_proj.name]();
   if (def_proj.parallels) proj = proj.parallels(def_proj.parallels);else if (def_proj.parallel) proj = proj.parallel(def_proj.parallel);
   if (def_proj.clipAngle) proj = proj.clipAngle(def_proj.clipAngle);
+
+  path = d3.geoPath().projection(proj).pointRadius(4);
+
   if (def_proj.rotate) prev_rotate = def_proj.rotate;
   if (proj.rotate) proj.rotate(prev_rotate);
 
@@ -1876,6 +1889,7 @@ function change_projection(new_proj_name) {
     zoom_without_redraw();
   } else {
     proj.translate(t).scale(s);
+    // if (def_proj.rotate) proj = proj.rotate(def_proj.rotate);
     map.selectAll('.layer').selectAll('path').attr('d', path);
     reproj_symbol_layer();
   }
@@ -18369,7 +18383,9 @@ var shortListContent = ['AzimuthalEqualAreaEurope', 'ConicConformalFrance', 'HEA
 
 var available_projections = new Map([['Armadillo', { name: 'geoArmadillo', scale: '400', param_in: 'other', param_ex: 'aphylactic' }], ['AzimuthalEquidistant', { name: 'geoAzimuthalEquidistant', scale: '700', param_in: 'plan', param_ex: 'equidistant' }], ['AzimuthalEqualArea', { name: 'geoAzimuthalEqualArea', scale: '700', param_in: 'plan', param_ex: 'equalarea' }], ['AzimuthalEqualAreaEurope', { name: 'geoAzimuthalEqualArea', scale: '700', rotate: [-10, -52, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'plan', param_ex: 'equalarea' }], ['Baker', { name: 'geoBaker', scale: '400', param_in: 'other', param_ex: 'aphylactic' }], ['Berhmann', { name: 'geoCylindricalEqualArea', scale: '400', parallel: 30, param_in: 'cylindrical', param_ex: 'equalarea' }], ['Boggs', { name: 'geoBoggs', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['InterruptedBoggs', { name: 'geoInterruptedBoggs', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Bonne', { name: 'geoBonne', scale: '400', param_in: 'pseudocone', param_ex: 'equalarea' }], ['Bromley', { name: 'geoBromley', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Collignon', { name: 'geoCollignon', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }],
 // ["ConicConformalTangent", {'name': 'geoConicConformal', 'scale': '400', 'parallels': [44, 44], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal'}],
-['ConicConformal', { name: 'geoConicConformal', scale: '400', parallels: [44, 49], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal' }], ['ConicConformalFrance', { name: 'geoConicConformal', scale: '400', parallels: [44, 49], rotate: [-3, -46.5, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'cone', param_ex: 'conformal' }], ['ConicEqualArea', { name: 'geoConicEqualArea', scale: '400', param_in: 'cone', param_ex: 'equalarea' }], ['ConicEquidistant', { name: 'geoConicEquidistant', scale: '400', parallels: [40, 45], param_in: 'cone', param_ex: 'equidistant' }],
+['ConicConformal', { name: 'geoConicConformal', scale: '400', parallels: [44, 49], bounds: [-25.5, -25.5, 75.5, 75.5], param_in: 'cone', param_ex: 'conformal' }], ['ConicConformalFrance', { name: 'geoConicConformal', scale: '400', parallels: [44, 49], rotate: [-3, -46.5, 0], bounds: [-10.6700, 34.5000, 31.5500, 71.0500], param_in: 'cone', param_ex: 'conformal' }],
+// ['ConicConformalFrance', { name: 'geoConicConformal', scale: '400', parallels: [44, 49], rotate: [-3, -46.5, 0], bounds: [-9.86, 41.15, 10.38, 51.56], param_in: 'cone', param_ex: 'conformal' }],
+['ConicEqualArea', { name: 'geoConicEqualArea', scale: '400', param_in: 'cone', param_ex: 'equalarea' }], ['ConicEquidistant', { name: 'geoConicEquidistant', scale: '400', parallels: [40, 45], param_in: 'cone', param_ex: 'equidistant' }],
 // ["ConicEquidistantTangent", {'name': 'geoConicEquidistant', 'scale': '400', parallels: [40, 40], param_in: 'cone', param_ex: 'equidistant'}],
 ['CrasterParabolic', { name: 'geoCraster', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Equirectangular', { name: 'geoEquirectangular', scale: '400', param_in: 'cylindrical', param_ex: 'equidistant' }], ['CylindricalEqualArea', { name: 'geoCylindricalEqualArea', scale: '400', param_in: 'cylindrical', param_ex: 'equalarea' }], ['CylindricalStereographic', { name: 'geoCylindricalStereographic', scale: '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ['EckertI', { name: 'geoEckert1', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['EckertII', { name: 'geoEckert2', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['EckertIII', { name: 'geoEckert3', scale: '525', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['EckertIV', { name: 'geoEckert4', scale: '525', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['EckertV', { name: 'geoEckert5', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['EckertVI', { name: 'geoEckert6', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Eisenlohr', { name: 'geoEisenlohr', scale: '400', param_in: 'other', param_ex: 'conformal' }], ['GallPeters', { name: 'geoCylindricalEqualArea', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'equalarea' }], ['GallStereographic', { name: 'geoCylindricalStereographic', scale: '400', parallel: 45, param_in: 'cylindrical', param_ex: 'aphylactic' }], ['Gilbert', { name: 'geoGilbert', scale: '400', type: '', param_in: 'other', param_ex: 'aphylactic' }], ['Gnomonic', { name: 'geoGnomonic', scale: '400', param_in: 'plan', param_ex: 'aphylactic' }], ['Gringorten', { name: 'geoGringorten', scale: '400', param_in: 'other', param_ex: 'equalarea' }], ['GringortenQuincuncial', { name: 'geoGringortenQuincuncial', scale: '400', param_in: 'other', param_ex: 'equalarea' }], ['Hatano', { name: 'geoHatano', scale: '200', param_in: 'other', param_ex: 'equalarea' }], ['HEALPix', { name: 'geoHealpix', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['HoboDyer', { name: 'geoCylindricalEqualArea', scale: '400', parallel: 37.5, param_in: 'cylindrical', param_ex: 'equalarea' }], ['Homolosine', { name: 'geoHomolosine', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['InterruptedHomolosine', { name: 'geoInterruptedHomolosine', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Loximuthal', { name: 'geoLoximuthal', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['Mercator', { name: 'geoMercator', scale: '375', param_in: 'cylindrical', param_ex: 'conformal' }], ['Miller', { name: 'geoMiller', scale: '375', param_in: 'cylindrical', param_ex: 'aphylactic' }], ['MillerOblatedStereographic', { name: 'geoModifiedStereographicMiller', scale: '375', param_in: 'plan', param_ex: 'conformal' }], ['Mollweide', { name: 'geoMollweide', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['NaturalEarth', { name: 'geoNaturalEarth', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['NaturalEarth2', { name: 'geoNaturalEarth2', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['Orthographic', { name: 'geoOrthographic', scale: '475', clipAngle: 90, param_in: 'plan', param_ex: 'aphylactic' }], ['Patterson', { name: 'geoPatterson', scale: '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ['Polyconic', { name: 'geoPolyconic', scale: '400', param_in: 'pseudocone', param_ex: 'aphylactic' }], ['Peircequincuncial', { name: 'geoPeirceQuincuncial', scale: '400', param_in: 'other', param_ex: 'conformal' }], ['Robinson', { name: 'geoRobinson', scale: '400', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['SinuMollweide', { name: 'geoSinuMollweide', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['InterruptedSinuMollweide', { name: 'geoInterruptedSinuMollweide', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Sinusoidal', { name: 'geoSinusoidal', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['InterruptedSinusoidal', { name: 'geoInterruptedSinusoidal', scale: '400', param_in: 'pseudocylindre', param_ex: 'equalarea' }], ['Stereographic', { name: 'geoStereographic', scale: '400', param_in: 'cylindrical', param_ex: 'aphylactic' }], ['TransverseMercator', { name: 'geoTransverseMercator', scale: '400', param_in: 'cylindrical', param_ex: 'conformal' }], ['Werner', { name: 'geoBonne', scale: '400', parallel: 90, param_in: 'pseudocone', param_ex: 'equalarea' }], ['Winkel1', { name: 'geoWinkel1', scale: '200', param_in: 'pseudocylindre', param_ex: 'aphylactic' }], ['WinkelTriple', { name: 'geoWinkel3', scale: '400', param_in: 'pseudoplan', param_ex: 'aphylactic' }]]);
 

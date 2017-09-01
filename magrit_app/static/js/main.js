@@ -163,10 +163,11 @@ function setUpInterface(reload_project) {
         return;
       } else if (val === 'last_projection') {
         val = tmp.name;
-      } else if (val === 'ConicConformalFrance') {
-        val = 'def_proj4';
-        _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
       }
+      // else if (val === 'ConicConformalFrance') {
+      //   val = 'def_proj4';
+      //   _app.last_projection = '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs';
+      // }
 
       if (val === 'def_proj4') {
         current_proj_name = val;
@@ -1956,14 +1957,9 @@ function zoom_without_redraw() {
   }
   window.legendRedrawTimeout = setTimeout(redraw_legends_symbols, 650);
   const zoom_params = svg_map.__zoom;
-  // let zoom_k_scale = proj.scale() * zoom_params.k;
   document.getElementById('input-center-x').value = round_value(zoom_params.x, 2);
   document.getElementById('input-center-y').value = round_value(zoom_params.y, 2);
   document.getElementById('input-scale-k').value = round_value(proj.scale() * zoom_params.k, 2);
-  // let a = document.getElementById('form_projection'),
-  //   disabled_val = (zoom_k_scale > 200) && (window._target_layer_file != undefined || result_data.length > 1)? '' : 'disabled';
-  // a.querySelector('option[value="ConicConformalSec"]').disabled = disabled_val;
-  // a.querySelector('option[value="ConicConformalTangent"]').disabled = disabled_val;
 }
 
 function redraw_legends_symbols(targeted_node) {
@@ -2144,7 +2140,27 @@ function handleClipPath(proj_name = '', main_layer) {
       .attr('clip-path', 'url(#clip)');
 
     svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
-  } else if (proj_name_lower.indexOf('conicconformal') > -1) {
+  } else if (proj_name_lower === 'conicconformalfrance') {
+    const ref_polygon = { type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString', coordinates: [[-20.00, 34.50], [20.00, 34.50], [45.00, 61.00], [-45.00, 61.00], [-20.00, 34.50]] }
+        // type: 'LineString', coordinates: [[-9.86, 41.15], [10.38, 41.15], [10.38, 51.56], [-9.86, 51.56], [-9.86, 41.15]] }
+    };
+    defs.append('path')
+      .datum(ref_polygon)
+      .attrs({ id: 'sphereClipPath', d: path });
+
+    defs.append('clipPath')
+      .attr('id', 'clip')
+      .append('use')
+      .attr('xlink:href', '#sphereClipPath');
+
+    map.selectAll('.layer:not(.no_clip)')
+      .attr('clip-path', 'url(#clip)');
+
+    svg_map.insertBefore(defs.node(), svg_map.childNodes[0]);
+  } else if (proj_name_lower === 'conicconformal') {
     const outline = d3.geoGraticule().extentMajor([[-180, -60], [180, 90]]).outline();
 
     // proj.fitSize([w, h], outline);
@@ -2191,6 +2207,9 @@ function change_projection(new_proj_name) {
   if (def_proj.parallels) proj = proj.parallels(def_proj.parallels);
   else if (def_proj.parallel) proj = proj.parallel(def_proj.parallel);
   if (def_proj.clipAngle) proj = proj.clipAngle(def_proj.clipAngle);
+
+  path = d3.geoPath().projection(proj).pointRadius(4);
+
   if (def_proj.rotate) prev_rotate = def_proj.rotate;
   if (proj.rotate) proj.rotate(prev_rotate);
 
@@ -2216,6 +2235,7 @@ function change_projection(new_proj_name) {
     zoom_without_redraw();
   } else {
     proj.translate(t).scale(s);
+    // if (def_proj.rotate) proj = proj.rotate(def_proj.rotate);
     map.selectAll('.layer').selectAll('path').attr('d', path);
     reproj_symbol_layer();
   }
