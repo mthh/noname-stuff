@@ -2144,7 +2144,7 @@ function handleClipPath(proj_name = '', main_layer) {
     const ref_polygon = { type: 'Feature',
       properties: {},
       geometry: {
-        type: 'LineString', coordinates: [[-20.00, 34.50], [20.00, 34.50], [45.00, 61.00], [-45.00, 61.00], [-20.00, 34.50]] }
+        type: 'LineString', coordinates: [[-30.50, 25.50], [50.00, 22.50], [55.00, 70.00], [-45.00, 70.00], [-30.00, 25.50]] }
         // type: 'LineString', coordinates: [[-9.86, 41.15], [10.38, 41.15], [10.38, 51.56], [-9.86, 51.56], [-9.86, 41.15]] }
     };
     defs.append('path')

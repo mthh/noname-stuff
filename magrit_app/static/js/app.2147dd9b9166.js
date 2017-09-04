@@ -1130,7 +1130,7 @@ function parseQuery(search) {
     lng: lang,
     fallbackLng: _app.existing_lang[0],
     backend: {
-      loadPath: 'static/locales/{{lng}}/translation.1f47989ca1aa.json'
+      loadPath: 'static/locales/{{lng}}/translation.2147dd9b9166.json'
     }
   }, function (err, tr) {
     if (err) {
@@ -1813,7 +1813,7 @@ function handleClipPath() {
     var ref_polygon = { type: 'Feature',
       properties: {},
       geometry: {
-        type: 'LineString', coordinates: [[-20.00, 34.50], [20.00, 34.50], [45.00, 61.00], [-45.00, 61.00], [-20.00, 34.50]] }
+        type: 'LineString', coordinates: [[-30.50, 25.50], [50.00, 22.50], [55.00, 70.00], [-45.00, 70.00], [-30.00, 25.50]] }
       // type: 'LineString', coordinates: [[-9.86, 41.15], [10.38, 41.15], [10.38, 51.56], [-9.86, 51.56], [-9.86, 41.15]] }
     };
     defs.append('path').datum(ref_polygon).attrs({ id: 'sphereClipPath', d: path });
@@ -11136,7 +11136,7 @@ function add_sample_layer() {
     prepare_extra_dataset_availables();
   }
   var fields_type_sample = new Map([['GrandParisMunicipalities', [{ "name": "DEP", "type": "category", "has_duplicate": true }, { "name": "IDCOM", "type": "id" }, { "name": "EPT", "type": "category", "has_duplicate": true }, { "name": "INC", "type": "stock" }, { "name": "LIBCOM", "type": "id" }, { "name": "LIBEPT", "type": "category", "has_duplicate": true }, { "name": "TH", "type": "stock" }, { "name": "UID", "type": "id" }, { "name": "IncPerTH", "type": "ratio" }]], ['martinique', [{ "name": "INSEE_COM", "type": "id" }, { "name": "NOM_COM", "type": "id", "not_number": true }, { "name": "STATUT", "type": "category", "has_duplicate": true }, { "name": "SUPERFICIE", "type": "stock" }, { "name": "P13_POP", "type": "stock" }, { "name": "P13_LOG", "type": "stock" }, { "name": "P13_LOGVAC", "type": "stock" }, { "name": "Part_Logements_Vacants", "type": "ratio" }]], ['nuts2-2013-data', [{ "name": "id", "type": "id", "not_number": true }, { "name": "name", "type": "id", "not_number": true }, { "name": "POP", "type": "stock" }, { "name": "GDP", "type": "stock" }, { "name": "UNEMP", "type": "ratio" }, { "name": "COUNTRY", "type": "category", "has_duplicate": true }]], ['brazil', [{ "name": "ADMIN_NAME", "type": "id", "not_number": true }, { "name": "Abbreviation", "type": "id", "not_number": true }, { "name": "Capital", "type": "id", "not_number": true }, { "name": "GDP_per_capita_2012", "type": "stock" }, { "name": "Life_expectancy_2014", "type": "ratio" }, { "name": "Pop2014", "type": "stock" }, { "name": "REGIONS", "type": "category", "has_duplicate": true }, { "name": "STATE2010", "type": "id" }, { "name": "popdensity2014", "type": "ratio" }]], ['world_countries_data', [{ "name": "ISO2", "type": "id", "not_number": true }, { "name": "ISO3", "type": "id", "not_number": true }, { "name": "ISONUM", "type": "id" }, { "name": "NAMEen", "type": "id", "not_number": true }, { "name": "NAMEfr", "type": "id", "not_number": true }, { "name": "UNRegion", "type": "category", "has_duplicate": true }, { "name": "GrowthRate", "type": "ratio" }, { "name": "PopDensity", "type": "ratio" }, { "name": "PopTotal", "type": "stock" }, { "name": "JamesBond", "type": "stock" }]]]);
-  var suggested_projection = new Map([['GrandParisMunicipalities', ['proj4', '+proj=lcc +lat_1=48.25 +lat_2=49.75 +lat_0=49 +lon_0=3 +x_0=1700000 +y_0=8200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs']], ['martinique', ['proj4', '+proj=utm +zone=20 +ellps=intl +towgs84=186,482,151,0,0,0,0 +units=m +no_defs']], ['nuts2-2013-data', ['proj4', '+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs']], ['brazil', ['proj4', '+proj=longlat +ellps=aust_SA +towgs84=-67.35,3.88,-38.22,0,0,0,0 +no_defs']], ['world_countries_data', ['d3', 'NaturalEarth2']]]);
+  var suggested_projection = new Map([['GrandParisMunicipalities', ['d3', 'ConicConformalFrance']], ['martinique', ['proj4', '+proj=utm +zone=20 +ellps=intl +towgs84=186,482,151,0,0,0,0 +units=m +no_defs']], ['nuts2-2013-data', ['proj4', '+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs']], ['brazil', ['proj4', '+proj=longlat +ellps=aust_SA +towgs84=-67.35,3.88,-38.22,0,0,0,0 +no_defs']], ['world_countries_data', ['d3', 'NaturalEarth2']]]);
   var target_layers = [[i18next.t('app_page.sample_layer_box.target_layer'), ''], [i18next.t('app_page.sample_layer_box.grandparismunicipalities'), 'GrandParisMunicipalities'], [i18next.t('app_page.sample_layer_box.martinique'), 'martinique'], [i18next.t('app_page.sample_layer_box.nuts2_data'), 'nuts2-2013-data'], [i18next.t('app_page.sample_layer_box.brazil'), 'brazil'], [i18next.t('app_page.sample_layer_box.world_countries'), 'world_countries_data']];
   var dialog_res = [];
   var selec = void 0,
