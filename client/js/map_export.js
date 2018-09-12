@@ -2,7 +2,7 @@ import { clickLinkFromDataUrl, display_error_during_computation, xhrequest } fro
 import { Mceil } from './helpers_math';
 import { custom_fonts } from './fonts';
 import { reproj_symbol_layer } from './map_ctrl';
-
+import { make_confirm_dialog2 } from './dialogs';
 
 function patchSvgForFonts() {
   function getListUsedFonts() {
@@ -302,4 +302,137 @@ export function export_layer_geo(layer, type, projec, proj4str) {
     }, (error) => {
       console.log(error);
     });
+}
+
+export function export_to_code(tooltip_info) {
+  const targetSvg = document.getElementById('svg_map').cloneNode(true);
+  const g_layer = targetSvg.querySelector(`#${_app.layer_to_id.get(tooltip_info.layer_name)}`);
+  const ref_g_layer = svg_map.querySelector(`#${_app.layer_to_id.get(tooltip_info.layer_name)}`);
+  const type_symbol = data_manager.current_layers[tooltip_info.layer_name].symbol || 'path';
+  g_layer.classList.add('tooltip_target');
+  const ref_features = ref_g_layer.querySelectorAll(type_symbol);
+  Array.from(g_layer.querySelectorAll(type_symbol))
+    .forEach((elem, i) => {
+      elem.classList.add('tltp_target');
+      elem.dataset.tltp_name_column = encodeURIComponent(
+        tooltip_info.field_name);
+      elem.dataset.tltp_value = encodeURIComponent(
+        ref_features[i].__data__.properties[tooltip_info.field_name]);
+    });
+  const page_template = `
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<style>
+div.tooltip {
+  z-index: 1001;
+  position: absolute;
+  text-align: center;
+  padding: 2px:
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+</style>
+<div class="tooltip" style="opacity: 0;"><span></span></div>
+${(new XMLSerializer()).serializeToString(targetSvg)}
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="http://d3js.org/d3-selection-multi.v1.js"></script>
+<script src="http://d3js.org/d3-scale-chromatic.v0.3.min.js"></script>
+<script>
+(() => {
+  const tooltip_div = d3.select('div.tooltip');
+  const id_to_layer = new Map(${JSON.stringify(([..._app.id_to_layer]))});
+  const current_layers = ${JSON.stringify(global.data_manager.current_layers)};
+  const map = d3.select('svg')
+    .call(d3.zoom()
+      .on('zoom', zoom_without_redraw));
+  const svg_map = document.querySelector('svg');
+  map.selectAll('.tltp_target')
+    .on('mouseover', function () {
+      const a = decodeURIComponent(this.dataset.tltp_name_column);
+      const b = decodeURIComponent(this.dataset.tltp_value);
+      tooltip_div
+        .transition()
+        .duration(200)
+        .style('opacity', 0.9);
+      tooltip_div
+        .select('span')
+        .html('<b>' + a + '</b><br>' + b);
+      const bbox = tooltip_div.select('span').node().getBoundingClientRect();
+      tooltip_div
+        .style('width', bbox.width + 10)
+        .style('height', bbox.height + 10)
+        .style('left', (d3.event.pageX - 5) + 'px')
+        .style('top', (d3.event.pageY - bbox.height - 5) + 'px');
+      ;
+    })
+    .on('mouseout', function(d) {
+      tooltip_div
+        .transition()
+        .duration(200)
+        .style('opacity', 0);
+    });
+  function zoom_without_redraw() {
+    let transform;
+    let t_val;
+    if (!d3.event || !d3.event.transform || !d3.event.sourceEvent) {
+      transform = d3.zoomTransform(svg_map);
+      t_val = transform.toString();
+      map.selectAll('.layer')
+        .transition()
+        .duration(50)
+        .style('stroke-width', function () {
+          const lyr_name = id_to_layer.get(this.id);
+          return current_layers[lyr_name].fixed_stroke
+            ? this.style.strokeWidth
+            : (current_layers[lyr_name]['stroke-width-const'] / transform.k) + 'px';
+        })
+        .attr('transform', t_val);
+      map.selectAll('.scalable-legend')
+        .transition()
+        .duration(50)
+        .attr('transform', t_val);
+    } else {
+      t_val = d3.event.transform.toString();
+      map.selectAll('.layer')
+        .transition()
+        .duration(50)
+        .style('stroke-width', function () {
+          const lyr_name = id_to_layer.get(this.id);
+          return current_layers[lyr_name].fixed_stroke
+            ? this.style.strokeWidth
+            : (current_layers[lyr_name]['stroke-width-const'] / d3.event.transform.k) + 'px';
+        })
+        .attr('transform', t_val);
+      map.selectAll('.scalable-legend')
+        .transition()
+        .duration(50)
+        .attr('transform', t_val);
+    }
+    // if (scaleBar.displayed) {
+    //   scaleBar.update();
+    // }
+  }
+})()
+</script>
+</body>`;
+  make_confirm_dialog2('exportWebDialogBox', 'Foo', { widthFitContent: true })
+    .then((confirmed) => {
+      if (!confirmed) {
+        console.log('Not confirmed');
+      }
+    });
+  const box_content = d3.select('.exportWebDialogBox').select('.modal-body').append('div').style('margin', '1x');
+  box_content.append('p')
+    .html('Include the following html code in an <i>Iframe</i> to include your map');
+
+  box_content.append('div')
+    .style('padding', '12px')
+    .append('textarea')
+    .style('width', '400px')
+    .style('height', '400px')
+    .html(page_template);
 }

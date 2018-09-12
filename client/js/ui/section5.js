@@ -1,5 +1,5 @@
 import { Mround } from './../helpers_math';
-import { export_compo_png, export_compo_svg, export_layer_geo } from './../map_export';
+import { export_compo_png, export_compo_svg, export_layer_geo, export_to_code } from './../map_export';
 
 
 export function makeSection5() {
@@ -20,28 +20,43 @@ export function makeSection5() {
         document.getElementById('export_options_svg').style.display = '';
         document.getElementById('export_options_geo').style.display = 'none';
         document.getElementById('export_options_png').style.display = 'none';
+        document.getElementById('export_options_web').style.display = 'none';
         export_filename.value = 'export.svg';
         export_filename.style.display = '';
         export_filename.previousSibling.style.display = '';
+        ok_button.html(_tr('app_page.section5b.export_button'));
       } else if (type === 'png') {
         document.getElementById('export_options_svg').style.display = 'none';
         document.getElementById('export_options_geo').style.display = 'none';
         document.getElementById('export_options_png').style.display = '';
+        document.getElementById('export_options_web').style.display = 'none';
         export_filename.value = 'export.png';
         export_filename.style.display = '';
         export_filename.previousSibling.style.display = '';
+        ok_button.html(_tr('app_page.section5b.export_button'));
       } else if (type === 'geo') {
         document.getElementById('export_options_svg').style.display = 'none';
         document.getElementById('export_options_png').style.display = 'none';
         document.getElementById('export_options_geo').style.display = '';
+        document.getElementById('export_options_web').style.display = 'none';
         export_filename.style.display = 'none';
         export_filename.previousSibling.style.display = 'none';
+        ok_button.html(_tr('app_page.section5b.export_button'));
+      } else if (type === 'web') {
+        document.getElementById('export_options_svg').style.display = 'none';
+        document.getElementById('export_options_png').style.display = 'none';
+        document.getElementById('export_options_geo').style.display = 'none';
+        document.getElementById('export_options_web').style.display = '';
+        export_filename.style.display = 'none';
+        export_filename.previousSibling.style.display = 'none';
+        ok_button.html('...');
       }
     });
 
   select_type_export.append('option').text('SVG').attr('value', 'svg');
   select_type_export.append('option').text('PNG').attr('value', 'png');
   select_type_export.append('option').text('GEO').attr('value', 'geo');
+  select_type_export.append('option').text('WEB').attr('value', 'web');
 
   const export_svg_options = dv5b.append('p')
     .attr('id', 'export_options_svg')
@@ -211,6 +226,26 @@ export function makeSection5() {
       'font-size': '10.5px',
     });
 
+  const export_web_options = dv5b.append('p')
+    .attr('id', 'export_options_web')
+    .style('display', 'none');
+
+  const web_layer_tooltip = export_web_options.append('p')
+    .style('margin', '5px 5px 40px 0');
+  web_layer_tooltip.append('span')
+    .attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_layer_tooltip' });
+  web_layer_tooltip.append('select')
+    .styles({ margin: '20px 0', 'max-width': '280px' })
+    .attrs({ id: 'layer_for_tooltip', class: 'm_elem_right' });
+
+  const web_field_tooltip = export_web_options.append('p')
+    .style('margin', '5px 5px 40px 0');
+  web_field_tooltip.append('span')
+    .attrs({ class: 'i18', 'data-i18n': '[html]app_page.export_box.option_field_tooltip' });
+  web_field_tooltip.append('select')
+    .styles({ margin: '20px 0', 'max-width': '280px' })
+    .attrs({ id: 'field_for_tooltip', class: 'm_elem_right' });
+
   const ok_button = dv5b.append('p').style('float', 'left')
     .append('button')
     .attrs({
@@ -287,6 +322,9 @@ export function makeSection5() {
         ratio = (exp_height * 118.11) / +h;
       }
       export_compo_png(ratio, exp_name);
+    } else if (type_exp === 'web') {
+      const name_layer =
+      export_to_code({ layer_name: 'quartier_paris_pop12_pop07', field_name: 'P07_POP' });
     }
   });
 }
