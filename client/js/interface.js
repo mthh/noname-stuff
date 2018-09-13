@@ -1281,9 +1281,18 @@ function changeTargetLayer(new_target) {
   // const old_target = downgradeTargetLayer();
   data_manager.current_layers[new_target].targeted = true;
   _app.targeted_layer_added = true;
-  data_manager.user_data[new_target] = Array.from(document.querySelector(`#${_app.layer_to_id.get(new_target)}`).querySelectorAll('path')).map(d => d.__data__.properties);
+  data_manager.user_data[new_target] = Array.prototype.slice.call(
+    document
+      .querySelector(`#${_app.layer_to_id.get(new_target)}`)
+      .querySelectorAll('path'),
+  ).map(d => d.__data__.properties);
   const fields = Object.keys(data_manager.user_data[new_target][0]);
-  update_section1(data_manager.current_layers[new_target].type, fields.length, data_manager.current_layers[new_target].n_features, new_target);
+  update_section1(
+    data_manager.current_layers[new_target].type,
+    fields.length,
+    data_manager.current_layers[new_target].n_features,
+    new_target,
+  );
   if (!data_manager.current_layers[new_target].fields_type) {
     data_manager.current_layers[new_target].original_fields = new Set(fields);
   }
@@ -1311,7 +1320,7 @@ function changeTargetLayer(new_target) {
   const d = {};
   d[new_target] = {
     type: 'FeatureCollection',
-    features: Array.prototype.slice.call(document.querySelectorAll(`#${id_new_target_lyr} > path`)).map(d => d.__data__),
+    features: Array.prototype.slice.call(document.querySelectorAll(`#${id_new_target_lyr} > path`)).map(_d => _d.__data__),
   };
   window._target_layer_file = topojson.topology(d);
 
@@ -1362,7 +1371,6 @@ export function switch_accordion_section(id_elem) {
   document.getElementById(id_elem || 'btn_s3').dispatchEvent(new MouseEvent('click'));
 }
 
-
 // Function to handle the title add and changes
 export function handle_title(txt) {
   const title = d3.select('#map_title').select('text');
@@ -1373,8 +1381,18 @@ export function handle_title(txt) {
       .attrs({ class: 'legend title', id: 'map_title' })
       .style('cursor', 'pointer')
       .insert('text')
-      .attrs({ x: w / 2, y: h / 12, 'alignment-baseline': 'middle', 'text-anchor': 'middle' })
-      .styles({ 'font-family': 'verdana', 'font-size': '20px', position: 'absolute', color: 'black' })
+      .attrs({
+        x: w / 2,
+        y: h / 12,
+        'alignment-baseline': 'middle',
+        'text-anchor': 'middle',
+      })
+      .styles({
+        'font-family': 'verdana',
+        'font-size': '20px',
+        position: 'absolute',
+        color: 'black',
+      })
       .text(txt)
       .on('contextmenu dblclick', () => {
         d3.event.preventDefault();
@@ -1385,7 +1403,7 @@ export function handle_title(txt) {
   }
 }
 
-function handle_title_properties() {
+export function handle_title_properties() {
   const title = d3.select('#map_title').select('text');
   if (!title.node() || title.text() === '') {
     swal({
@@ -1752,10 +1770,12 @@ export function remove_layer_cleanup(name) {
   // Remove the layer from the "geo export" menu :
   const a = document.getElementById('layer_to_export').querySelector(`option[value="${name}"]`);
   if (a) a.remove();
-
+  const b = document.getElementById('layer_for_tooltip').querySelector(`option[value="${name}"]`);
+  if (b) b.remove();
   // Remove the layer from the "mask" section if the "smoothed map" menu is open :
   if (global._app.current_functionnality && (
-      global._app.current_functionnality.name === 'smooth' || global._app.current_functionnality.name === 'grid')) {
+      global._app.current_functionnality.name === 'smooth'
+        || global._app.current_functionnality.name === 'grid')) {
     Array.prototype.slice.call(document.querySelectorAll('.mask_field'))
       .forEach((elem) => {
         const aa = elem.querySelector(`option[value="${name}"]`);

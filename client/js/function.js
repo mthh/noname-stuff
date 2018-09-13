@@ -838,6 +838,8 @@ export function render_twostocks_waffle(layer, rendering_params) {
     draggable: false,
   };
   create_li_layer_elem(layer_to_add, nb_features, ['Point', 'waffle'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
 }
 
 function fillMenu_PropSymbolChoro() {
@@ -2298,6 +2300,8 @@ export function make_prop_line(rendering_params, geojson_line_layer) {
     data_manager.current_layers[layer_to_add].break_val = rendering_params.break_val;
   }
   create_li_layer_elem(layer_to_add, nb_features, ['Line', 'prop'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
 }
 
 
@@ -2472,6 +2476,8 @@ export function make_prop_symbols(rendering_params, _pt_layer) {
     data_manager.current_layers[layer_to_add].break_val = rendering_params.break_val;
   }
   create_li_layer_elem(layer_to_add, nb_features, ['Point', 'prop'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
 
   if (warn_empty_features.length > 0) {
     display_warning_empty_geom(warn_empty_features);
@@ -3153,6 +3159,8 @@ const render_discont = function () {
       n_features: nb_ft,
     };
     create_li_layer_elem(new_layer_name, nb_ft, ['Line', 'discont'], 'result');
+    d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+    d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
 
     _app.waitingOverlay.hide();
 
@@ -3565,6 +3573,8 @@ function render_TypoSymbols(rendering_params, new_name) {
     ref_layer_name: layer_name,
   };
   create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'symbol'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
   handle_legend(layer_to_add);
   zoom_without_redraw();
   switch_accordion_section();
@@ -4620,6 +4630,8 @@ export const render_label = function render_label(layer, rendering_params, optio
     default_font: selected_font,
   };
   create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'label'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
   if (warn_empty_features.length > 0) {
     setTimeout(() => { display_warning_empty_geom(warn_empty_features); }, 50);
   }
@@ -4715,6 +4727,8 @@ export const render_label_graticule = function render_label_graticule(layer, ren
     default_font: selected_font,
   };
   create_li_layer_elem(layer_to_add, nb_ft, ['Point', 'label'], 'result');
+  d3.select('#layer_for_tooltip').append('option').attr('value', layer_to_add).text(layer_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
   zoom_without_redraw();
   return layer_to_add;
 };

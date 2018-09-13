@@ -230,21 +230,74 @@ export function makeSection5() {
     .attr('id', 'export_options_web')
     .style('display', 'none');
 
-  const web_layer_tooltip = export_web_options.append('p')
-    .style('margin', '5px 5px 40px 0');
-  web_layer_tooltip.append('span')
-    .attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_layer_tooltip' });
-  web_layer_tooltip.append('select')
-    .styles({ margin: '20px 0', 'max-width': '280px' })
-    .attrs({ id: 'layer_for_tooltip', class: 'm_elem_right' });
+  const zoomable_section = export_web_options.append('p')
+    .style('margin', '25px 0 10px 0');
+  zoomable_section.append('input')
+    .styles({ float: 'right' })
+    .attrs({ id: 'zoomable_web_export', type: 'checkbox' })
+    .property('checked', true);
+  zoomable_section.append('label')
+    .attrs({
+      class: 'i18n',
+      'data-i18n': '[html]app_page.export_box.option_zoomable_export',
+      for: 'zoomable_web_export',
+    })
+    .html('Activer le zoom');
 
-  const web_field_tooltip = export_web_options.append('p')
-    .style('margin', '5px 5px 40px 0');
-  web_field_tooltip.append('span')
-    .attrs({ class: 'i18', 'data-i18n': '[html]app_page.export_box.option_field_tooltip' });
-  web_field_tooltip.append('select')
-    .styles({ margin: '20px 0', 'max-width': '280px' })
-    .attrs({ id: 'field_for_tooltip', class: 'm_elem_right' });
+  const web_layer_tooltip = export_web_options.append('div')
+    .style('clear', 'both');
+    // .style('margin', '5px 5px 10px 0');
+  web_layer_tooltip.append('p')
+    .style('margin', 'auto')
+    .attrs({ class: 'i18n', 'data-i18n': '[html]app_page.export_box.option_layer_tooltip' })
+    .html('Couche sur laquelle afficher un tooltip');
+  web_layer_tooltip.append('p')
+    .style('margin', '5px 5px 30px')
+    .append('select')
+    .styles({ margin: '0 0 10px 0', 'max-width': '280px', float: 'right' })
+    .attrs({ id: 'layer_for_tooltip' })
+    .on('change', function() {
+      const layer_name = this.value;
+      const layer_id = _app.layer_to_id.get(layer_name);
+      const fields = Object.keys(document.querySelector(`g#${layer_id}`).querySelector('*').__data__.properties);
+      console.log(fields);
+      const select1 = d3.select('#field_for_tooltip');
+      const select2 = d3.select('#id_field_for_tooltip');
+      select1.selectAll('option').remove();
+      select2.selectAll('option').remove();
+      select1.append('option').attr('value', 'none').text('None');
+      select2.append('option').attr('value', 'none').text('None');
+      fields.forEach((field) => {
+        select1.append('option').attr('value', field).text(field);
+        select2.append('option').attr('value', field).text(field);
+      });
+    });
+
+  const web_field_tooltip = export_web_options.append('div')
+    .style('clear', 'both');
+    // .style('margin', '5px 5px 20px 0');
+  web_field_tooltip.append('p')
+    .style('margin', 'auto')
+    .attrs({ class: 'i18', 'data-i18n': '[html]app_page.export_box.option_field_tooltip' })
+    .html('Champ contenant la valeur à afficher');
+  web_field_tooltip.append('p')
+    .style('margin', '5px 5px 30px')
+    .append('select')
+    .styles({ margin: '0 0 10px 0', 'max-width': '280px', float: 'right' })
+    .attrs({ id: 'field_for_tooltip' });
+
+  const web_id_field_tooltip = export_web_options.append('div')
+    .style('clear', 'both');
+    // .style('margin', '5px 5px 20px 0');
+  web_id_field_tooltip.append('p')
+    .style('margin', 'auto')
+    .attrs({ class: 'i18', 'data-i18n': '[html]app_page.export_box.option_field_tooltip' })
+    .html('Champ contenant le nom / l\'id de l\'entité');
+  web_id_field_tooltip.append('p')
+    .style('margin', '5px 5px 30px')
+    .append('select')
+    .styles({ margin: '0 0 10px 0', 'max-width': '280px', float: 'right' })
+    .attrs({ id: 'id_field_for_tooltip' });
 
   const ok_button = dv5b.append('p').style('float', 'left')
     .append('button')
@@ -323,8 +376,16 @@ export function makeSection5() {
       }
       export_compo_png(ratio, exp_name);
     } else if (type_exp === 'web') {
-      const name_layer =
-      export_to_code({ layer_name: 'quartier_paris_pop12_pop07', field_name: 'P07_POP' });
+      const layer_name = document.getElementById('layer_for_tooltip').value;
+      const field_name = document.getElementById('field_for_tooltip').value;
+      const id_field_name = document.getElementById('id_field_for_tooltip').value;
+      const zoomable = !!document.getElementById('zoomable_web_export').checked;
+      export_to_code({
+        layer_name,
+        field_name,
+        id_field_name,
+        zoomable,
+      });
     }
   });
 }

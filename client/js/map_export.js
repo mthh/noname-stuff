@@ -305,6 +305,7 @@ export function export_layer_geo(layer, type, projec, proj4str) {
 }
 
 export function export_to_code(tooltip_info) {
+
   const targetSvg = document.getElementById('svg_map').cloneNode(true);
   const g_layer = targetSvg.querySelector(`#${_app.layer_to_id.get(tooltip_info.layer_name)}`);
   const ref_g_layer = svg_map.querySelector(`#${_app.layer_to_id.get(tooltip_info.layer_name)}`);
@@ -318,6 +319,8 @@ export function export_to_code(tooltip_info) {
         tooltip_info.field_name);
       elem.dataset.tltp_value = encodeURIComponent(
         ref_features[i].__data__.properties[tooltip_info.field_name]);
+      elem.dataset.tltp_name = encodeURIComponent(
+        ref_features[i].__data__.properties[tooltip_info.id_field_name]);
     });
   const page_template = `
 <!DOCTYPE html>
@@ -352,15 +355,20 @@ ${(new XMLSerializer()).serializeToString(targetSvg)}
   const svg_map = document.querySelector('svg');
   map.selectAll('.tltp_target')
     .on('mouseover', function () {
+      this.dataset.strokevalue = this.style.stroke;
+      this.dataset.strokewidth = this.style.strokeWidth;
+      this.style.stroke = 'red';
+      this.style.strokeWidth = '2px';
       const a = decodeURIComponent(this.dataset.tltp_name_column);
       const b = decodeURIComponent(this.dataset.tltp_value);
+      const name = decodeURIComponent(this.dataset.tltp_name);
       tooltip_div
         .transition()
         .duration(200)
         .style('opacity', 0.9);
       tooltip_div
         .select('span')
-        .html('<b>' + a + '</b><br>' + b);
+        .html('<h3>' + name + '</h3><b>' + a + '</b><br>' + b);
       const bbox = tooltip_div.select('span').node().getBoundingClientRect();
       tooltip_div
         .style('width', bbox.width + 10)
@@ -370,6 +378,8 @@ ${(new XMLSerializer()).serializeToString(targetSvg)}
       ;
     })
     .on('mouseout', function(d) {
+      this.style.stroke = this.dataset.strokevalue;
+      this.style.strokeWidth = this.dataset.strokewidth;
       tooltip_div
         .transition()
         .duration(200)

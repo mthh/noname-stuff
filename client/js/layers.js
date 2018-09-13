@@ -432,6 +432,8 @@ export function add_layer_topojson(text, options = {}) {
       'fill-opacity': type !== 'Line' ? 0.90 : 0,
     });
   d3.select('#layer_to_export').append('option').attr('value', lyr_name_to_add).text(lyr_name_to_add);
+  d3.select('#layer_for_tooltip').append('option').attr('value', lyr_name_to_add).text(lyr_name_to_add);
+  d3.select('#layer_for_tooltip').node().dispatchEvent(new Event('change'));
   update_section1_layout();
   if (target_layer_on_add) {
     data_manager.current_layers[lyr_name_to_add].original_fields = new Set(Object.getOwnPropertyNames(data_manager.user_data[lyr_name_to_add][0]));
