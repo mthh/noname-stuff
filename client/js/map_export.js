@@ -444,5 +444,5 @@ ${(new XMLSerializer()).serializeToString(targetSvg)}
     .append('textarea')
     .style('width', '400px')
     .style('height', '400px')
-    .html(page_template);
+    .html('<iframe src="data:text/html;charset=utf-8,' + encodeURI(page_template) + '"></iframe>');
 }
